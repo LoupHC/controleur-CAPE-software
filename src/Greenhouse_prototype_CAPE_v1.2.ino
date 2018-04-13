@@ -152,10 +152,16 @@ void setup() {
     rtc.begin();
   #endif
   //start communication with relay driver
-  #ifdef I2C_OUTPUTS
+  #ifdef MCP_I2C_OUTPUTS
     mcp.begin();
-    mcp.pinMode(SAFETY_PIN, OUTPUT);
-    mcp.digitalWrite(SAFETY_PIN, HIGH);
+  #endif
+  //Add safety alarm
+  greenhouse.addAlarm(ACT_LOW, ALARM_PIN);
+  #ifdef ALARM_MAX_TEMP
+    greenhouse.setAlarmMaxTemp(ALARM_MAX_TEMP);
+  #endif
+  #ifdef ALARM_MIN_TEMP
+    greenhouse.setAlarmMinTemp(ALARM_MIN_TEMP);
   #endif
   // change RTC settings
   #ifdef RTC_TIME_SET
@@ -232,7 +238,7 @@ void loop() {
   #if HEATERS == 2
     H2.routine(heatingTemperature, greenhouseTemperature.value());
   #endif
-
+    greenhouse.checkAlarm(greenhouseTemperature.value());
   #if defined(R1_RECALIBRATE) && ROLLUPS >= 1
     recalibrateR1();
   #endif
@@ -249,8 +255,6 @@ void loop() {
 //***************************************************
 //*********************MACROS**************************
 //***************************************************
-
-
 
 void loadParameters(){
 
@@ -341,19 +345,19 @@ void loadParameters(){
       H2.setParameters(H2_MOD, H2_HYST);
     #endif
     #if TIMEPOINTS >= 1
-      T1.setParameters(TP1_TYPE, TP1_HOUR, TP1_MN_MOD, TP1_HEAT, TP1_COOL, TP1_HEAT_CLOUD, TP1_COOL_CLOUD, TP1_RAMP);
+      T1.setParameters(TP1_TYPE, TP1_HOUR, TP1_MN_MOD, TP1_HEAT_SUN, TP1_COOL_SUN, TP1_HEAT_CLOUD, TP1_COOL_CLOUD, TP1_RAMP);
     #endif
     #if TIMEPOINTS >= 2
-      T2.setParameters(TP2_TYPE, TP2_HOUR, TP2_MN_MOD, TP2_HEAT, TP2_COOL, TP2_HEAT_CLOUD, TP2_COOL_CLOUD, TP2_RAMP);
+      T2.setParameters(TP2_TYPE, TP2_HOUR, TP2_MN_MOD, TP2_HEAT_SUN, TP2_COOL_SUN, TP2_HEAT_CLOUD, TP2_COOL_CLOUD, TP2_RAMP);
     #endif
     #if TIMEPOINTS >= 3
-      T3.setParameters(TP3_TYPE, TP3_HOUR, TP3_MN_MOD, TP3_HEAT, TP3_COOL, TP3_HEAT_CLOUD, TP3_COOL_CLOUD, TP3_RAMP);
+      T3.setParameters(TP3_TYPE, TP3_HOUR, TP3_MN_MOD, TP3_HEAT_SUN, TP3_COOL_SUN, TP3_HEAT_CLOUD, TP3_COOL_CLOUD, TP3_RAMP);
     #endif
     #if TIMEPOINTS >= 4
-      T4.setParameters(TP4_TYPE, TP4_HOUR, TP4_MN_MOD, TP4_HEAT, TP4_COOL, TP4_HEAT_CLOUD, TP4_COOL_CLOUD, TP4_RAMP);
+      T4.setParameters(TP4_TYPE, TP4_HOUR, TP4_MN_MOD, TP4_HEAT_SUN, TP4_COOL_SUN, TP4_HEAT_CLOUD, TP4_COOL_CLOUD, TP4_RAMP);
     #endif
     #if TIMEPOINTS == 5
-      T5.setParameters(TP5_TYPE, TP5_HOUR, TP5_MN_MOD, TP5_HEAT, TP5_COOL, TP5_HEAT_CLOUD, TP5_COOL_CLOUD, TP5_RAMP);
+      T5.setParameters(TP5_TYPE, TP5_HOUR, TP5_MN_MOD, TP5_HEAT_SUN, TP5_COOL_SUN, TP5_HEAT_CLOUD, TP5_COOL_CLOUD, TP5_RAMP);
     #endif
 
 

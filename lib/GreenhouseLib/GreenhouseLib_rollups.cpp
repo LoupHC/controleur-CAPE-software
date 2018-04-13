@@ -175,63 +175,39 @@ void Rollup::initStage(Stage stage, float modif, byte inc){
 }
 /*
 Open or close the rollups to specific increment, using a multiple cooling stages logic
-Adjust to an external target temperature (Mode MAN_TEMP)
 */
-
 void Rollup::routine(float targetTemp, float temp){
     checkTimings();
     if(_routine == true){
-      switch(_stage){
-        case OFF_VAL:
+      if(_routineCycle == false){
+        if(_stage == OFF_VAL){
           calibrateStages();
-          break;
-        case 0:
+        }
+        else{
           openOrClose(temp, targetTemp);
-          break;
-        case 1:
-          openOrClose(temp, targetTemp);
-          break;
-        case 2:
-          openOrClose(temp, targetTemp);
-          break;
-        case 3:
-          openOrClose(temp, targetTemp);
-          break;
-        case 4:
-          openOrClose(temp, targetTemp);
-          break;
+        }
       }
-      watchRoutine();
+      else {
+        watchRoutine();
+      }
     }
     else if(_fixOverride == true){
       watchFixOverride();
     }
   debugPrints();
   }
-
+  /*
+  Same but with an external boolean condition that triggers an override
+  */
 void Rollup::routine(boolean condition, float targetTemp, float temp){
     checkTimings();
     if(_routine == true){
       if(_routineCycle == false){
-        switch(_stage){
-          case OFF_VAL:
-            calibrateStages();
-            break;
-          case 0:
-            openOrClose(temp, targetTemp);
-            break;
-          case 1:
-            openOrClose(temp, targetTemp);
-            break;
-          case 2:
-            openOrClose(temp, targetTemp);
-            break;
-          case 3:
-            openOrClose(temp, targetTemp);
-            break;
-          case 4:
-            openOrClose(temp, targetTemp);
-            break;
+        if(_stage == OFF_VAL){
+          calibrateStages();
+        }
+        else{
+          openOrClose(temp, targetTemp);
         }
       }
       else {

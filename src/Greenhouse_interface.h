@@ -162,6 +162,8 @@ const char T5MIN[Code_lenght]     = "4502";
 const char T5HEATT[Code_lenght]   = "4503";
 const char T5COOLT[Code_lenght]   = "4504";
 const char T5RAMP[Code_lenght]    = "4505";
+const char TESTRELAYS[Code_lenght]= "5555";
+const char TESTIIC[Code_lenght]   = "6666";
 
 elapsedMillis unpressedTimer;
 elapsedMillis pressedTimer;
@@ -183,6 +185,11 @@ char keyPressed;
 //Flashing display
 byte flashCount1 = 0;
 byte flashCount2 = 0;
+
+boolean relayTest = false;
+const byte RyDriverI2CAddr = B0100000;//device ID
+byte GPIO = B11111111;
+byte validAddress[6] = {0};
 
 
 //***************************************************
@@ -284,6 +291,7 @@ void lcdPrintTemp(byte _row){
 }
 
 void lcdPrintTarget(){
+  lcd.setCursor(9,0); lcd.print(F("           "));
   lcd.setCursor(9,0);
    lcd.print(F("|")); lcd.print((int)heatingTemperature); lcd.print(F("-"));lcd.print((int)coolingTemperature);
 
@@ -555,8 +563,23 @@ void timepointsDisplay(){
       #if TIMEPOINTS ==4
       lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
       #endif
-      #if TIMEPOINTS ==4
+      #if TIMEPOINTS >4
+      lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());lcd.print(F("-")); lcdPrintDigits(T5.hr());lcd.print(F(":"));lcdPrintDigits(T5.mn());
+      #endif
+      #if TIMEPOINTS >=4
       switch (T4.type.value()){
+        case 0: lcd.print("(SR)");break;
+        case 1: lcd.print("(CL)");break;
+        case 2: lcd.print("(SS)");break;
+      }
+      #endif
+      break;
+      case 5:
+      #if TIMEPOINTS ==5
+      lcd.setCursor(0,x);lcd.print(F("TP5: ")); lcdPrintDigits(T5.hr());lcd.print(F(":"));lcdPrintDigits(T5.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
+      #endif
+      #if TIMEPOINTS ==5
+      switch (T5.type.value()){
         case 0: lcd.print("(SR)");break;
         case 1: lcd.print("(CL)");break;
         case 2: lcd.print("(SS)");break;
@@ -602,8 +625,11 @@ void temperaturesDisplay(){
         #if TIMEPOINTS >= 3
           case 3: lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcd.print(T3.heatingTemp.value());lcd.print(F("-")); lcd.print(T3.coolingTemp.value());lcd.print(F(" R")); lcd.print(T3.ramping.value());break;
         #endif
-        #if TIMEPOINTS == 4
+        #if TIMEPOINTS >= 4
           case 4: lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcd.print(T4.heatingTemp.value());lcd.print(F("-")); lcd.print(T4.coolingTemp.value());lcd.print(F(" R")); lcd.print(T4.ramping.value());break;
+        #endif
+        #if TIMEPOINTS == 5
+          case 5: lcd.setCursor(0,x);lcd.print(F("TP5: ")); lcd.print(T5.heatingTemp.value());lcd.print(F("-")); lcd.print(T5.coolingTemp.value());lcd.print(F(" R")); lcd.print(T5.ramping.value());break;
         #endif
       }
     }
@@ -616,10 +642,13 @@ void temperaturesDisplay(){
           case 2: lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcd.print(T2.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T2.coolingTempCloud.value());lcd.print(F(" R")); lcd.print(T2.ramping.value());break;
         #endif
         #if TIMEPOINTS >= 3
-          case 3: lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcd.print(T3.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T3.coolingTempCloud.value());lcd.print(F(" R")); lcd.print(T3.ramping.value());break;
+          case 3: lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcd.print(T3.heatingTemp.value());lcd.print(F("-")); lcd.print(T3.coolingTemp.value());lcd.print(F(" R")); lcd.print(T3.ramping.value());break;
         #endif
-        #if TIMEPOINTS == 4
-          case 4: lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcd.print(T4.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T4.coolingTempCloud.value());lcd.print(F(" R")); lcd.print(T4.ramping.value());break;
+        #if TIMEPOINTS >= 4
+          case 4: lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcd.print(T4.heatingTemp.value());lcd.print(F("-")); lcd.print(T4.coolingTemp.value());lcd.print(F(" R")); lcd.print(T4.ramping.value());break;
+        #endif
+        #if TIMEPOINTS == 5
+          case 5: lcd.setCursor(0,x);lcd.print(F("TP5: ")); lcd.print(T5.heatingTemp.value());lcd.print(F("-")); lcd.print(T5.coolingTemp.value());lcd.print(F(" R")); lcd.print(T5.ramping.value());break;
         #endif
       }
     }
@@ -727,6 +756,7 @@ void menuAction(){
       select();
     }
     if(keyPressed == 'D'){
+      menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
       lcd.noBlink();
       switch(action){
         case 1:
@@ -737,6 +767,7 @@ void menuAction(){
             else if(greenhouse.weather() == CLOUD){
               greenhouse.setWeather(SUN);
             }
+            key = '9';
           }
         break;
         case 2:
@@ -755,7 +786,7 @@ void menuAction(){
           }
         break;
       }
-      menu = MODE_DISPLAY;action = 0;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+      action = 0;
     }
   }
 
@@ -893,6 +924,120 @@ void confirmType(String variableName, byte typeValue){
   lcd.print("]   ");
 }
 
+
+void checkIIC(){
+  lcd.noBlink();
+  lcd.setCursor(0,0);
+  lcd.print("----I2C DEVICES-----");
+
+  byte error, address;
+  int nDevices = 0;
+
+  for(address = 1; address < 127; address++ ) {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+    if (error == 0)
+    {
+      validAddress[nDevices] = address;
+      nDevices++;
+    }
+  }
+  lcd.setCursor(0,1);
+  if(validAddress[0] != 0){
+    lcd.print("0x");
+    if (validAddress[0]<16)
+      lcd.print("0");
+    lcd.print(validAddress[0],HEX);
+  }
+  lcd.setCursor(0,2);
+  if(validAddress[1] != 0){
+    lcd.print("0x");
+    if (validAddress[1]<16)
+      lcd.print("0");
+    lcd.print(validAddress[1],HEX);
+  }
+  lcd.setCursor(0,3);
+  if(validAddress[2] != 0){
+    lcd.print("0x");
+    if (validAddress[2]<16)
+      lcd.print("0");
+    lcd.print(validAddress[2],HEX);
+  }
+  lcd.setCursor(10,1);
+  if(validAddress[3] != 0){
+    lcd.print("0x");
+    if (validAddress[3]<16)
+      lcd.print("0");
+    lcd.print(validAddress[3],HEX);
+  }
+  lcd.setCursor(10,2);
+  if(validAddress[4] != 0){
+    lcd.print("0x");
+    if (validAddress[4]<16)
+      lcd.print("0");
+    lcd.print(validAddress[4],HEX);
+  }
+  lcd.setCursor(10,3);
+  if(validAddress[5] != 0){
+    lcd.print("0x");
+    if (validAddress[5]<16)
+      lcd.print("0");
+    lcd.print(validAddress[5],HEX);
+  }
+}
+
+void checkRelays(){
+  GPIO = B00000000;
+  if(relayTest == false){
+   Wire.begin();
+   Wire.beginTransmission(0x20); //begins talking to the slave device
+   Wire.write(0x00); //selects the IODIRA register
+   Wire.write(0x00); //this sets all port A pins to outputs
+   Wire.write(0x09);//select GPIO register
+   Wire.write(GPIO);//set register value-all low
+   Wire.endTransmission(); //stops talking to device
+  }
+  relayTest = true;
+  GPIO = B11111111;
+
+  Wire.beginTransmission(RyDriverI2CAddr);
+  Wire.write(0x09);//select GPIO register
+  Wire.write(GPIO);//set register value-all high
+  Wire.endTransmission();
+
+  delay(5000);
+
+  GPIO = B00000000;
+
+  Wire.beginTransmission(RyDriverI2CAddr);
+  Wire.write(0x09);//select GPIO register
+  Wire.write(GPIO);//set register value-all high
+  Wire.endTransmission();
+
+  delay(1000);
+
+  for(int x = 0; x < 8; x++){
+    bitWrite(GPIO, x, 1);
+    Wire.beginTransmission(RyDriverI2CAddr);
+    Wire.write(0x09);//select GPIO register
+    Wire.write(GPIO);//set register value-all high
+    Wire.endTransmission();
+    delay(1000);
+  }
+
+  for(int x = 0; x < 8; x++){
+    bitWrite(GPIO, x, 0);
+    Wire.beginTransmission(RyDriverI2CAddr);
+    Wire.write(0x09);//select GPIO register
+    Wire.write(GPIO);//set register value-all high
+    Wire.endTransmission();
+    delay(1000);
+  }
+}
+
 void menuSetParameter(){
   if(firstPrint == true){
     lcd.clear();
@@ -900,6 +1045,7 @@ void menuSetParameter(){
     lcd.print(F("-Parameter Selected-"));
     firstPrint = false;
   }
+
 //Général
   if(!strcmp(Data, SETDAY)){
     unsigned short daySet = (unsigned short)greenhouse.rightNow(3);
@@ -917,7 +1063,7 @@ void menuSetParameter(){
   }
   else if(!strcmp(Data, SETMONTH)){
     unsigned short monthSet = (unsigned short)greenhouse.rightNow(4);
-    confirmVariable("SET MONTH",0,monthSet,31);
+    confirmVariable("SET MONTH",1,monthSet,12);
     if((keyPressed == 'D')&&(unpressedTimer > 1000)){
       #ifdef CLOCK_DS3231
         unsigned short year = 2000+(unsigned short)greenhouse.rightNow(5);
@@ -1668,7 +1814,26 @@ void menuSetParameter(){
       menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
     }
   }
+
+  else if(!strcmp(Data, T5RAMP)){
+    confirmVariable("   T5 - RAMPING", T5.ramping.minimum(),T5.ramping.value(),T5.ramping.maximum());
+    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+      T5.ramping.setValue(usvariable);
+      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
+    }
+  }
 #endif
+  else if(!strcmp(Data, TESTRELAYS)){
+    checkRelays();
+  }
+
+  else if(!strcmp(Data, TESTIIC)){
+    checkIIC();
+    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+      menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+    }
+  }
+
   else{
   lcd.noBlink();menu = MODE_PROGRAM;firstPrint = true;line = 0;
   }
