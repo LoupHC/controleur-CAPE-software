@@ -147,7 +147,7 @@ At 17C, furnace will start.
 At 19C, furnace  stop.
 */
 
-#define COMPUTER_INTERFACE    //Uncomment this line if you rely only on this sheet for programming
+//#define COMPUTER_INTERFACE    //Uncomment this line if you rely only on this sheet for programming
 
 //************************************************************
 //*******************CONTROL PARAMETERS***********************
