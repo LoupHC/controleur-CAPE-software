@@ -1709,34 +1709,34 @@ void menuSetParameter(){
       menu = MODE_DISPLAY;key = '8';firstPrint = true; unpressedTimer = 0; line = 0;
     }
   }
-  else if(!strcmp(Data, T3HEATT)){
+  else if(!strcmp(Data, T4HEATT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T3 - HEAT TEMP-SUN", T3.coolingTemp.minimum(),T3.heatingTemp.value(),T3.coolingTemp.maximum());
+      confirmVariable("T4 - HEAT TEMP-SUN", T4.coolingTemp.minimum(),T4.heatingTemp.value(),T4.coolingTemp.maximum());
       if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.heatingTemp.setValue(fvariable);
+        T4.heatingTemp.setValue(fvariable);
         menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
       }
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T3 - HEAT TEMP-CLOUD", T3.coolingTemp.minimum(),T3.heatingTempCloud.value(),T3.coolingTemp.maximum());
+      confirmVariable("T4 - HEAT TEMP-CLOUD", T4.coolingTemp.minimum(),T4.heatingTempCloud.value(),T4.coolingTemp.maximum());
       if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.heatingTempCloud.setValue(fvariable);
+        T4.heatingTempCloud.setValue(fvariable);
         menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
       }
     }
   }
-  else if(!strcmp(Data, T3COOLT)){
+  else if(!strcmp(Data, T4COOLT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T3 - COOL TEMP-SUN", T3.coolingTemp.minimum(),T3.coolingTemp.value(),T3.coolingTemp.maximum());
+      confirmVariable("T4 - COOL TEMP-SUN", T4.coolingTemp.minimum(),T4.coolingTemp.value(),T4.coolingTemp.maximum());
       if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.coolingTemp.setValue(fvariable);
+        T4.coolingTemp.setValue(fvariable);
         menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
       }
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T3 - COOL TEMP-CLOUD", T3.coolingTemp.minimum(),T3.coolingTempCloud.value(),T3.coolingTemp.maximum());
+      confirmVariable("T4 - COOL TEMP-CLOUD", T4.coolingTemp.minimum(),T4.coolingTempCloud.value(),T4.coolingTemp.maximum());
       if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.coolingTempCloud.setValue(fvariable);
+        T4.coolingTempCloud.setValue(fvariable);
         menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
       }
     }
