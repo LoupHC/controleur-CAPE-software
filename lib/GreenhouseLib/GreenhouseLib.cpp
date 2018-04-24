@@ -88,8 +88,10 @@ void Greenhouse::fullRoutine(byte rightNow[6], float* coolingTemp, float* heatin
   checkProgramSuccession();
   selectActualProgram();
   startRamping();
+
   #if MAX_ROLLUPS >= 1
   for (byte x = 0; x < _rollups; x++){
+
     rollup[x].EEPROMPut();
   }
   #endif
