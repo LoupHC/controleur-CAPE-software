@@ -10,13 +10,13 @@
 //Humidity sensor
 //#define HUM_DHT22
 //#define HUM_DHT11
-#define HUM_DHT12
+//#define HUM_DHT12
 
 //Real time clock
 #define CLOCK_DS3231
 
 //Temerature pin
-#define TEMP_SENSOR          7 //connect this pin to the DS18B20 data line
+#define TEMP_SENSOR          A1 //connect this pin to the DS18B20 data line
 
 #ifdef TEMP_DS18B20
   #include <OneWire.h>

@@ -55,7 +55,7 @@ LiquidCrystal_I2C  lcd(I2CADDR_LCD, 2, 1, 0, 4, 5, 6, 7);
 // - Matrix keypad 4x4
 // - PCF8574 I/O expander
 
-#define KEYPAD_DISPLAY
+//#define KEYPAD_DISPLAY
 
   #include <Keypad_I2C.h>
   #include <Keypad.h>
@@ -79,7 +79,7 @@ LiquidCrystal_I2C  lcd(I2CADDR_LCD, 2, 1, 0, 4, 5, 6, 7);
   Keypad_I2C keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR_KEY);
 #endif
 
-#define I2C_OUTPUTS               //Comment this line if you don't use MCP23008 I/O Expander (Comment as well MCP_I2C_OUTPUTS on the Defines.h file of GreenhouseLib)
+//#define I2C_OUTPUTS               //Comment this line if you don't use MCP23008 I/O Expander (Comment as well MCP_I2C_OUTPUTS on the Defines.h file of GreenhouseLib)
 
 //********************Display variables*******************
 char key = '1';

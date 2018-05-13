@@ -26,15 +26,15 @@
 
 //#define TEST_MODE
 //Outputs type
-//#define IOS_OUTPUTS
-#define MCP_I2C_OUTPUTS
+#define IOS_OUTPUTS
+//#define MCP_I2C_OUTPUTS
 
 //Don't change these values unless you know what you are doing
-#define MAX_ROLLUPS 2
-#define MAX_TIMEPOINTS 5
-#define MAX_FANS 2
-#define MAX_HEATERS 2
-#define MAX_STAGES 5
+#define MAX_ROLLUPS 1
+#define MAX_TIMEPOINTS 4
+#define MAX_FANS 0
+#define MAX_HEATERS 0
+#define MAX_STAGES 4
 
 //EEPROM indexation
 #define ROLLUP_INDEX 10

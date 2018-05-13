@@ -147,7 +147,7 @@ At 17C, furnace will start.
 At 19C, furnace  stop.
 */
 
-//#define COMPUTER_INTERFACE    //Uncomment this line if you rely only on this sheet for programming
+#define COMPUTER_INTERFACE    //Uncomment this line if you rely only on this sheet for programming
 
 //************************************************************
 //*******************CONTROL PARAMETERS***********************
@@ -159,20 +159,20 @@ At 19C, furnace  stop.
 //Create greenhouse object
 #define TIMEPOINTS            4
         //# of timepoints
-#define ROLLUPS               2          //# of rollups
+#define ROLLUPS               1          //# of rollups
 #define STAGES                4          //# of cool stages (for rollups)
-#define FANS                  1          //# of fans
-#define HEATERS               1          //# of heaters
+#define FANS                  0          //# of fans
+#define HEATERS               0          //# of heaters
 //********************PINOUT**************************
-#define ROLLUP1_OPENING_PIN   0    //connect this pin to the opening relay (west motor)
-#define ROLLUP1_CLOSING_PIN   1    //connect this pin to the closing relay (west motor)
-#define ROLLUP2_OPENING_PIN   2    //connect this pin to the opening relay (east motor)
-#define ROLLUP2_CLOSING_PIN   3    //connect this pin to the closing relay (east motor)
-#define HEATER1_PIN           4    //connect this pin to the heater relay
+#define ROLLUP1_OPENING_PIN   4    //connect this pin to the opening relay (west motor)
+#define ROLLUP1_CLOSING_PIN   5    //connect this pin to the closing relay (west motor)
+#define ROLLUP2_OPENING_PIN   OFF    //connect this pin to the opening relay (east motor)
+#define ROLLUP2_CLOSING_PIN   OFF    //connect this pin to the closing relay (east motor)
+#define HEATER1_PIN           OFF    //connect this pin to the heater relay
 #define HEATER2_PIN           OFF    //connect this pin to the heater relay
-#define FAN1_PIN              5  //Connect this pin to the fan relay
+#define FAN1_PIN              OFF  //Connect this pin to the fan relay
 #define FAN2_PIN              OFF  //Connect this pin to the fan relay
-#define ALARM_PIN             7    //Connect this pin to the safety buzzer
+#define ALARM_PIN             OFF    //Connect this pin to the safety buzzer
 
 //*************COORD GÉOGRAPHIQUES*********************
 #define TIMEZONE              -5
