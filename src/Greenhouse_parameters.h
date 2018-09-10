@@ -261,14 +261,14 @@ ROLLUP PARAMETERS - SYNTAX RULES :
 */
 //*******************************************************Rollup 1 (overral parameters)
 #define R1_HYST             1
-#define R1_ROTUP            200
-#define R1_ROTDOWN          175
+#define R1_ROTUP            25
+#define R1_ROTDOWN          25
 #define R1_PAUSE            5
 //*******************************************************Rollup 2 (overral parameters)
 
 #define R2_HYST             1
-#define R2_ROTUP            200
-#define R2_ROTDOWN          175
+#define R2_ROTUP            25
+#define R2_ROTDOWN          25
 #define R2_PAUSE            5
 
 //*******************************************************************
@@ -328,11 +328,6 @@ HEATER PARAMETERS - SYNTAX RULES:
 #define H2_MOD              -1
 
 //************************************************************************
-/*EMERGENCY TEMPERATURE REFERENC
-If temperature probe doesnt reply back at first cycle, default temperature value
-*/
-
-#define EMERGENCY_TEMP_REF    20.00
 
 /*ALARM
   Fire alarm (ALARM_PIN) when temperature get over a maximum or under a minimum

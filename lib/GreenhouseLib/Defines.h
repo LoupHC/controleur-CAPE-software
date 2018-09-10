@@ -35,6 +35,7 @@
 #define MAX_FANS 2
 #define MAX_HEATERS 2
 #define MAX_STAGES 5
+#define MAX_OVERRIDES 5
 
 //EEPROM indexation
 #define ROLLUP_INDEX 10
