@@ -25,9 +25,9 @@
 //#define DEBUG_SETUP
 
 //#define TEST_MODE
-//Outputs type
-//#define IOS_OUTPUTS
-#define MCP_I2C_OUTPUTS
+
+
+#define MCP_I2C_OUTPUTS   //Comment if you use Atmegas IOs pins instead of MCP23008
 
 //Don't change these values unless you know what you are doing
 #define MAX_ROLLUPS 2
