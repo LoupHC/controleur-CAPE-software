@@ -32,7 +32,7 @@ Greenhouse::Greenhouse(int timezone, float latitude, float longitude, byte timep
   _latitude = latitude;
   _longitude = longitude;
   _weather = SUN;
-  _alarmEnabled = false;
+  _alarmEnabled = true;
   for (byte x = 0; x < _rollups; x++){
     rollup[x].setStages(_stages);
   }
@@ -297,7 +297,7 @@ void Greenhouse::addAlarm(boolean relayType, byte alarmPin){
     _alarmEnabled = true;
     _alarmMax = OFF_VAL;
     _alarmMin = OFF_VAL;
-    #ifdef IOS_OUTPUTS
+    #ifndef MCP_I2C_OUTPUTS
         pinMode(_alarmPin, OUTPUT);
         if(_alarmRelayType == ACT_LOW){
           digitalWrite(_alarmPin, HIGH);
@@ -327,7 +327,7 @@ void Greenhouse::setAlarmMinTemp(float temperature){
 }
 void Greenhouse::alarmBlast(){
   if(_alarmEnabled){
-    #ifdef IOS_OUTPUTS
+    #ifndef MCP_I2C_OUTPUTS
       if(_alarmRelayType == ACT_LOW){
         digitalWrite(_alarmPin, LOW);
       }
@@ -348,7 +348,7 @@ void Greenhouse::alarmBlast(){
 }
 void Greenhouse::stopAlarm(){
   if(_alarmEnabled){
-      #ifdef IOS_OUTPUTS
+    #ifndef MCP_I2C_OUTPUTS
         if(_alarmRelayType == ACT_LOW){
           digitalWrite(_alarmPin, HIGH);
         }
