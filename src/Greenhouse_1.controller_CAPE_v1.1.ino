@@ -52,11 +52,9 @@
 #include "Arduino.h"
 
 //********************LIBRARIES**************************
-#include "Greenhouse_parameters.h"
+#include "Greenhouse_versions.h"
+#include "Greenhouse_2.parameters.h"
 #include "GreenhouseLib.h"
-
-#define VERSION 102
-
 
 Greenhouse greenhouse(TIMEZONE, LATITUDE, LONGITUDE, TIMEPOINTS, ROLLUPS, STAGES, FANS, HEATERS);
 
@@ -106,19 +104,25 @@ floatParameter greenhouseTemperature;
 floatParameter greenhouseHumidity;
 float coolingTemperature;
 float heatingTemperature;
+
+elapsedMillis exportTimer;
+unsigned short exportCounter = 0;
+unsigned short maxLines = 1440;
+unsigned long exportDelay = 10;
+boolean connectionEstablished = false;
 //flags
 boolean sensorFailure = false;
 boolean EEPROMReset = false;
 
 //********************SENSORS**************************
 //See "Greenhouse_sensors.h" for sensor functions
-#include "Greenhouse_sensors.h"
+#include "Greenhouse_3.sensors.h"
 //********************INTERFACE**************************
 //See "Greenhouse_overrides.h" for overrides functions
-#include "Greenhouse_overrides.h"
+#include "Greenhouse_4.overrides.h"
 //********************INTERFACE**************************
 //See "Greenhouse_interface.h" for LCD display functions
-#include "Greenhouse_interface.h"
+#include "Greenhouse_5.interface.h"
 //********************ERRORS**************************
 #include "Preprocessor_error_codes.h"
 
@@ -129,7 +133,7 @@ boolean EEPROMReset = false;
 
 void setup() {
   //start communication with serial monitor
-  Serial.begin(9600);
+  Serial.begin(9600); // opens serial port, sets data rate to 115200 bps
   //start communication internal temp/humididty sensor
   Wire.begin();
   //start communication with LCD
@@ -140,6 +144,8 @@ void setup() {
   #endif
   //Temperature range
   greenhouseTemperature.setLimits(-180, 100);
+  greenhouseHumidity.setLimits(-100, 100);
+  greenhouseHumidity.setValue(0);
   //last recorded value if probe doesnt reply back at first cycle
   if(EEPROM.read(1) == 111){
     float emergencyTemp = EEPROM.read(2);
@@ -149,12 +155,15 @@ void setup() {
     greenhouseTemperature.setValue(20);
   }
   //start communication with temp probe
-  #ifdef TEMP_DS18B20
+  #ifdef DS18B20
     sensors.begin();
     sensors.setResolution(12);
   #endif
+  #ifdef SHT1X
+    sht1x.initSensor();
+  #endif
   //start communication with humidity probe
-  #ifdef HUMIDITY_DHT
+  #ifdef DHT
     dht.begin();
   #endif
   //start communication with clock
@@ -183,7 +192,7 @@ void setup() {
   //get sensors values
   getDateAndTime();
   getGreenhouseTemp();
-  delay(1000);
+  getGreenhouseHum();
   //set time within greenhouse object
   greenhouse.setNow(rightNowValue);
 
@@ -262,14 +271,18 @@ void loop() {
   #if defined(ROLLUP1_DESHUM)||defined(ROLLUP2_DESHUM)||defined(FAN1_DESHUM)||defined(FAN2_DESHUM)||defined(HEATER1_DESHUM)
     deshumCycle();
   #endif
+  #ifdef EXCEL_EXPORT
+    dataloggingToExcel();
+  #endif
 }
 //***************************************************
 //*********************MACROS**************************
 //***************************************************
 
 void loadParameters(){
+    byte isSetUp = FIRST_BOOT;         //random flag number, must differ from default EEPROM memory value
 
-    if(EEPROM[0] != VERSION){
+    if(EEPROM[0] != isSetUp){   //flag indicates if EEPROM has been yet configured
       EEPROMReset = true;
       rtc.setTime(HOUR_SET, MINUT_SET, SECOND_SET);
       rtc.setDate(DAY_SET, MONTH_SET, YEAR_SET);
@@ -412,6 +425,102 @@ void loadParameters(){
 
     }
 
-    EEPROM[0] = VERSION;
+    EEPROM[0] = FIRST_BOOT;
     EEPROMReset = false;
+}
+
+void dataloggingToExcel(){
+
+  if (exportTimer >= (exportDelay*1000)){
+
+    checkFeedback();
+    if(connectionEstablished){
+      updateExportParameters();
+    }
+    //counter havent started yet
+
+    if(exportCounter == 0){
+      if (connectionEstablished){
+        resetExport();
+        exportCounter++;
+      }
+      else{
+        exportCounter = 0;
+      }
+    }
+    //counter have started
+    else{
+      if(exportCounter < maxLines){
+        if(connectionEstablished){
+          exportData();
+          exportCounter++;
+        }
+      }
+      else{
+        if(connectionEstablished){
+          saveExportAndClear();
+        }
+      }
+    }
+    exportTimer = 0;
+  }
+}
+void checkFeedback(){
+  Serial.println("CELL,GET,O1");
+  int spreadsheetTag = Serial.parseInt();
+
+  if (spreadsheetTag == 0){
+    connectionEstablished = false;
+  }
+  else{
+    connectionEstablished = true;
+  }
+
+}
+void resetExport(){
+  Serial.println("CLEARRANGE,A,2,D,10000");
+  Serial.println("LABEL, Date, Heure, Temperature, Humidite,,Delais, Sauvegarde automatique,,,,,,,,5555");
+  String delay = String(exportDelay);
+  String lines = String(maxLines);
+  Serial.print("CELL,SET,F2,");
+  Serial.println(delay);
+  Serial.print("CELL,SET,G2,");
+  Serial.println(lines);
+}
+void exportData(){
+    String counter = String(exportCounter+1);
+    Serial.print("ROW,SET,");
+    Serial.println(counter);
+    Serial.print("DATA,DATE,TIME,");
+    Serial.print(greenhouseTemperature.value());
+    Serial.print(",");
+    Serial.println(greenhouseHumidity.value());
+}
+
+
+void updateExportParameters(){
+
+  Serial.println("CELL,GET,F2");
+  int tableDelay = Serial.parseInt();
+  exportDelay = tableDelay;
+
+  Serial.println("CELL,GET,G2");
+  int tableMaxLines = Serial.parseInt();
+  if(tableMaxLines == 0){
+    maxLines = 1440;
+    exportCounter = 0;
+  }
+  else{
+    maxLines = tableMaxLines;
+  }
+}
+
+void saveExportAndClear(){
+  String date = rtc.getDateStr();
+  String now = rtc.getTimeStr();
+  String fileName = date +"." + now + ".datalogging";
+  Serial.print("SAVEWORKBOOKAS,");
+  Serial.println(fileName);
+  exportCounter = 0;
+
 }

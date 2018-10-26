@@ -45,7 +45,6 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
-#define I2CADDR_LCD    0x27
 #define BACKLIGHT_PIN     3
 LiquidCrystal_I2C  lcd(I2CADDR_LCD, 2, 1, 0, 4, 5, 6, 7);
 
@@ -62,7 +61,6 @@ LiquidCrystal_I2C  lcd(I2CADDR_LCD, 2, 1, 0, 4, 5, 6, 7);
   #include <Wire.h>
 
 #ifdef KEYPAD_DISPLAY
-  #define I2CADDR_KEY 0x26
   const byte ROWS = 4; //four rows
   const byte COLS = 4; //four columns
   char keys[ROWS][COLS] = {
@@ -288,6 +286,11 @@ void lcdPrintTemp(byte _row){
     lcd.setCursor(0,_row);
     if(sensorFailure == false){lcd.print(greenhouseTemperature.value()); lcd.print(F("C"));}
     else if(sensorFailure == true){lcd.print(F("!!!"));}
+
+    if(greenhouseHumidity.value() != 0){
+      lcd.setCursor(4,_row); lcd.print(F("C-   "));
+      lcd.setCursor(6,_row); lcd.print((int)greenhouseHumidity.value());lcd.print("%");
+    }
 }
 
 void lcdPrintTarget(){
@@ -348,17 +351,9 @@ void homeDisplay(){
     firstPrint = false;
   }
 
-  if(greenhouseTemperature.valueHasChanged()){
-    lcdPrintTemp(0);
-    greenhouseTemperature.updateLastValue();
-  }
-  for(int x = 0; x < 6; x++){
-    if (rightNow[x].valueHasChanged()){
-      lcdPrintTime(1);
-      rightNow[x].updateLastValue();
-    }
-  }
+  lcdPrintTemp(0);
   lcdPrintTarget();
+  lcdPrintTime(1);
   lcdPrintOutputs();
 }
 

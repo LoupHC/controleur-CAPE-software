@@ -1,41 +1,27 @@
 
-//Select your sensors
-
-//Temperature sensor
-#define TEMP_DS18B20
-//#define TEMP_DHT22
-//#define TEMP_DHT11
-//#define TEMP_DHT12
-
-//Humidity sensor
-//#define HUM_DHT22
-//#define HUM_DHT11
-#define HUM_DHT12
-
-//Real time clock
-#define CLOCK_DS3231
-
-//Temerature pin
-#define TEMP_SENSOR          7 //connect this pin to the DS18B20 data line
-
-#ifdef TEMP_DS18B20
+#ifdef DS18B20
   #include <OneWire.h>
   #include <DallasTemperature.h>
   //Create DS18B20 object
-  OneWire oneWire(TEMP_SENSOR);
+  OneWire oneWire(DS18B20_PIN);
   DallasTemperature sensors(&oneWire);
 #endif
 
-#ifdef HUM_DHT11
-  #include <DHT.h>
-  //Create DHT object
-  DHT dht(HUMIDITY_SENSOR, DHT11);
+#ifdef SHT1X
+  #include <SHT1x.h>
+  SHT1x sht1x(SHT1X_DATA, SHT1X_CLOCK);
 #endif
 
-#ifdef HUM_DHT22
+#ifdef DHT11
   #include <DHT.h>
   //Create DHT object
-  DHT dht(HUMIDITY_SENSOR, DHT22);
+  DHT dht(DHT11_PIN, DHT11);
+#endif
+
+#ifdef DHT22
+  #include <DHT.h>
+  //Create DHT object
+  DHT dht(DHT22_PIN, DHT22);
 #endif
 
 #ifdef CLOCK_DS3231
@@ -45,10 +31,11 @@
   Time  t;
 #endif
 
-#include <DHT12.h>
+#ifdef DHT12
+  #include <DHT12.h>
   //Create DHT object
-DHT12 DHT;
-
+  DHT12 DHT;
+#endif
 
 unsigned long counter = 1;
 
@@ -84,7 +71,7 @@ void getDateAndTime(){
 
 
 void getGreenhouseTemp(){
-  #ifdef TEMP_DS18B20
+  #ifdef DS18B20
     sensors.requestTemperatures();
     float temp = sensors.getTempCByIndex(0);
 
@@ -93,12 +80,10 @@ void getGreenhouseTemp(){
       EEPROM.update(2, (byte)greenhouseTemperature.value());
       greenhouseTemperature.setValue(greenhouseTemperature.value());
       sensorFailure = true;
-      #ifdef ALARM_PIN
         greenhouse.alarmBlast();
         delay(500);
         greenhouse.stopAlarm();
         delay(1000);
-      #endif
       Serial.println("sensor fault");
     }
     else{
@@ -108,7 +93,28 @@ void getGreenhouseTemp(){
     }
   #endif
 
-  #ifdef TEMP_DHT12
+  #ifdef SHT1X
+    float temp = sht1x.readTemperatureC();
+    //Serial.println(temp);
+
+    if(temp <= -30.00){
+      EEPROM.update(1, 111);
+      EEPROM.update(2, (byte)greenhouseTemperature.value());
+      greenhouseTemperature.setValue(greenhouseTemperature.value());
+      sensorFailure = true;
+        greenhouse.alarmBlast();
+        delay(500);
+        greenhouse.stopAlarm();
+        delay(1000);
+      Serial.println("sensor fault");
+    }
+    else{
+      greenhouseTemperature.setValue(temp);
+      greenhouseTemperature.updateLastValue();
+      sensorFailure = false;
+    }
+  #endif
+  #ifdef DHT12
     DHT.read();
     greenhouseTemperature.setValue(DHT.temperature);
   #endif
@@ -116,12 +122,17 @@ void getGreenhouseTemp(){
 }
 
 void getGreenhouseHum(){
-  greenhouseHumidity.setLimits(0, 100);
 
-  #ifdef HUMIDIDTY_DHT
+  #ifdef SHT1X
+    float hum = sht1x.readHumidity();
+    greenhouseHumidity.setValue(hum);
+    //Serial.println(hum);
+  #endif
+
+  #ifdef DHT
     greenhouseHumidity.setValue((float)dht.readHumidity());
   #endif
-  #ifdef HUM_DHT12
+  #ifdef DHT12
     DHT.read();
     greenhouseHumidity.setValue(DHT.humidity);
   #endif
