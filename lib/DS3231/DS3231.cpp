@@ -1,11 +1,11 @@
 /*
   DS3231.cpp - Arduino/chipKit library support for the DS3231 I2C Real-Time Clock
   Copyright (C)2015 Rinky-Dink Electronics, Henning Karlsen. All right reserved
-  
+
   This library has been made to easily interface and use the DS3231 RTC with
   an Arduino or chipKit.
 
-  You can find the latest version of the library at 
+  You can find the latest version of the library at
   http://www.RinkyDinkElectronics.com/
 
   This library is free software; you can redistribute it and/or
@@ -16,7 +16,7 @@
   will allow commercial use. This includes using the library,
   modified or not, as a tool to sell products.
 
-  The license applies to all part of the library including the 
+  The license applies to all part of the library including the
   examples and tools supplied with the library.
 */
 #include "DS3231.h"
@@ -106,7 +106,7 @@ void DS3231::setDOW()
 	int dow;
 	byte mArr[12] = {6,2,2,5,0,3,5,1,4,6,2,4};
 	Time _t = getTime();
-  
+
 	dow = (_t.year % 100);
 	dow = dow*1.25;
 	dow += _t.date;
@@ -134,13 +134,13 @@ char *DS3231::getTimeStr(uint8_t format)
 	else
 		output[0]=char((t.hour / 10)+48);
 	output[1]=char((t.hour % 10)+48);
-	output[2]=58;
+	output[2]=46;
 	if (t.min<10)
 		output[3]=48;
 	else
 		output[3]=char((t.min / 10)+48);
 	output[4]=char((t.min % 10)+48);
-	output[5]=58;
+	output[5]=46;
 	if (format==FORMAT_SHORT)
 		output[5]=0;
 	else
@@ -444,4 +444,3 @@ uint8_t DS3231::_encode(uint8_t value)
 	uint8_t encoded = ((value / 10) << 4) + (value % 10);
 	return encoded;
 }
-
