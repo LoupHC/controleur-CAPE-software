@@ -40,11 +40,11 @@ class floatParameter
     void loadInEEPROM();
     float minimum();
     float maximum();
-
     int address();
     float value();
     float lastValue();
     boolean valueHasChanged();
+    boolean isOffLimit();
 
   private:
     int _address;
@@ -71,6 +71,7 @@ class uShortParameter
     unsigned short lastValue();
     boolean valueHasChanged();
     int address();
+    boolean isOffLimit();
 
   private:
     int _address;
@@ -97,6 +98,7 @@ class shortParameter
     short lastValue();
     boolean valueHasChanged();
     int address();
+    boolean isOffLimit();
 
   private:
     int _address;
@@ -123,6 +125,7 @@ class byteParameter
     byte lastValue();
     boolean valueHasChanged();
     int address();
+    boolean isOffLimit();
 
   private:
     int _address;

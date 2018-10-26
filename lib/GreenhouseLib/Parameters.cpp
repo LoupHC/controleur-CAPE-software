@@ -36,23 +36,12 @@ int floatParameter::address(){
   return _address;
 }
 void floatParameter::setValue(float value){
-//If parameter's value is between minimum and maximum values, change it, else, report error
   setLastValue(_value);
-  if((value >= _minimum)&&(value <= _maximum)){
     _value = value;
-  }
-  else{
-    _value = 333;
-  }
 }
 
 void floatParameter::setLastValue(float lastValue){
-  if((lastValue >= _minimum)&&(lastValue <= _maximum)){
     _lastValue = lastValue;
-  }
-  else{
-    _lastValue = 333;
-  }
 }
 
 void floatParameter::updateLastValue(){
@@ -89,7 +78,14 @@ float floatParameter::value(){
 float floatParameter::lastValue(){
   return _lastValue;
 }
-
+boolean floatParameter::isOffLimit(){
+  if ((_value < _minimum) || (_value > _maximum)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
 //short parameters
 
 shortParameter::shortParameter(){}
@@ -102,23 +98,11 @@ int shortParameter::address(){
   return _address;
 }
 void shortParameter::setValue(short value){
-//If parameter's value is between minimum and maximum values, change it, else, report error
   setLastValue(_value);
-  if((value >= _minimum)&&(value <= _maximum)){
     _value = value;
-  }
-  else{
-    _value = 333;
-  }
 }
 void shortParameter::setLastValue(short lastValue){
-  if((lastValue >= _minimum)&&(lastValue <= _maximum)){
     _lastValue = lastValue;
-  }
-  else{
-
-    _lastValue = 333;
-  }
 }
 
 void shortParameter::updateLastValue(){
@@ -155,6 +139,14 @@ short shortParameter::value(){
 short shortParameter::lastValue(){
   return _lastValue;
 }
+boolean shortParameter::isOffLimit(){
+  if ((_value < _minimum) || (_value > _maximum)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
 
 //unsigned short parameters
 
@@ -168,22 +160,11 @@ int uShortParameter::address(){
   return _address;
 }
 void uShortParameter::setValue(unsigned short value){
-//If parameter's value is between minimum and maximum values, change it, else, report error
   setLastValue(_value);
-  if((value >= _minimum)&&(value <= _maximum)){
     _value = value;
-  }
-  else{
-    _value = 333;
-  }
 }
 void uShortParameter::setLastValue(unsigned short lastValue){
-  if((lastValue >= _minimum)&&(lastValue <= _maximum)){
     _lastValue = lastValue;
-  }
-  else{
-    _lastValue = 333;
-  }
 }
 
 void uShortParameter::updateLastValue(){
@@ -220,6 +201,14 @@ unsigned short uShortParameter::value(){
 unsigned short uShortParameter::lastValue(){
   return _lastValue;
 }
+boolean uShortParameter::isOffLimit(){
+  if ((_value < _minimum) || (_value > _maximum)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
 
 //Byte parameter
 
@@ -233,37 +222,18 @@ int byteParameter::address(){
   return _address;
 }
 void byteParameter::setValue(byte value){
-//If parameter's value is between minimum and maximum values, change it, else, report error
   setLastValue(_value);
-  if((value >= _minimum)&&(value <= _maximum)){
-    _value = value;
-  }
-  else{
-    _value = 155;
-  }
+  _value = value;
 }
 
 void byteParameter::setLastValue(byte lastValue){
-  if((lastValue >= _minimum)&&(lastValue <= _maximum)){
     _lastValue = lastValue;
-  }
-  else{
-    _lastValue = 155;
-  }
 }
 
 void byteParameter::updateLastValue(){
   setLastValue(_value);
 }
 
-boolean byteParameter::valueHasChanged(){
-  if(_value == _lastValue){
-    return false;
-  }
-  else{
-    return true;
-  }
-}
 
 void byteParameter::setLimits (byte minimum, byte maximum){
   _minimum = minimum;
@@ -287,6 +257,14 @@ byte byteParameter::lastValue(){
   return _lastValue;
 }
 
+boolean byteParameter::valueHasChanged(){
+  if(_value == _lastValue){
+    return false;
+  }
+  else{
+    return true;
+  }
+}
 //Time parameter which you can add and substract hours and minuts
 timeParameter::timeParameter(){}
 timeParameter::timeParameter(short hour, short minut){
