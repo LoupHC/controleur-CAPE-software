@@ -67,7 +67,6 @@ Rollup::Rollup(){
   _localCounter = _counter;
   _counter++;
 
-
   _routine = true;
   _fixOverride = false;
   _relativeOverride = false;
@@ -151,7 +150,7 @@ void Rollup::initOutputs(boolean relayType, byte rOpen, byte rClose){
   }
 
   //initial state
-  #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
     pinMode(_openingPin, OUTPUT);
     pinMode(_closingPin, OUTPUT);
     digitalWrite(_openingPin, _desactivate);
@@ -504,7 +503,7 @@ Activate or desactivate the opening or closing relay
 */
 
 void Rollup::action(byte pin, boolean state){
-  #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
     if(state == _activate){
       digitalWrite(pin, _activate);
     }

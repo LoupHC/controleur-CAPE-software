@@ -66,7 +66,7 @@ void Fan::initOutput(byte relayType, byte pin){
  }
 
  //initial state
-  #ifdef IOS_OUTPUTS
+ #ifndef MCP_I2C_OUTPUTS
     pinMode(pin, OUTPUT);
     digitalWrite(pin, _desactivate);
   #endif
@@ -164,7 +164,7 @@ void Fan::watchRelativeOverride(boolean condition){
 
 
 void Fan::stop(){
-  #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
 
   if(digitalRead(_pin) == _activate){
     digitalWrite(_pin, _desactivate);
@@ -185,7 +185,7 @@ void Fan::stop(){
 }
 
 void Fan::start(){
-    #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
 
       if(digitalRead(_pin) == _desactivate){
         digitalWrite(_pin, _activate);
@@ -239,7 +239,7 @@ boolean Fan::override(){
   }
 }
 boolean Fan::isActive(){
-  #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
   if(digitalRead(_pin) == _activate){
     return true;
   }
@@ -334,7 +334,7 @@ void Heater::initOutput(byte relayType, byte pin){
  }
 
  //initial state
-  #ifdef IOS_OUTPUTS
+ #ifndef MCP_I2C_OUTPUTS
     pinMode(_pin, OUTPUT);
     digitalWrite(_pin, _desactivate);
   #endif
@@ -428,7 +428,7 @@ void Heater::routine(float target, float temp){
   }
 
 void Heater::stop(){
-  #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
     if(digitalRead(_pin) == HIGH){
       digitalWrite(_pin, _desactivate);
     }
@@ -447,7 +447,7 @@ void Heater::stop(){
   }
 
 void Heater::start(){
-  #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
     if(digitalRead(_pin) == _desactivate){
       digitalWrite(_pin, _activate);
     }
@@ -501,7 +501,7 @@ boolean Heater::override(){
 }
 
 boolean Heater::isActive(){
-  #ifdef IOS_OUTPUTS
+  #ifndef MCP_I2C_OUTPUTS
   if(digitalRead(_pin) == _activate){
     return true;
   }
