@@ -27,7 +27,6 @@ class SHT1x
     float readHumidity();
     float readTemperatureC();
     float readTemperatureF();
-    void readSensor();
   private:
     elapsedMillis requestDelay;
     boolean waitingForTemp;
@@ -37,6 +36,7 @@ class SHT1x
     int _dataPin;
     int _clockPin;
     int _numBits;
+    void readSensor();
     void readHumidityRaw();
 
     int shiftIn(int _dataPin, int _clockPin, int _numBits);

@@ -29,7 +29,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-//***************************************************
+//RTC_DS3231*********************************************
 //********************GLOBAL**************************
 //***************************************************
 #define MODE_DISPLAY           1
@@ -85,16 +85,16 @@ short menu = MODE_DISPLAY;
 boolean firstPrint = true;
 boolean fastPlus = false;
 boolean fastMinus = false;
-short line = 0;
-short maxLine;
 const byte Code_lenght = 5; // Give enough room for 4 chars + NULL char
 char Data[Code_lenght] = "0000"; // 4 is the number of chars it can hold + the null char = 5
+
 const char SETDAY[Code_lenght]    = "0001";
 const char SETMONTH[Code_lenght]  = "0002";
 const char SETYEAR[Code_lenght]   = "0003";
 const char SETHOUR[Code_lenght]   = "0004";
 const char SETMIN[Code_lenght]    = "0005";
 const char R1HYST[Code_lenght]    = "1100";
+const char R1STEPS[Code_lenght]   = "1104";
 const char R1ROTUP[Code_lenght]   = "1101";
 const char R1ROTDOWN[Code_lenght] = "1102";
 const char R1PAUSE[Code_lenght]   = "1103";
@@ -163,14 +163,93 @@ const char T5RAMP[Code_lenght]    = "4505";
 const char TESTRELAYS[Code_lenght]= "5555";
 const char TESTIIC[Code_lenght]   = "6666";
 
+
+const char ADJT24H[Code_lenght]   = "4001";
+const char ADJTNIGHT[Code_lenght] = "4002";
+const char ADJTDAY[Code_lenght]   = "4003";
+const char DIF[Code_lenght]       = "4004";
+const char DIFTEMP[Code_lenght]   = "4005";
+const char PRENIGHT[Code_lenght]  = "4006";
+const char PRENTEMP[Code_lenght]  = "4007";
+const char PRENSPEED[Code_lenght] = "4008";
+
+
+const char R1OV[Code_lenght]      = "5110";
+const char R1FOPEN[Code_lenght]   = "5111";
+const char R1FCLOSE[Code_lenght]  = "5112";
+const char R1FINC1[Code_lenght]   = "5113";
+const char R1FINC2[Code_lenght]   = "5114";
+
+const char R2OV[Code_lenght]      = "5120";
+const char R2FOPEN[Code_lenght]   = "5121";
+const char R2FCLOSE[Code_lenght]  = "5122";
+const char R2FINC1[Code_lenght]   = "5123";
+const char R2FINC2[Code_lenght]   = "5124";
+
+const char F1OV[Code_lenght]      = "5210";
+const char F1FOPEN[Code_lenght]   = "5211";
+const char F1FCLOSE[Code_lenght]  = "5212";
+
+const char F2OV[Code_lenght]      = "5220";
+const char F2FOPEN[Code_lenght]   = "5221";
+const char F2FCLOSE[Code_lenght]  = "5222";
+
+const char H1OV[Code_lenght]      = "5310";
+const char H1FOPEN[Code_lenght]   = "5311";
+const char H1FCLOSE[Code_lenght]  = "5312";
+
+const char H2OV[Code_lenght]      = "5320";
+const char H2FOPEN[Code_lenght]   = "5321";
+const char H2FCLOSE[Code_lenght]  = "5322";
+
+const char R1STAGES[Code_lenght]  = "6001";
+const char R2STAGES[Code_lenght]  = "6002";
+
+const char MENU1[Code_lenght]  = "1000";
+const char MENU2[Code_lenght]  = "2000";
+const char MENU3[Code_lenght]  = "3000";
+const char MENU4[Code_lenght]  = "4000";
+const char MENU5[Code_lenght]  = "5000";
+const char MENU6[Code_lenght]  = "6000";
+const char MENU7[Code_lenght]  = "7000";
+const char MENU8[Code_lenght]  = "8000";
+const char MENU9[Code_lenght]  = "9000";
+
+const char R1WIZ[Code_lenght]  = "0100";
+const char R1WIZ1[Code_lenght]  = "0101";
+const char R1WIZ2[Code_lenght]  = "0102";
+const char R1WIZ3[Code_lenght]  = "0103";
+const char R1WIZ4[Code_lenght]  = "0104";
+const char R1WIZ5[Code_lenght]  = "0105";
+const char R1WIZ6[Code_lenght]  = "0106";
+const char R1WIZ7[Code_lenght]  = "0107";
+const char R1WIZ8[Code_lenght]  = "0108";
+const char R1WIZ9[Code_lenght]  = "0109";
+const char R1WIZ10[Code_lenght] = "0110";
+const char R1WIZ11[Code_lenght] = "0111";
+const char R1WIZ12[Code_lenght] = "0112";
+
+
+
+
+
+
 elapsedMillis unpressedTimer;
 elapsedMillis pressedTimer;
+
 float fvariable;
-unsigned short usvariable;
+unsigned short usvariable, usvariable1, usvariable2;
 short svariable;
 byte typeSet;
 unsigned short hourSet;
 unsigned short minSet;
+
+byte increment = 0;
+short line = 0;
+short maxLine;
+short lastline = 0;
+short smodif = 0;
+float fmodif = 0;
 
 boolean confirm = false;
 byte action = 0;
@@ -181,8 +260,8 @@ bool Pass_is_good;
 char keyPressed;
 
 //Flashing display
-byte flashCount1 = 0;
-byte flashCount2 = 0;
+byte flashingCounter = 0;
+boolean codeWithNoDisplay = true;
 
 boolean relayTest = false;
 const byte RyDriverI2CAddr = B0100000;//device ID
@@ -190,9 +269,73 @@ byte GPIO = B11111111;
 byte validAddress[6] = {0};
 
 
+byte clocks[8] = {
+  B01110,
+  B10101,
+  B10101,
+  B10111,
+  B10001,
+  B10001,
+  B01110,
+};
+
+byte rains[8] = {
+  B00110,
+  B11111,
+  B11111,
+  B01110,
+  B10010,
+  B00100,
+  B01000,
+};
+
+byte humids[8] = {
+  B00100,
+  B01010,
+  B01010,
+  B10001,
+  B10001,
+  B10001,
+  B01110,
+};
+
+byte locks[8] = {
+  B00100,
+  B01010,
+  B01010,
+  B11111,
+  B11011,
+  B11011,
+  B11111,
+  B00000,
+};
+
+
+
+
 //***************************************************
 //********************MACROS**************************
 //***************************************************
+void clearData(){
+for(int x = 0; x < Code_lenght-1; x++)
+  {   // This can be used for any array size,
+    Data[x] = 0; //clear array for new data
+  }
+  return;
+}
+
+void clearMenu(){
+  firstPrint = true;
+  codeWithNoDisplay = true;
+  unpressedTimer = 0;
+  data_count = 0;
+  line = 0;
+  increment = 0;
+  lastline = 0;
+  smodif = 0;
+  fmodif = 0;
+  lcd.noBlink();
+}
 
 void serialPrintDigits(int digits){
   // utility function for digital clock display: prints preceding colon and leading 0
@@ -213,9 +356,14 @@ void initLCD(byte length, byte width){
   lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE);
   lcd.setBacklight(HIGH);
   lcd.clear();
+  lcd.createChar(1,clocks);
+  lcd.createChar(2,humids);
+  lcd.createChar(3,rains);
+  lcd.createChar(4,locks);
 }
 
 void lcdPrintOutput(String item, byte _column, byte _row, Fan fan){
+
     //Fan
     lcd.setCursor(_column, _row); lcd.print(F("          "));
     lcd.setCursor(_column, _row); lcd.print(item);
@@ -226,16 +374,15 @@ void lcdPrintOutput(String item, byte _column, byte _row, Fan fan){
       lcd.print(F("OFF"));
     }
     if(fan.override() == true){
-      lcd.setCursor(_column+8, _row);
-      lcd.print ("*");
+      //lcd.setCursor(_column+8, _row);
+      //lcd.print ("*");
     }
     else{
-      lcd.setCursor(_column+8, _row);
-      lcd.print (" ");
+      //lcd.setCursor(_column+8, _row);
+      //lcd.print (" ");
     }
 }
 void lcdPrintOutput(String item, byte _column, byte _row, Heater heater){
-    //Fan
     lcd.setCursor(_column, _row); lcd.print(F("          "));
     lcd.setCursor(_column, _row); lcd.print(item);
     if(heater.isActive() == true){
@@ -245,15 +392,15 @@ void lcdPrintOutput(String item, byte _column, byte _row, Heater heater){
       lcd.print(F("OFF"));
     }
     if(heater.override() == true){
-      lcd.setCursor(_column+8, _row);
-      lcd.print ("*");
+      //lcd.setCursor(_column+8, _row);
+      //lcd.print ("*");
     }
     else{
-        lcd.setCursor(_column+8, _row);
-      lcd.print (" ");
+      //  lcd.setCursor(_column+8, _row);
+      //lcd.print (" ");
     }
 }
-void lcdPrintRollups(String side, String opening, String closing, byte _column, byte _row, Rollup rollup, byte* counter){
+void lcdPrintRollups(String side, String opening, String closing, byte _column, byte _row, Rollup rollup){
   //East rollup
   lcd.setCursor(_column, _row); lcd.print(F("          "));
   lcd.setCursor(_column, _row);
@@ -261,49 +408,65 @@ void lcdPrintRollups(String side, String opening, String closing, byte _column, 
   else if (rollup.opening() == true){lcd.print(opening);}
   else if (rollup.closing() == true){lcd.print(closing);}
   else if(rollup.isWaiting()){
-    if(*counter == 0){
+    if(flashingCounter == 0){
       lcd.print(side); lcd.print(rollup.incrementCounter());lcd.print(F("%"));
-      *counter += 1;
     }
-    else if(*counter == 1){
+    else if(flashingCounter == 1){
       lcd.print(F("          "));
-      *counter = 0;
     }
   }
   else{lcd.print(side); lcd.print(rollup.incrementCounter());lcd.print(F("%"));}
   if(rollup.override() == true){
-    lcd.setCursor(_column+8, _row);
-    lcd.print ("*");
+    //lcd.setCursor(_column+8, _row);
+    //lcd.print ("*");
   }
   else{
-      lcd.setCursor(_column+8, _row);
-      lcd.print (" ");
+      //lcd.setCursor(_column+8, _row);
+      //lcd.print (" ");
     }
   }
 void lcdPrintTemp(byte _row){
 
     lcd.setCursor(0,_row); lcd.print(F("         "));
     lcd.setCursor(0,_row);
-    if(sensorFailure == false){lcd.print(greenhouseTemperature.value()); lcd.print(F("C"));}
+    if(sensorFailure == false){lcd.print(greenhouseTemperature); lcd.print(F("C"));}
     else if(sensorFailure == true){lcd.print(F("!!!"));}
 
-    if(greenhouseHumidity.value() != 0){
-      lcd.setCursor(4,_row); lcd.print(F("C-   "));
-      lcd.setCursor(6,_row); lcd.print((int)greenhouseHumidity.value());lcd.print("%");
+    if(greenhouseHumidity != 0){
+      lcd.setCursor(4,_row);
+      if(sensorFailure == false){ lcd.print(F("C-   "));lcd.setCursor(6,_row); lcd.print((int)greenhouseHumidity);lcd.print("%");}
+      else if(sensorFailure == true){lcd.print(F("!!!"));}
     }
 }
 
 void lcdPrintTarget(){
   lcd.setCursor(9,0); lcd.print(F("           "));
   lcd.setCursor(9,0);
-   lcd.print(F("|")); lcd.print((int)heatingTemperature); lcd.print(F("-"));lcd.print((int)coolingTemperature);
-
-   if(greenhouse.weather() == SUN){
+  lcd.print(F("|"));
+if(greenhouse.isRamping()){
+  if(flashingCounter == 0){
+    lcd.print((int)greenhouse.heatingTemp()); lcd.print(F("-"));lcd.print((int)greenhouse.coolingTemp());
+    if(greenhouse.weather() == SUN){
      lcd.print("(SUN)");
-   }
-   else{
+    }
+    else{
      lcd.print("(CLD)");
-   }
+    }
+  }
+  else if(flashingCounter == 1){
+    lcd.print(F("          "));
+  }
+}
+else{
+  lcd.print((int)greenhouse.heatingTemp()); lcd.print(F("-"));lcd.print((int)greenhouse.coolingTemp());
+  if(greenhouse.weather() == SUN){
+   lcd.print("(SUN)");
+  }
+  else{
+   lcd.print("(CLD)");
+  }
+}
+
 
 
 }
@@ -314,31 +477,121 @@ void lcdPrintTime(byte _row){
 }
 
 void lcdPrintOutputs(){
-  #if ROLLUPS >= 1
-  lcdPrintRollups("R1:","OPENING", "CLOSING", 0, 2, R1, &flashCount1);
-  #endif
-  #if ROLLUPS == 2
-    lcdPrintRollups("|R2:","|OPENING", "|CLOSING", 9, 2, R2, &flashCount2);
-  #endif
+  if(greenhouse.rollups.value() >= 1){
+    lcdPrintRollups("R1:","OPENING", "CLOSING", 0, 2, R1);
+  }
 
-  #if FANS == 1 && HEATERS == 0
+  if(greenhouse.rollups.value() == 2){
+    lcdPrintRollups("|R2:","|OPENING", "|CLOSING", 9, 2, R2);
+  }
+
+  if((greenhouse.fans.value() == 1)&&(greenhouse.heaters.value() == 0)){
     lcdPrintOutput("F1: ", 0, 3, F1);
-  #elif FANS == 1 && HEATERS == 1
+  }
+  else if((greenhouse.fans.value() >= 1)&&(greenhouse.heaters.value() >= 1)){
     lcdPrintOutput("F1: ", 0, 3, F1);
     lcdPrintOutput("|H1: ", 9, 3, H1);
-  #elif FANS == 2 && HEATERS == 0
+  }
+  else if((greenhouse.fans.value() == 2)&&(greenhouse.heaters.value() == 0)){
     lcdPrintOutput("F1: ", 0, 3, F1);
     lcdPrintOutput("|F2: ", 9, 3, F2);
-  #elif FANS == 0 && HEATERS == 1
+  }
+  else if((greenhouse.fans.value() == 0)&&(greenhouse.heaters.value() == 1)){
     lcdPrintOutput("H1: ", 0, 3, H1);
-  #elif FANS == 0 && HEATERS == 2
+  }
+  else if((greenhouse.fans.value() == 0)&&(greenhouse.heaters.value() == 2)){
     lcdPrintOutput("H1: ", 0, 3, H1);
     lcdPrintOutput("|H2: ", 9, 3, H2);
-  #else
+  }
+  else{
     lcd.setCursor(0, 3);
     lcd.print(F("                    "));
-  #endif
+  }
+  if(greenhouse.isActive(FIX_R1)){
+      lcd.setCursor(8, 3);
+      lcd.write((byte)1);
+  }
+  if(greenhouse.isActive(FIX_R2)){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)1);
+  }
+  if(greenhouse.isActive(FIX_F1)){
+      lcd.setCursor(8, 3);
+      lcd.write((byte)1);
+  }
+  if(greenhouse.isActive(FIX_F2)){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)1);
+  }
+  if(greenhouse.isActive(FIX_H1)&&greenhouse.fans.value() == 0){
+      lcd.setCursor(8, 3);
+      lcd.write((byte)1);
+  }
+  if(greenhouse.isActive(FIX_H1)&&greenhouse.fans.value() >= 1){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)1);
+  }
+  if(greenhouse.isActive(FIX_H2)){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)1);
+  }
 
+  if(greenhouse.isActive(DESHUM_AUTO1)&&greenhouse.fans.value() == 0){
+      lcd.setCursor(8, 3);
+      lcd.write((byte)2);
+  }
+  if(greenhouse.isActive(DESHUM_AUTO1)&&greenhouse.fans.value() >= 1){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)2);
+  }
+  if(greenhouse.isActive(DESHUM_AUTO2)){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)2);
+  }
+  if(greenhouse.isActive(DESHUM_AUTO_COLD1)){
+      lcd.setCursor(8, 3);
+      lcd.write((byte)2);
+  }
+  /*if(greenhouse.isActive(DESHUM_AUTO_COLD2)){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)2);
+  }*/
+  if(rain == true){
+      lcd.setCursor(8, 2);
+      lcd.write((byte)3);
+  }
+  if((rain == true)&& (greenhouse.rollups.value() == 2)){
+      lcd.setCursor(19, 2);
+      lcd.write((byte)3);
+  }
+  if(R1.isLock()){
+      lcd.setCursor(8, 2);
+      lcd.write((byte)4);
+  }
+  if(R2.isLock()){
+      lcd.setCursor(19, 2);
+      lcd.write((byte)4);
+  }
+  if(F1.isLock()){
+      lcd.setCursor(8, 3);
+      lcd.write((byte)4);
+  }
+  if(F2.isLock()){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)4);
+  }
+  if(H1.isLock()&&greenhouse.fans.value() == 0){
+      lcd.setCursor(8, 3);
+      lcd.write((byte)4);
+  }
+  if(H1.isLock()&&greenhouse.fans.value() >= 1){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)4);
+  }
+  if(H2.isLock()){
+      lcd.setCursor(19, 3);
+      lcd.write((byte)4);
+  }
 }
 
 void homeDisplay(){
@@ -357,7 +610,6 @@ void homeDisplay(){
   lcdPrintOutputs();
 }
 
-#ifdef KEYPAD_DISPLAY
 void printHeader(String header, short maxLineOfMenu){
 
   //clear + print header
@@ -411,7 +663,7 @@ void stageDisplay(Rollup rollup){
   float stageTemp3 = greenhouse.coolingTemp() + rollup.stage[3].mod.value();
   float stageTemp4 = greenhouse.coolingTemp() + rollup.stage[4].mod.value();
 
-  printHeader("ROLLUP - STAGES ",STAGES);
+  printHeader("ROLLUP - STAGES ",greenhouse.stages.value());
   if(firstPrint == true){
     lcd.print("(");
     lcd.print(rollup.nb()+1);
@@ -421,7 +673,7 @@ void stageDisplay(Rollup rollup){
   adjustLine();
 
   //print content
-  int maxLines = STAGES+1;
+  int maxLines = greenhouse.stages.value()+1;
   if(maxLines > 4){
     maxLines = 4;
   }
@@ -496,14 +748,14 @@ void heaterDisplay(Heater heater){
 }
 
 void timepointsDisplay(){
-  printHeader("TIMEPOINTS - TIME",TIMEPOINTS);
+  printHeader("TIMEPOINTS - TIME",greenhouse.timepoints.value());
   if(firstPrint == true){
     firstPrint = false;
   }
   adjustLine();
 
   //print content
-  int maxLines = TIMEPOINTS+1;
+  int maxLines = greenhouse.timepoints.value()+1;
   if(maxLines > 4){
     maxLines = 4;
   }
@@ -515,71 +767,55 @@ void timepointsDisplay(){
 
     switch(writeLine){
       case 1:
-      #if TIMEPOINTS > 1
+      if (greenhouse.timepoints.value() > 1){
         lcd.setCursor(0,x);lcd.print(F("TP1: ")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());lcd.print(F("-")); lcdPrintDigits(T2.hr());lcd.print(F(":"));lcdPrintDigits(T2.mn());
-      #endif
-      #if TIMEPOINTS >1
-      switch (T1.type.value()){
-        case 0: lcd.print("(SR)");break;
-        case 1: lcd.print("(CL)");break;
-        case 2: lcd.print("(SS)");break;
+
+        switch (T1.type.value()){
+          case 0: lcd.print("(SR)");break;
+          case 1: lcd.print("(CL)");break;
+          case 2: lcd.print("(SS)");break;
+        }
       }
-      #endif
       break;
       case 2:
-      #if TIMEPOINTS == 2
+      if (greenhouse.timepoints.value() == 2){
         lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcdPrintDigits(T2.hr());lcd.print(F(":"));lcdPrintDigits(T2.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
-      #elif TIMEPOINTS >2
+      }else if (greenhouse.timepoints.value() > 2){
         lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcdPrintDigits(T2.hr());lcd.print(F(":"));lcdPrintDigits(T2.mn());lcd.print(F("-")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());
-      #endif
-      #if TIMEPOINTS >=2
-      switch (T2.type.value()){
-        case 0: lcd.print("(SR)");break;
-        case 1: lcd.print("(CL)");break;
-        case 2: lcd.print("(SS)");break;
       }
-      #endif
+      if (greenhouse.timepoints.value() >= 2){
+        switch (T2.type.value()){
+          case 0: lcd.print("(SR)");break;
+          case 1: lcd.print("(CL)");break;
+          case 2: lcd.print("(SS)");break;
+        }
+      }
       break;
       case 3:
-      #if TIMEPOINTS ==3
-      lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
-      #elif TIMEPOINTS > 3
-      lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());lcd.print(F("-")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());
-      #endif
-      #if TIMEPOINTS >=3
-      switch (T3.type.value()){
-        case 0: lcd.print("(SR)");break;
-        case 1: lcd.print("(CL)");break;
-        case 2: lcd.print("(SS)");break;
+      if (greenhouse.timepoints.value() == 3){
+        lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
+      }else if (greenhouse.timepoints.value() > 3){
+        lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());lcd.print(F("-")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());
       }
-      #endif
+      if (greenhouse.timepoints.value() >= 3){
+        switch (T3.type.value()){
+          case 0: lcd.print("(SR)");break;
+          case 1: lcd.print("(CL)");break;
+          case 2: lcd.print("(SS)");break;
+        }
+      }
       break;
       case 4:
-      #if TIMEPOINTS ==4
-      lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
-      #endif
-      #if TIMEPOINTS >4
-      lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());lcd.print(F("-")); lcdPrintDigits(T5.hr());lcd.print(F(":"));lcdPrintDigits(T5.mn());
-      #endif
-      #if TIMEPOINTS >=4
-      switch (T4.type.value()){
-        case 0: lcd.print("(SR)");break;
-        case 1: lcd.print("(CL)");break;
-        case 2: lcd.print("(SS)");break;
+      if (greenhouse.timepoints.value() == 4){
+        lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
       }
-      #endif
-      break;
-      case 5:
-      #if TIMEPOINTS ==5
-      lcd.setCursor(0,x);lcd.print(F("TP5: ")); lcdPrintDigits(T5.hr());lcd.print(F(":"));lcdPrintDigits(T5.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
-      #endif
-      #if TIMEPOINTS ==5
-      switch (T5.type.value()){
-        case 0: lcd.print("(SR)");break;
-        case 1: lcd.print("(CL)");break;
-        case 2: lcd.print("(SS)");break;
+      if (greenhouse.timepoints.value() == 4){
+        switch (T4.type.value()){
+          case 0: lcd.print("(SR)");break;
+          case 1: lcd.print("(CL)");break;
+          case 2: lcd.print("(SS)");break;
+        }
       }
-      #endif
       break;
    }
   }
@@ -588,10 +824,10 @@ void timepointsDisplay(){
 void temperaturesDisplay(){
 
   if(greenhouse.weather() == SUN){
-    printHeader("TIMEP - TEMP(SUN)",TIMEPOINTS);
+    printHeader("TIMEP - TEMP(SUN)",greenhouse.timepoints.value());
   }
   else if(greenhouse.weather() == CLOUD){
-    printHeader("TIMEP - TEMP(CLOUD)",TIMEPOINTS);
+    printHeader("TIMEP - TEMP(CLOUD)",greenhouse.timepoints.value());
   }
   if(firstPrint == true){
     firstPrint = false;
@@ -600,7 +836,7 @@ void temperaturesDisplay(){
   adjustLine();
 
   //print content
-  int maxLines = TIMEPOINTS+1;
+  int maxLines = greenhouse.timepoints.value()+1;
   if(maxLines > 4){
     maxLines = 4;
   }
@@ -611,50 +847,42 @@ void temperaturesDisplay(){
     }
     if(greenhouse.weather() == SUN){
       switch(writeLine){
-        #if TIMEPOINTS >= 1
+        if (greenhouse.timepoints.value() >= 1){
           case 1: lcd.setCursor(0,x);lcd.print(F("TP1: ")); lcd.print(T1.heatingTemp.value());lcd.print(F("-")); lcd.print(T1.coolingTemp.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);lcd.print(T1.ramping.value());break;
-        #endif
-        #if TIMEPOINTS >= 2
+        }
+        if (greenhouse.timepoints.value() >= 2){
           case 2: lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcd.print(T2.heatingTemp.value());lcd.print(F("-")); lcd.print(T2.coolingTemp.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);lcd.print(T2.ramping.value());break;
-        #endif
-        #if TIMEPOINTS >= 3
+        }
+        if (greenhouse.timepoints.value() >= 3){
           case 3: lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcd.print(T3.heatingTemp.value());lcd.print(F("-")); lcd.print(T3.coolingTemp.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x); lcd.print(T3.ramping.value());break;
-        #endif
-        #if TIMEPOINTS >= 4
+        }
+        if (greenhouse.timepoints.value() == 4){
           case 4: lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcd.print(T4.heatingTemp.value());lcd.print(F("-")); lcd.print(T4.coolingTemp.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x); lcd.print(T4.ramping.value());break;
-        #endif
-        #if TIMEPOINTS == 5
-          case 5: lcd.setCursor(0,x);lcd.print(F("TP5: ")); lcd.print(T5.heatingTemp.value());lcd.print(F("-")); lcd.print(T5.coolingTemp.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x); lcd.print(T5.ramping.value());break;
-        #endif
+        }
       }
     }
     else if(greenhouse.weather() == CLOUD){
       switch(writeLine){
-        #if TIMEPOINTS >= 1
+        if (greenhouse.timepoints.value() >= 1){
           case 1: lcd.setCursor(0,x);lcd.print(F("TP1: ")); lcd.print(T1.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T1.coolingTempCloud.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x); lcd.print(T1.ramping.value());break;
-        #endif
-        #if TIMEPOINTS >= 2
+        }
+        if (greenhouse.timepoints.value() >= 2){
           case 2: lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcd.print(T2.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T2.coolingTempCloud.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);  lcd.print(T2.ramping.value());break;
-        #endif
-        #if TIMEPOINTS >= 3
+        }
+        if (greenhouse.timepoints.value() >= 2){
           case 3: lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcd.print(T3.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T3.coolingTempCloud.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);  lcd.print(T3.ramping.value());break;
-        #endif
-        #if TIMEPOINTS >= 4
+        }
+        if (greenhouse.timepoints.value() >= 2){
           case 4: lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcd.print(T4.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T4.coolingTempCloud.value());
             lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);  lcd.print(T4.ramping.value());break;
-        #endif
-        #if TIMEPOINTS == 5
-          case 5: lcd.setCursor(0,x);lcd.print(F("TP5: ")); lcd.print(T5.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T5.coolingTempCloud.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);  lcd.print(T5.ramping.value());break;
-        #endif
+        }
       }
     }
   }
@@ -666,41 +894,58 @@ void geoDisplay(){
 void sensorsDisplay(){
 
 }
-#endif
-void menuDisplay(){
-  switch (key){
-      case '1' : homeDisplay(); break;
-    #if ROLLUPS >= 1 && defined(KEYPAD_DISPLAY)
-      case '2' : rollupDisplay(R1);break;
-    #endif
-    #if ROLLUPS == 2 && defined(KEYPAD_DISPLAY)
-      case '3' : rollupDisplay(R2);break;
-    #endif
-    #if ROLLUPS >= 1 && defined(KEYPAD_DISPLAY)
-      case '5' : stageDisplay(R1);break;
-    #endif
-    #if ROLLUPS == 2 && defined(KEYPAD_DISPLAY)
-      case '6' : stageDisplay(R2);break;
-    #endif
-    #if FANS >= 1 && defined(KEYPAD_DISPLAY)
-      case '4' : fanDisplay(F1);break;
-    #elif HEATERS >= 1 && defined(KEYPAD_DISPLAY)
-      case '4' : heaterDisplay(H1);break;
-    #endif
-    #if FANS == 2 && defined(KEYPAD_DISPLAY)
-      case '7' : fanDisplay(F2);break;
-    #elif FANS == 1 && HEATERS == 1 && defined(KEYPAD_DISPLAY)
-      case '7' : heaterDisplay(H1);break;
-    #elif HEATERS == 2 && defined(KEYPAD_DISPLAY)
-      case '7' : heaterDisplay(H2);break;
-    #endif
-    #ifdef KEYPAD_DISPLAY
-      case '8' : timepointsDisplay();break;
-      case '9' : temperaturesDisplay();break;
-    #endif
-  }
 
-}
+void menuDisplay(){
+
+    if(key == '1'){
+      homeDisplay();
+    }
+    else if (key == '2'){
+      if (greenhouse.rollups.value() >= 1){
+        rollupDisplay(R1);
+      }
+    }
+    else if (key == '3'){
+      if(greenhouse.rollups.value() == 2){
+        rollupDisplay(R2);
+      }
+    }
+    else if (key == '5'){
+      if (greenhouse.rollups.value() >= 1){
+        stageDisplay(R1);
+      }
+    }
+    else if (key == '6'){
+      if (greenhouse.rollups.value() == 2){
+        stageDisplay(R2);
+      }
+    }
+    else if (key == '4'){
+      if (greenhouse.fans.value() >= 1){
+        fanDisplay(F1);
+      }
+      else if ((greenhouse.fans.value() == 0)&&(greenhouse.heaters.value() >= 1)){
+        heaterDisplay(H1);
+      }
+    }
+    else if (key == '7'){
+      if ((greenhouse.fans.value() == 2)){
+        fanDisplay(F2);
+      }
+      else if ((greenhouse.fans.value() >= 1)&&(greenhouse.heaters.value() >= 1)){
+        heaterDisplay(H1);
+      }
+      else if ((greenhouse.heaters.value() == 2)){
+        heaterDisplay(H2);
+      }
+    }
+    else if (key == '8'){
+      timepointsDisplay();
+    }
+    else if (key == '9'){
+      temperaturesDisplay();
+    }
+  }
 
 void select(){
 
@@ -727,11 +972,53 @@ void select(){
   }
 }
 
+boolean choiceIsConfirmed(){
+  if((keyPressed == 'D')&&(unpressedTimer > 300)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+void displayMenu(char index){
+  menu = MODE_DISPLAY;key = index;firstPrint = true; unpressedTimer = 0; line = 0;
+}
+
+void displayNextProgram(const char* id){
+  for(int x = 0; x < Code_lenght;x++){
+      Data[x] = id[x];
+  }
+  lcd.clear();
+  clearMenu();
+}
+
 void menuAction(){
     if(keyPressed == 'C'){
       lcd.clear();
       lcd.print("---SELECT ACTION----");
     }
+    if(keyPressed == '2'){
+      menu = SET_PARAMETER;
+      displayNextProgram(R1OV);
+    }
+    if(keyPressed == '3'){
+      menu = SET_PARAMETER;
+      displayNextProgram(R2OV);
+    }
+    if(keyPressed == '4'){
+      menu = SET_PARAMETER;
+      displayNextProgram(F1OV);
+    }
+    if(keyPressed == '7'){
+      menu = SET_PARAMETER;
+      displayNextProgram(H1OV);
+    }
+    if(keyPressed == '9'){
+      menu = SET_PARAMETER;
+      displayNextProgram(ADJT24H);
+    }
+    /*
     if(keyPressed == '1'){
       action = 1;
       lcd.clear();
@@ -744,24 +1031,25 @@ void menuAction(){
     }
     if(keyPressed == '2'){
       action = 2;
+
       lcd.clear();
       lcd.print("FULL VENTILATION?");
     }
     if(keyPressed == '3'){
       action = 3;
       lcd.clear();
-      if (deshum == true){
+      *//*if (deshum == true){
         lcd.print("DISABLE DESHUM?");
       }
       else if(deshum == false){
         lcd.print("ENABLE DESHUM?");
-      }
+      }*//*
     }
     if(action != 0){
       select();
     }
     if(keyPressed == 'D'){
-      menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('1');
       lcd.noBlink();
       switch(action){
         case 1:
@@ -777,22 +1065,22 @@ void menuAction(){
         break;
         case 2:
           if(confirm == true){
-              fullVentOverride = true;
+              //fullVentOverride = true;
             }
         break;
         case 3:
-          if(confirm == true){
+          if(confirm == true){*//*
             if(deshum == true){
               deshum = false;
             }
             else if (deshum == false){
               deshum = true;
-            }
+            }*//*
           }
         break;
       }
       action = 0;
-    }
+    }*/
   }
 
 
@@ -822,49 +1110,137 @@ void menuProgram(){
     if((data_count == 0) && (keyPressed == 'D')) // if the array index is equal to the number of expected chars, compare data to master
     {
       menu = SET_PARAMETER;
-      line = 0;
-      unpressedTimer = 0;
-      firstPrint = true;
+      clearMenu();
     }
 }
 
-void confirmVariable(String variableName, float min, float value, float max){
-  fvariable = value+((float)line*0.10);
+void jumpIncrements(){
+  increment++;
+  if(increment > 2){
+    increment = 0;
+  }
+}
+
+short sincrement(){
+  if (increment == 0){
+    return 1;
+  }
+  else if (increment == 1){
+    return 10;
+  }
+  else{
+    return 100;
+  }
+
+}
+
+float fincrement(){
+  if (increment == 0){
+    return 0.5;
+  }
+  else if (increment == 1){
+    return 1;
+  }
+  else{
+    return 10;
+  }
+}
+
+void adjustusvariable(unsigned short min, unsigned short value, unsigned short max){
+  svariable = value + smodif;
+
+  if (line > lastline){
+    smodif += sincrement();
+  }
+  else if (line < lastline){
+    smodif -= sincrement();
+  }
+
+  if(svariable > (short)max){
+    svariable = (short)max;
+    line -= 1;
+    smodif = max - value;
+  }
+  else if(svariable < (short)min){
+    svariable = (short)min;
+    line += 1;
+    smodif = min - value;
+  }
+  usvariable = (unsigned short) svariable;
+  lastline = line;
+
+}
+void adjustsvariable(short min, short value, short max){
+  svariable = value + smodif;
+
+  if (line > lastline){
+    smodif += sincrement();
+  }
+  else if (line < lastline){
+    smodif -= sincrement();
+  }
+
+  if(svariable > max){
+    svariable = max;
+    line -= 1;
+    smodif = max - value;
+  }
+  else if(svariable < min){
+    svariable = min;
+    line += 1;
+    smodif = min - value;
+  }
+  lastline = line;
+}
+
+
+
+void adjustfvariable(float min, float value, float max){
+  fvariable = value + fmodif;
+  if (line > lastline){
+    fmodif += fincrement();
+  }
+  else if (line < lastline){
+    fmodif -= fincrement();
+  }
   if(fvariable > max){
     fvariable = max;
     line -= 1;
+    fmodif = max - value;
   }
-  if(fvariable < min){
+  else if(fvariable < min){
     fvariable = min;
     line += 1;
+    fmodif = min - value;
   }
+  lastline = line;
+}
+
+void confirmVariable(const __FlashStringHelper* variableName, float min, float value, float max){
+  adjustfvariable(min,value,max);
+  firstPrint = false;
+  codeWithNoDisplay = false;
+
   lcd.noBlink();
   lcd.setCursor(0,1);
   lcd.print(variableName);
   lcd.setCursor(0,2);
   lcd.print("[min] [value] [max]");
-  lcd.setCursor(0,3);
+  lcd.setCursor(3,3);
   lcd.print("[");
-  lcd.print(min);
+  lcd.print((short)min);
   lcd.print("][");
   lcd.print(fvariable);
   lcd.print("][");
-  lcd.print(max);
+  lcd.print((short)max);
   lcd.print("]");
 
 
 }
-void confirmVariable(String variableName, unsigned short min, unsigned short value, unsigned short max){
-  svariable = (short)value + line;
-  if(svariable > (short)max){
-    svariable = (short)max;
-    line -= 1;
-  }
-  if(svariable < (short)min){
-    svariable = (short)min;
-    line += 1;
-  }
-  usvariable = (unsigned long)svariable;
+void confirmVariable(const __FlashStringHelper* variableName, unsigned short min, unsigned short value, unsigned short max){
+  adjustusvariable(min,value,max);
+  firstPrint = false;
+  codeWithNoDisplay = false;
 
   lcd.noBlink();
   lcd.setCursor(0,1);
@@ -880,16 +1256,11 @@ void confirmVariable(String variableName, unsigned short min, unsigned short val
   lcd.print(max);
   lcd.print("]");
 }
-void confirmVariable(String variableName, short min, short value, short max){
-  svariable = value + line;
-  if(svariable > max){
-    svariable = max;
-    line -= 1;
-  }
-  if(svariable < min){
-    svariable = min;
-    line += 1;
-  }
+void confirmVariable(const __FlashStringHelper* variableName, short min, short value, short max){
+  adjustsvariable(min,value,max);
+  firstPrint = false;
+  codeWithNoDisplay = false;
+
   lcd.noBlink();
   lcd.setCursor(0,1);
   lcd.print(variableName);
@@ -904,7 +1275,34 @@ void confirmVariable(String variableName, short min, short value, short max){
   lcd.print(max);
   lcd.print("]");
 }
-void confirmType(String variableName, byte typeValue){
+void confirmVariable(const __FlashStringHelper* variableName, byte typeValue, String item1, String item2){
+  short type = (short)typeValue + line;
+  if(type > 1){
+    type = 1;
+    line -= 1;
+  }
+  if(type < 0){
+    type = 0;
+    line += 1;
+  }
+  typeSet = type;
+
+  firstPrint = false;
+  codeWithNoDisplay = false;
+  lcd.noBlink();
+  lcd.setCursor(0,1);
+  lcd.print(variableName);
+  lcd.setCursor(0,2);
+  lcd.print("(Press *# to scroll)");
+  lcd.setCursor(7,3);
+  lcd.print("[");
+  switch (typeSet){
+    case 0: lcd.print(item1);break;
+    case 1: lcd.print(item2);break;
+  }
+  lcd.print("]   ");
+}
+void confirmVariable(const __FlashStringHelper* variableName, byte typeValue, String item1, String item2,String item3){
   short type = (short)typeValue + line;
   if(type > 2){
     type = 2;
@@ -916,20 +1314,81 @@ void confirmType(String variableName, byte typeValue){
   }
   typeSet = type;
 
+  firstPrint = false;
+  codeWithNoDisplay = false;
   lcd.noBlink();
   lcd.setCursor(0,1);
   lcd.print(variableName);
+  lcd.setCursor(0,2);
+  lcd.print("(Press *# to scroll)");
   lcd.setCursor(7,3);
   lcd.print("[");
   switch (typeSet){
-    case 0: lcd.print("SR");break;
-    case 1: lcd.print("CLOCK");break;
-    case 2: lcd.print("SS");break;
+    case 0: lcd.print(item1);break;
+    case 1: lcd.print(item2);break;
+    case 2: lcd.print(item3);break;
   }
   lcd.print("]   ");
 }
 
+void confirmVariable(const __FlashStringHelper* variableName, byte typeValue, String item1, String item2,String item3,String item4 ){
+  short type = (short)typeValue + line;
+  if(type > 3){
+    type = 3;
+    line -= 1;
+  }
+  if(type < 0){
+    type = 0;
+    line += 1;
+  }
+  typeSet = type;
 
+  firstPrint = false;
+  codeWithNoDisplay = false;
+  lcd.noBlink();
+  lcd.setCursor(0,1);
+  lcd.print(variableName);
+  lcd.setCursor(0,2);
+  lcd.print("(Press *# to scroll)");
+  lcd.setCursor(7,3);
+  lcd.print("[");
+  switch (typeSet){
+    case 0: lcd.print(item1);break;
+    case 1: lcd.print(item2);break;
+    case 2: lcd.print(item3);break;
+    case 3: lcd.print(item4);break;
+  }
+  lcd.print("]   ");
+}
+
+void setParameter(const __FlashStringHelper* variableName, floatParameter &parameter, const char* returnid){
+    confirmVariable(variableName,parameter.minimum(),parameter.value(),parameter.maximum());
+    if(choiceIsConfirmed()){
+      parameter.setValue(fvariable);
+      displayNextProgram(returnid);
+    }
+}
+void setParameter(const __FlashStringHelper* variableName, uShortParameter &parameter, const char* returnid){
+    confirmVariable(variableName,parameter.minimum(),parameter.value(),parameter.maximum());
+    if(choiceIsConfirmed()){
+      parameter.setValue(usvariable);
+      displayNextProgram(returnid);
+    }
+}
+void setParameter(const __FlashStringHelper* variableName, shortParameter &parameter, const char* returnid){
+    confirmVariable(variableName,parameter.minimum(),parameter.value(),parameter.maximum());
+    if(choiceIsConfirmed()){
+      parameter.setValue(svariable);
+      displayNextProgram(returnid);
+    }
+}
+void setParameter(const __FlashStringHelper* variableName, byteParameter &parameter, const char* returnid){
+    confirmVariable(variableName,(unsigned short)parameter.minimum(),(unsigned short)parameter.value(),(unsigned short)parameter.maximum());
+    if(choiceIsConfirmed()){
+      parameter.setValue(svariable);
+      displayNextProgram(returnid);
+    }
+}
 void checkIIC(){
   lcd.noBlink();
   lcd.setCursor(0,0);
@@ -1043,886 +1502,1140 @@ void checkRelays(){
   }
 }
 
+boolean programSelected(const char* id){
+  if(!strcmp(Data, id)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+void zeroEqualInfinity(){
+  if(usvariable == 0){
+    lcd.setCursor(7,3);
+    lcd.print(F("INF"));
+  }
+}
 void menuSetParameter(){
   if(firstPrint == true){
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print(F("-Parameter Selected-"));
-    firstPrint = false;
   }
 
+
 //Général
-  if(!strcmp(Data, SETDAY)){
+  if(programSelected(SETDAY)){
     unsigned short daySet = (unsigned short)greenhouse.rightNow(3);
-    confirmVariable("SET DAY",0,daySet,31);
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      #ifdef CLOCK_DS3231
+    confirmVariable(F("SET DAY"),0,daySet,31);
+    if(choiceIsConfirmed()){
+      #if  RTC == RTC_DS3231
         unsigned short year = 2000+(unsigned short)greenhouse.rightNow(5);
         rtc.setDate((byte)usvariable, (byte)greenhouse.rightNow(4), year);
         getDateAndTime();
-        greenhouse.setNow(rightNowValue);
+        greenhouse.setNow(rightNow);
         greenhouse.solarCalculations();
       #endif
-      menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('1');
     }
   }
-  else if(!strcmp(Data, SETMONTH)){
+  if(programSelected(SETMONTH)){
     unsigned short monthSet = (unsigned short)greenhouse.rightNow(4);
-    confirmVariable("SET MONTH",1,monthSet,12);
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      #ifdef CLOCK_DS3231
+    confirmVariable(F("SET MONTH"),1,monthSet,12);
+    if(choiceIsConfirmed()){
+        #if  RTC == RTC_DS3231
         unsigned short year = 2000+(unsigned short)greenhouse.rightNow(5);
         rtc.setDate( (byte)greenhouse.rightNow(3),(byte)usvariable, year);
         getDateAndTime();
-        greenhouse.setNow(rightNowValue);
+        greenhouse.setNow(rightNow);
         greenhouse.solarCalculations();
       #endif
-      menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('1');
     }
   }
-  else if(!strcmp(Data, SETYEAR)){
+  if(programSelected(SETYEAR)){
     unsigned short yearSet = (unsigned short)greenhouse.rightNow(5);
-    confirmVariable("SET YEAR",0,yearSet,99);
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      #ifdef CLOCK_DS3231
+    confirmVariable(F("SET YEAR"),0,yearSet,99);
+    if(choiceIsConfirmed()){
+        #if  RTC == RTC_DS3231
         unsigned short year = 2000 + usvariable;
         rtc.setDate( (byte)greenhouse.rightNow(3), (byte)greenhouse.rightNow(4), year);
         getDateAndTime();
-        greenhouse.setNow(rightNowValue);
+        greenhouse.setNow(rightNow);
         greenhouse.solarCalculations();
       #endif
-      menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('1');
     }
   }
-  else if(!strcmp(Data, SETHOUR)){
-    confirmVariable("SET HOUR",0,(unsigned short)greenhouse.rightNow(2),23);
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      if(rightNow[2].value() == greenhouse.rightNow(2)){
+  if(programSelected(SETHOUR)){
+    confirmVariable(F("SET HOUR"),0,(unsigned short)greenhouse.rightNow(2),23);
+    if(choiceIsConfirmed()){
+      #if  RTC == RTC_DS3231
         hourSet = usvariable;
-      }
-      else{
-        hourSet = usvariable;
-        if(hourSet > 0){
-          hourSet -= 1;
+        if(!(rightNow[2] == greenhouse.rightNow(2))){
+          if(hourSet > 0){
+            hourSet -= 1;
+          }
+          else{
+            hourSet = 23;
+          }
         }
-        else{
-          hourSet = 23;
-        }
-      }
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = SETMIN[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
-    }
-  }
-  else if(!strcmp(Data, SETMIN)){
-    confirmVariable("SET MINUTS",0,(unsigned short)greenhouse.rightNow(1),59);
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      #ifdef CLOCK_DS3231
-        minSet = usvariable;
-        rtc.setTime(hourSet, minSet, 0);
-        menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+        rtc.setTime(hourSet, rightNow[1], 0);
+        displayNextProgram(SETMIN);
       #endif
     }
   }
+
+
+
+  if(programSelected(SETMIN)){
+    confirmVariable(F("SET MINUTS"),0,(unsigned short)greenhouse.rightNow(1),59);
+    if(choiceIsConfirmed()){
+      #if  RTC == RTC_DS3231
+        minSet = usvariable;
+        rtc.setTime(rightNow[2], minSet, 0);
+        displayMenu('1');
+      #endif
+    }
+  }
+
+
+  if(programSelected(R1STEPS)){
+    confirmVariable(F("ROLLUP1 : # STEPS"),(unsigned short)1, (unsigned short)greenhouse.stages.value(),(unsigned short)4);
+      if(choiceIsConfirmed()){
+        greenhouse.stages.setValue(usvariable);
+        displayMenu('5');
+      }
+  }
   //Rollup 1
-#if ROLLUPS >= 1
-  else if(!strcmp(Data, R1HYST)){
-    confirmVariable("R1 - HYSTERESIS",R1.hyst.minimum(),R1.hyst.value(),R1.hyst.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.hyst.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '2';firstPrint = true; unpressedTimer = 0; line = 0;
+if(greenhouse.rollups.value() >= 1){
+  if(programSelected(R1HYST)){
+    setParameter(F("R1 - HYSTERESIS"),R1.hyst,MENU2);
+  }
+  if(programSelected(R1ROTUP)){
+    setParameter(F("R1 - ROTATION (UP)"),R1.rotationUp,MENU2);
+  }
+  if(programSelected(R1ROTDOWN)){
+    setParameter(F("R1 - ROTATION (DOWN)"),R1.rotationDown,MENU2);
+  }
+  if(programSelected(R1PAUSE)){
+    setParameter(F("R1 - PAUSE TIME"), R1.pause,MENU2);
+  }
+  if(greenhouse.stages.value() >= 1){
+    if(programSelected(R1S1MOD)){
+      setParameter(F("  R1 - STAGE 1 MOD"),R1.stage[1].mod,MENU5);
+    }
+    if(programSelected(R1S1TARG)){
+      setParameter(F("  R1 - STAGE 1 MOD"),R1.stage[1].target,MENU5);
     }
   }
-  else if(!strcmp(Data, R1ROTUP)){
-    confirmVariable(" R1 - ROTATION (UP)",R1.rotationUp.minimum(),R1.rotationUp.value(),R1.rotationUp.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.rotationUp.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '2';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 2){
+    if(programSelected(R1S2MOD)){
+      setParameter(F("  R1 - STAGE 2 MOD"),R1.stage[2].mod,MENU5);
+    }
+    if(programSelected(R1S2TARG)){
+      setParameter(F("  R1 - STAGE 2 MOD"),R1.stage[2].target,MENU5);
     }
   }
-  else if(!strcmp(Data, R1ROTDOWN)){
-    confirmVariable("R1 - ROTATION (DOWN)",R1.rotationDown.minimum(),R1.rotationDown.value(),R1.rotationDown.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.rotationDown.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '2';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 3){
+    if(programSelected(R1S3MOD)){
+      setParameter(F("  R1 - STAGE 3 MOD"),R1.stage[3].mod,MENU5);
+    }
+    if(programSelected(R1S3TARG)){
+      setParameter(F("  R1 - STAGE 3 MOD"),R1.stage[3].target,MENU5);
     }
   }
-  else if(!strcmp(Data, R1PAUSE)){
-    confirmVariable("  R1 - PAUSE TIME",R1.pause.minimum(),R1.pause.value(),R1.pause.maximum());
-    if((keyPressed == 'D')&&(R1.pause.value()!= usvariable)){
-      R1.pause.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '2';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 4){
+    if(programSelected(R1S4MOD)){
+      setParameter(F("  R1 - STAGE 4 MOD"),R1.stage[4].mod,MENU5);
+    }
+    if(programSelected(R1S4TARG)){
+      setParameter(F("  R1 - STAGE 4 MOD"),R1.stage[4].target,MENU5);
     }
   }
-#endif
-#if ROLLUPS >= 1 && STAGES >= 1
-  else if(!strcmp(Data, R1S1MOD)){
-    confirmVariable("  R1 - STAGE 1 MOD",R1.stage[1].mod.minimum(),R1.stage[1].mod.minimum(),R1.stage[1].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[1].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 5){
+    if(programSelected(R1S5MOD)){
+      setParameter(F("  R1 - STAGE 5 MOD"),R1.stage[5].mod,MENU5);
+    }
+    if(programSelected(R1S5TARG)){
+      setParameter(F("  R1 - STAGE 5 MOD"),R1.stage[5].target,MENU5);
     }
   }
-  else if(!strcmp(Data, R1S1TARG)){
-    confirmVariable("R1 - STAGE 1 TARGET",R1.stage[1].target.minimum(),R1.stage[1].target.value(),R1.stage[1].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[1].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
+}
+if(greenhouse.rollups.value() >= 2){
+  if(programSelected(R2HYST)){
+    setParameter(F("R2 - HYSTERESIS"),R2.hyst,MENU3);
+  }
+  if(programSelected(R2ROTUP)){
+    setParameter(F("R2 - ROTATION (UP)"),R2.rotationUp,MENU3);
+  }
+  if(programSelected(R2ROTDOWN)){
+    setParameter(F("R2 - ROTATION (DOWN)"),R2.rotationDown,MENU3);
+  }
+  if(programSelected(R2PAUSE)){
+    setParameter(F("R2 - PAUSE TIME"), R2.pause,MENU3);
+  }
+  if(greenhouse.stages.value() >= 1){
+    if(programSelected(R2S1MOD)){
+      setParameter(F("  R2 - STAGE 1 MOD"),R2.stage[1].mod,MENU6);
+    }
+    if(programSelected(R2S1TARG)){
+      setParameter(F("  R2 - STAGE 1 MOD"),R2.stage[1].target,MENU6);
     }
   }
-#endif
-#if ROLLUPS >= 1 && STAGES >= 2
-  else if(!strcmp(Data, R1S2MOD)){
-    confirmVariable("  R1 - STAGE 2 MOD",R1.stage[2].mod.minimum(),R1.stage[2].mod.value(),R1.stage[2].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[2].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 2){
+    if(programSelected(R2S2MOD)){
+      setParameter(F("  R2 - STAGE 2 MOD"),R2.stage[2].mod,MENU6);
+    }
+    if(programSelected(R2S2TARG)){
+      setParameter(F("  R2 - STAGE 2 MOD"),R2.stage[2].target,MENU6);
     }
   }
-  else if(!strcmp(Data, R1S2TARG)){
-    confirmVariable("R1 - STAGE 2 TARGET",R1.stage[2].target.minimum(),R1.stage[2].target.value(),R1.stage[2].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[2].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 3){
+    if(programSelected(R2S3MOD)){
+      setParameter(F("  R2 - STAGE 3 MOD"),R2.stage[3].mod,MENU6);
+    }
+    if(programSelected(R2S3TARG)){
+      setParameter(F("  R2 - STAGE 3 MOD"),R2.stage[3].target,MENU6);
     }
   }
-#endif
-#if ROLLUPS >= 1 && STAGES >= 3
-  else if(!strcmp(Data, R1S3MOD)){
-    confirmVariable("  R1 - STAGE 3 MOD",R1.stage[3].mod.minimum(),R1.stage[3].mod.value(),R1.stage[3].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[3].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 4){
+    if(programSelected(R2S4MOD)){
+      setParameter(F("  R2 - STAGE 4 MOD"),R2.stage[4].mod,MENU6);
+    }
+    if(programSelected(R2S4TARG)){
+      setParameter(F("  R2 - STAGE 4 MOD"),R2.stage[4].target,MENU6);
     }
   }
-  else if(!strcmp(Data, R1S3TARG)){
-    confirmVariable("R1 - STAGE 3 TARGET",R1.stage[3].target.minimum(),R1.stage[3].target.value(),R1.stage[3].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[3].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(greenhouse.stages.value() >= 5){
+    if(programSelected(R2S5MOD)){
+      setParameter(F("  R2 - STAGE 5 MOD"),R2.stage[5].mod,MENU6);
+    }
+    if(programSelected(R2S5TARG)){
+      setParameter(F("  R2 - STAGE 5 MOD"),R2.stage[5].target,MENU6);
     }
   }
-#endif
-#if ROLLUPS >= 1 && STAGES >= 4
-  else if(!strcmp(Data, R1S4MOD)){
-    confirmVariable("  R1 - STAGE 4 MOD",R1.stage[4].mod.minimum(),R1.stage[4].mod.value(),R1.stage[4].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[4].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
+}
+if(greenhouse.fans.value() >= 1){
+  if(programSelected(F1HYST)){
+    setParameter(F("  F1 - HYSTERESIS"),F1.hyst,MENU4);
+  }
+  if(programSelected(F1MOD)){
+    setParameter(F("  F1 - MODIFICATOR"),F1.mod,MENU4);
+  }
+}
+if(greenhouse.fans.value() >= 2){
+  if(programSelected(F2HYST)){
+    setParameter(F("  F2 - HYSTERESIS"),F2.hyst,MENU7);
+  }
+  if(programSelected(F2MOD)){
+    setParameter(F("  F2 - MODIFICATOR"),F2.mod,MENU7);
+  }
+}
+if(greenhouse.heaters.value() >= 1 && greenhouse.fans.value() == 0){
+  if(programSelected(H1HYST)){
+    setParameter(F("  H1 - HYSTERESIS"),H1.hyst,MENU4);
+  }
+  if(programSelected(H1MOD)){
+    setParameter(F("  H1 - MODIFICATOR"),H1.mod,MENU4);
+  }
+}
+if(greenhouse.heaters.value() >= 1 && greenhouse.fans.value() >= 1){
+  if(programSelected(H1HYST)&&greenhouse.fans.value() != 0){
+    setParameter(F("  H1 - HYSTERESIS"),H1.hyst,MENU7);
+  }
+  if(programSelected(H1MOD)&&greenhouse.fans.value() != 0){
+    setParameter(F("  H1 - MODIFICATOR"),H1.mod,MENU7);
+  }
+}
+if(greenhouse.heaters.value() >= 2){
+  if(programSelected(H2HYST)){
+    setParameter(F("  H2 - HYSTERESIS"),H2.hyst,MENU7);
+  }
+  if(programSelected(H2MOD)){
+    setParameter(F("  H2 - MODIFICATOR"),H2.mod,MENU7);
+  }
+}
+if(greenhouse.timepoints.value() >= 1){
+  if(programSelected(T1HOUR)){
+    setParameter(F("  H2 - TYPE"),H2.mod,MENU7);
+  }
+  if(programSelected(T1TYPE)){
+    confirmVariable(F("     T1 - TYPE"),T1.type.value(), "SR", "CLOCK", "SS");
+    if(choiceIsConfirmed()){
+      displayNextProgram(T1HOUR);
     }
   }
-  else if(!strcmp(Data, R1S4TARG)){
-    confirmVariable("R1 - STAGE 4 TARGET",R1.stage[4].target.minimum(),R1.stage[4].target.value(),R1.stage[4].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[4].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if ROLLUPS >= 1 && STAGES >= 5
-  else if(!strcmp(Data, R1S5MOD)){
-    confirmVariable("  R1 - STAGE 5 MOD",R1.stage[5].mod.minimum(),R1.stage[5].mod.value(),R1.stage[5].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[5].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R1S5TARG)){
-    confirmVariable("R1 - STAGE 5 TARGET",R1.stage[5].target.minimum(),R1.stage[5].target(),R1.stage[5].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R1.stage[5].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '5';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if ROLLUPS == 2
-  //Rollup 2
-  else if(!strcmp(Data, R2HYST)){
-    confirmVariable("  R2 - HYSTERESIS",R2.hyst.minimum(),R2.hyst.value(),R2.hyst.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.hyst.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '3';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2ROTUP)){
-    confirmVariable(" R2 - ROTATION (UP)",R2.rotationUp.minimum(),R2.rotationUp.value(),R2.rotationUp.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.rotationUp.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '3';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2ROTDOWN)){
-    confirmVariable("R2 - ROTATION (DOWN)",R2.rotationDown.minimum(),R2.rotationDown.value(),R2.rotationDown.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.rotationDown.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '3';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2PAUSE)){
-    confirmVariable("  R2 - PAUSE TIME",R2.pause.minimum(),R2.pause.value(),R2.pause.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.pause.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '3';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if ROLLUPS == 2 && STAGES >= 1
-  else if(!strcmp(Data, R2S1MOD)){
-    confirmVariable("  R2 - STAGE 1 MOD",R2.stage[1].mod.minimum(),R2.stage[1].mod.minimum(),R2.stage[1].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[1].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2S1TARG)){
-    confirmVariable("R2 - STAGE 1 TARGET",R2.stage[1].target.minimum(),R2.stage[1].target.value(),R2.stage[1].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[1].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if ROLLUPS == 2 && STAGES >= 2
-  else if(!strcmp(Data, R2S2MOD)){
-    confirmVariable("  R2 - STAGE 2 MOD",R2.stage[2].mod.minimum(),R2.stage[2].mod.value(),R2.stage[2].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[2].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2S2TARG)){
-    confirmVariable("R2 - STAGE 2 TARGET",R2.stage[2].target.minimum(),R2.stage[2].target.value(),R2.stage[2].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[2].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if ROLLUPS == 2 && STAGES >= 3
-  else if(!strcmp(Data, R2S3MOD)){
-    confirmVariable("  R2 - STAGE 3 MOD",R2.stage[3].mod.minimum(),R2.stage[3].mod.value(),R2.stage[3].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[3].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2S3TARG)){
-    confirmVariable("R2 - STAGE 3 TARGET",R2.stage[3].target.minimum(),R2.stage[3].target.value(),R2.stage[3].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[3].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if ROLLUPS == 2 && STAGES >= 4
-  else if(!strcmp(Data, R2S4MOD)){
-    confirmVariable("  R2 - STAGE 4 MOD",R2.stage[4].mod.minimum(),R2.stage[4].mod.value(),R2.stage[4].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[4].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2S4TARG)){
-    confirmVariable("R2 - STAGE 4 TARGET",R2.stage[4].target.minimum(),R2.stage[4].target.value(),R2.stage[4].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[4].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if ROLLUPS == 2 && STAGES >= 5
-  else if(!strcmp(Data, R2S5MOD)){
-    confirmVariable("  R2 - STAGE 5 MOD",R2.stage[5].mod.minimum(),R2.stage[5].mod.value(),R2.stage[5].mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[5].mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, R2S5TARG)){
-    confirmVariable("R2 - STAGE 5 TARGET",R2.stage[5].target.minimum(),R2.stage[5].target.value(),R2.stage[5].target.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      R2.stage[5].target.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '6';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if FANS >= 1
-  else if(!strcmp(Data, F1HYST)){
-    confirmVariable("  F1 - HYSTERESIS", F1.hyst.minimum(), F1.hyst.value(), F1.hyst.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      F1.hyst.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '4';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, F1MOD)){
-    confirmVariable(" F1 - MODIFICATEUR", F1.mod.minimum(), F1.mod.value(), F1.mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      F1.mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '4';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if FANS == 2
-  else if(!strcmp(Data, F2HYST)){
-    confirmVariable("  F2 - HYSTERESIS", F2.hyst.minimum(), F2.hyst.value(), F2.hyst.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      F2.hyst.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '7';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, F2MOD)){
-    confirmVariable(" F2 - MODIFICATEUR", F2.mod.minimum(), F2.mod.value(), F2.mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      F2.mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '7';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if HEATERS >= 1 && FANS == 0
-  else if(!strcmp(Data, H1HYST)){
-    confirmVariable("  H1 - HYSTERESIS", H1.hyst.minimum(), H1.hyst.value(), H1.hyst.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      H1.hyst.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '4';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, H1MOD)){
-    confirmVariable(" H1 - MODIFICATEUR", H1.mod.minimum(), H1.mod.value(), H1.mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      H1.mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '4';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if HEATERS >= 1 && FANS == 1
-  else if(!strcmp(Data, H1HYST)){
-    confirmVariable("  H1 - HYSTERESIS", H1.hyst.minimum(), H1.hyst.value(), H1.hyst.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      H1.hyst.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '7';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, H1MOD)){
-    confirmVariable(" H1 - MODIFICATEUR", H1.mod.minimum(), H1.mod.value(), H1.mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      H1.mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '7';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-
-
-#if HEATERS == 2
-  else if(!strcmp(Data, H2HYST)){
-    confirmVariable("  H2 - HYSTERESIS", H2.hyst.minimum(), H2.hyst.value(), H2.hyst.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      H2.hyst.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '7';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-  else if(!strcmp(Data, H2MOD)){
-    confirmVariable(" H2 - MODIFICATEUR", H2.mod.minimum(), H2.mod.value(), H2.mod.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      H2.mod.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '7';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-#if TIMEPOINTS >= 1
-  else if(!strcmp(Data, T1TYPE)){
-    confirmType("     T1 - TYPE",T1.type.value());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T1HOUR[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
-    }
-  }
-  else if(!strcmp(Data, T1HOUR)){
+  if(programSelected(T1HOUR)){
     if(typeSet == CLOCK){
-      confirmVariable("     T1 - HOUR", 0,T1.hrMod.value(),23);
+      confirmVariable(F("     T1 - HOUR"), 0,T1.hrMod.value(),23);
     }
     else{
-      confirmVariable("     T1 - HOUR", -23,T1.hrMod.value(),23);
+      confirmVariable(F("     T1 - HOUR"), -23,T1.hrMod.value(),23);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+    if(choiceIsConfirmed()){
       hourSet = svariable;
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T1MIN[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
+      displayNextProgram(T1MIN);
     }
   }
-  else if(!strcmp(Data, T1MIN)){
+  if(programSelected(T1MIN)){
     if(typeSet == CLOCK){
-      confirmVariable("    T1 - MINUTS", 0,T1.mnMod.value(),59);
+      confirmVariable(F("    T1 - MINUTS"), 0,T2.mnMod.value(),59);
     }
     else{
-      confirmVariable("    T1 - MINUTS", -59,T1.mnMod.value(),59);
+      confirmVariable(F("    T1 - MINUTS"), -59,T1.mnMod.value(),59);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+    if(choiceIsConfirmed()){
       minSet = svariable;
       T1.type.setValue(typeSet);
       T1.setTimepoint(hourSet, minSet);
-      menu = MODE_DISPLAY;key = '8';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('8');
     }
   }
-  else if(!strcmp(Data, T1HEATT)){
+  if(programSelected(T1HEATT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T1 - HEAT TEMP-SUN", T1.coolingTemp.minimum(),T1.heatingTemp.value(),T1.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T1.heatingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T1 - HEAT TEMP-SUN"),T1.heatingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T1 - HEAT TEMP-CLOUD", T1.coolingTemp.minimum(),T1.heatingTempCloud.value(),T1.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T1.heatingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T1 - HEAT TEMP-CLOUD"),T1.heatingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T1COOLT)){
+  if(programSelected(T1COOLT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T1 - COOL TEMP-SUN", T1.coolingTemp.minimum(),T1.coolingTemp.value(),T1.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T1.coolingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T1 - COOL TEMP-SUN"),T1.coolingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T1 - COOL TEMP-CLOUD", T1.coolingTemp.minimum(),T1.coolingTempCloud.value(),T1.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T1.coolingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T1 - COOL TEMP-CLOUD"),T1.coolingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T1RAMP)){
-    confirmVariable("   T1 - RAMPING", T1.ramping.minimum(),T1.ramping.value(),T1.ramping.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T1.ramping.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(programSelected(T1RAMP)){
+    setParameter(F("   T1 - RAMPING"),T1.ramping,MENU9);
+  }
+  if(programSelected(T2TYPE)){
+    confirmVariable(F("     T2 - TYPE"),T2.type.value(),"SR", "CLOCK", "SS");
+    if(choiceIsConfirmed()){
+      displayNextProgram(T2HOUR);
     }
   }
-#endif
-#if TIMEPOINTS >= 2
-  else if(!strcmp(Data, T2TYPE)){
-    confirmType("     T2 - TYPE",T2.type.value());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T2HOUR[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
-    }
-  }
-  else if(!strcmp(Data, T2HOUR)){
+}
+if(greenhouse.timepoints.value() >= 2){
+  if(programSelected(T2HOUR)){
     if(typeSet == CLOCK){
-      confirmVariable("     T2 - HOUR", 0,T2.hrMod.value(),23);
+      confirmVariable(F("     T2 - HOUR"), 0,T2.hrMod.value(),23);
     }
     else{
-      confirmVariable("     T2 - HOUR", -23,T2.hrMod.value(),23);
+      confirmVariable(F("     T2 - HOUR"), -23,T2.hrMod.value(),23);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+    if(choiceIsConfirmed()){
       hourSet = svariable;
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T2MIN[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
+      displayNextProgram(T2MIN);
     }
   }
-  else if(!strcmp(Data, T2MIN)){
+  if(programSelected(T2MIN)){
     if(typeSet == CLOCK){
-      confirmVariable("    T2 - MINUTS", 0,T2.mnMod.value(),59);
+      confirmVariable(F("    T2 - MINUTS"), 0,T2.mnMod.value(),59);
     }
     else{
-      confirmVariable("    T2 - MINUTS", -59,T2.mnMod.value(),59);
+      confirmVariable(F("    T2 - MINUTS"), -59,T2.mnMod.value(),59);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+    if(choiceIsConfirmed()){
       minSet = svariable;
       T2.type.setValue(typeSet);
       T2.setTimepoint(hourSet, minSet);
-      menu = MODE_DISPLAY;key = '8';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('8');
     }
   }
-  else if(!strcmp(Data, T2HEATT)){
+  if(programSelected(T2HEATT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T2 - HEAT TEMP-SUN", T2.coolingTemp.minimum(),T2.heatingTemp.value(),T2.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T2.heatingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T2 - HEAT TEMP-SUN"),T2.heatingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T2 - HEAT TEMP-CLOUD", T2.coolingTemp.minimum(),T2.heatingTempCloud.value(),T2.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T2.heatingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T2 - HEAT TEMP-CLOUD"),T2.heatingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T2COOLT)){
+  if(programSelected(T2COOLT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T2 - COOL TEMP-SUN", T2.coolingTemp.minimum(),T2.coolingTemp.value(),T2.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T2.coolingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T2 - COOL TEMP-SUN"),T2.coolingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T2 - COOL TEMP-CLOUD", T2.coolingTemp.minimum(),T2.coolingTempCloud.value(),T2.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T2.coolingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T2 - COOL TEMP-CLOUD"),T2.coolingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T2RAMP)){
-    confirmVariable("   T2 - RAMPING", T2.ramping.minimum(),T2.ramping.value(),T2.ramping.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T2.ramping.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(programSelected(T2RAMP)){
+    setParameter(F("   T2 - RAMPING"),T2.ramping,MENU9);
+  }
+}
+if(greenhouse.timepoints.value() >= 3){
+  if(programSelected(T3TYPE)){
+    confirmVariable(F("     T3 - TYPE"),T3.type.value(),"SR", "CLOCK", "SS");
+    if(choiceIsConfirmed()){
+      displayNextProgram(T3HOUR);
     }
   }
-#endif
-#if TIMEPOINTS >= 3
-  else if(!strcmp(Data, T3TYPE)){
-    confirmType("     T3 - TYPE",T3.type.value());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T3HOUR[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
-    }
-  }
-  else if(!strcmp(Data, T3HOUR)){
+  if(programSelected(T3HOUR)){
     if(typeSet == CLOCK){
-      confirmVariable("     T3 - HOUR", 0,T3.hrMod.value(),23);
+      confirmVariable(F("     T3 - HOUR"), 0,T3.hrMod.value(),23);
     }
     else{
-      confirmVariable("     T3 - HOUR", -23,T3.hrMod.value(),23);
+      confirmVariable(F("     T3 - HOUR"), -23,T3.hrMod.value(),23);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      hourSet = svariable;
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T3MIN[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
+    if(choiceIsConfirmed()){
+      displayNextProgram(T3MIN);
     }
   }
-  else if(!strcmp(Data, T3MIN)){
+  if(programSelected(T3MIN)){
     if(typeSet == CLOCK){
-      confirmVariable("    T3 - MINUTS", 0,T3.mnMod.value(),59);
+      confirmVariable(F("    T3 - MINUTS"), 0,T3.mnMod.value(),59);
     }
     else{
-      confirmVariable("    T3 - MINUTS", -59,T3.mnMod.value(),59);
+      confirmVariable(F("    T3 - MINUTS"), -59,T3.mnMod.value(),59);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+    if(choiceIsConfirmed()){
       minSet = svariable;
       T3.type.setValue(typeSet);
       T3.setTimepoint(hourSet, minSet);
-      menu = MODE_DISPLAY;key = '8';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('8');
     }
   }
-  else if(!strcmp(Data, T3HEATT)){
+  if(programSelected(T3HEATT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T3 - HEAT TEMP-SUN", T3.coolingTemp.minimum(),T3.heatingTemp.value(),T3.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.heatingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T3 - HEAT TEMP-SUN"),T3.heatingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T3 - HEAT TEMP-CLOUD", T3.coolingTemp.minimum(),T3.heatingTempCloud.value(),T3.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.heatingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T3 - HEAT TEMP-CLOUD"),T3.heatingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T3COOLT)){
+  if(programSelected(T3COOLT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T3 - COOL TEMP-SUN", T3.coolingTemp.minimum(),T3.coolingTemp.value(),T3.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.coolingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T3 - COOL TEMP-SUN"),T3.coolingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T3 - COOL TEMP-CLOUD", T3.coolingTemp.minimum(),T3.coolingTempCloud.value(),T3.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T3.coolingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T3 - COOL TEMP-CLOUD"),T3.coolingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T3RAMP)){
-    confirmVariable("   T3 - RAMPING", T3.ramping.minimum(),T3.ramping.value(),T3.ramping.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T3.ramping.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(programSelected(T3RAMP)){
+    setParameter(F("   T3 - RAMPING"),T3.ramping,MENU9);
+  }
+  if(programSelected(T4TYPE)){
+    confirmVariable(F("     T4 - TYPE"),T4.type.value(),"SR", "CLOCK", "SS");
+    if(choiceIsConfirmed()){
+      displayNextProgram(T4HOUR);
     }
   }
-#endif
-#if TIMEPOINTS >= 4
-  else if(!strcmp(Data, T4TYPE)){
-    confirmType("     T4 - TYPE",T4.type.value());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T4HOUR[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
-    }
-  }
-  else if(!strcmp(Data, T4HOUR)){
+}
+if(greenhouse.timepoints.value() >= 4){
+  if(programSelected(T4HOUR)){
     if(typeSet == CLOCK){
-      confirmVariable("     T4 - HOUR", 0,T4.hrMod.value(),23);
+      confirmVariable(F("     T4 - HOUR"), 0,T4.hrMod.value(),23);
     }
     else{
-      confirmVariable("     T4 - HOUR", -23,T4.hrMod.value(),23);
+      confirmVariable(F("     T4 - HOUR"), -23,T4.hrMod.value(),23);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      hourSet = svariable;
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T4MIN[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
+    if(choiceIsConfirmed()){
+      displayNextProgram(T4MIN);
     }
   }
-  else if(!strcmp(Data, T4MIN)){
+  if(programSelected(T4MIN)){
     if(typeSet == CLOCK){
-      confirmVariable("    T4 - MINUTS", 0,T4.mnMod.value(),59);
+      confirmVariable(F("    T4 - MINUTS"), 0,T4.mnMod.value(),59);
     }
     else{
-      confirmVariable("    T4 - MINUTS", -59,T4.mnMod.value(),59);
+      confirmVariable(F("    T4 - MINUTS"), -59,T4.mnMod.value(),59);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+    if(choiceIsConfirmed()){
       minSet = svariable;
       T4.type.setValue(typeSet);
       T4.setTimepoint(hourSet, minSet);
-      menu = MODE_DISPLAY;key = '8';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('8');
     }
   }
-  else if(!strcmp(Data, T4HEATT)){
+  if(programSelected(T4HEATT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T4 - HEAT TEMP-SUN", T4.coolingTemp.minimum(),T4.heatingTemp.value(),T4.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T4.heatingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T4 - HEAT TEMP-SUN"),T4.heatingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T4 - HEAT TEMP-CLOUD", T4.coolingTemp.minimum(),T4.heatingTempCloud.value(),T4.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T4.heatingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T4 - HEAT TEMP-CLOUD"),T4.heatingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T4COOLT)){
+  if(programSelected(T4COOLT)){
     if(greenhouse.weather() == SUN){
-      confirmVariable("T4 - COOL TEMP-SUN", T4.coolingTemp.minimum(),T4.coolingTemp.value(),T4.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T4.coolingTemp.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T4 - COOL TEMP-SUN"),T4.coolingTemp,MENU9);
     }
     else if(greenhouse.weather() == CLOUD){
-      confirmVariable("T4 - COOL TEMP-CLOUD", T4.coolingTemp.minimum(),T4.coolingTempCloud.value(),T4.coolingTemp.maximum());
-      if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-        T4.coolingTempCloud.setValue(fvariable);
-        menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-      }
+      setParameter(F("T4 - COOL TEMP-CLOUD"),T4.coolingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T4RAMP)){
-    confirmVariable("   T4 - RAMPING", T4.ramping.minimum(),T4.ramping.value(),T4.ramping.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T4.ramping.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(programSelected(T4RAMP)){
+    setParameter(F("   T4 - RAMPING"),T4.ramping,MENU9);
+  }
+  if(programSelected(T5TYPE)){
+    confirmVariable(F("     T5 - TYPE"),T5.type.value(),"SR", "CLOCK", "SS");
+    if(choiceIsConfirmed()){
+      displayNextProgram(T5HOUR);
     }
   }
-#endif
-#if TIMEPOINTS >= 5
-  else if(!strcmp(Data, T5TYPE)){
-    confirmType("     T5 - TYPE",T5.type.value());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T5HOUR[x];
-        Serial.print("");
-        Serial.print(Data[x]);
-      }
-      Serial.println("");
-      unpressedTimer = 0;
-      line = 0;
-    }
-  }
-  else if(!strcmp(Data, T5HOUR)){
+}
+if(greenhouse.timepoints.value() >= 5){
+  if(programSelected(T5HOUR)){
     if(typeSet == CLOCK){
-      confirmVariable("     T5 - HOUR", 0,T5.hrMod.value(),23);
+      confirmVariable(F("     T5 - HOUR"), 0,T5.hrMod.value(),23);
     }
     else{
-      confirmVariable("     T5 - HOUR", -23,T5.hrMod.value(),23);
+      confirmVariable(F("     T5 - HOUR"), -23,T5.hrMod.value(),23);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      hourSet = svariable;
-      for(int x = 0; x < Code_lenght;x++){
-        Data[x] = T5MIN[x];
-      }
-      unpressedTimer = 0;
-      line = 0;
+    if(choiceIsConfirmed()){
+      displayNextProgram(T5MIN);
     }
   }
-  else if(!strcmp(Data, T5MIN)){
+  if(programSelected(T5MIN)){
     if(typeSet == CLOCK){
-      confirmVariable("    T5 - MINUTS", 0,T5.mnMod.value(),59);
+      confirmVariable(F("    T5 - MINUTS"), 0,T5.mnMod.value(),59);
     }
     else{
-      confirmVariable("    T5 - MINUTS", -59,T5.mnMod.value(),59);
+      confirmVariable(F("    T5 - MINUTS"), -59,T5.mnMod.value(),59);
     }
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
+    if(choiceIsConfirmed()){
       minSet = svariable;
       T5.type.setValue(typeSet);
       T5.setTimepoint(hourSet, minSet);
-      menu = MODE_DISPLAY;key = '8';firstPrint = true; unpressedTimer = 0; line = 0;
+      displayMenu('8');
     }
   }
-  else if(!strcmp(Data, T5HEATT)){
-    confirmVariable("  T5 - HEAT TEMP", T5.coolingTemp.minimum(),T5.heatingTemp.value(),T5.coolingTemp.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T5.heatingTemp.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(programSelected(T5HEATT)){
+    if(greenhouse.weather() == SUN){
+      setParameter(F("T5 - HEAT TEMP-SUN"),T5.heatingTemp,MENU9);
+    }
+    else if(greenhouse.weather() == CLOUD){
+      setParameter(F("T5 - HEAT TEMP-CLOUD"),T5.heatingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T5COOLT)){
-    confirmVariable("  T5 - COOL TEMP", T5.coolingTemp.minimum(),T5.coolingTemp.value(),T5.coolingTemp.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T5.coolingTemp.setValue(fvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
+  if(programSelected(T5COOLT)){
+    if(greenhouse.weather() == SUN){
+      setParameter(F("T5 - COOL TEMP-SUN"),T5.coolingTemp,MENU9);
+    }
+    else if(greenhouse.weather() == CLOUD){
+      setParameter(F("T5 - COOL TEMP-CLOUD"),T5.coolingTempCloud,MENU9);
     }
   }
-  else if(!strcmp(Data, T5RAMP)){
-    confirmVariable("   T5 - RAMPING", T5.ramping.minimum(),T5.ramping.value(),T5.ramping.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T5.ramping.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
+  if(programSelected(T5RAMP)){
+    setParameter(F("   T5 - RAMPING"),T5.ramping,MENU9);
   }
-
-  else if(!strcmp(Data, T5RAMP)){
-    confirmVariable("   T5 - RAMPING", T5.ramping.minimum(),T5.ramping.value(),T5.ramping.maximum());
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      T5.ramping.setValue(usvariable);
-      menu = MODE_DISPLAY;key = '9';firstPrint = true; unpressedTimer = 0; line = 0;
-    }
-  }
-#endif
-  else if(!strcmp(Data, TESTRELAYS)){
+}
+  if(programSelected(TESTRELAYS)){
     checkRelays();
   }
 
-  else if(!strcmp(Data, TESTIIC)){
+  if(programSelected(TESTIIC)){
     checkIIC();
-    if((keyPressed == 'D')&&(unpressedTimer > 1000)){
-      menu = MODE_DISPLAY;key = '1';firstPrint = true; unpressedTimer = 0; line = 0;
+    if(choiceIsConfirmed()){
+      displayMenu('1');
     }
   }
 
-  else{
-  lcd.noBlink();menu = MODE_PROGRAM;firstPrint = true;line = 0;
+  if(programSelected(R1OV)){
+    confirmVariable(F("   R1 - OVERRIDE"), 0, "AUTO", "FOPEN", "FCLOSE", "FINCR");
+    if(choiceIsConfirmed()){
+      switch (typeSet) {
+        case 0: R1.unlock();displayMenu('1');break;
+        case 1: displayNextProgram(R1FOPEN);break;
+        case 2: displayNextProgram(R1FCLOSE);break;
+        case 3: displayNextProgram(R1FINC1);break;
+      }
+    }
+  }
+
+  if(programSelected(R1FOPEN)){
+    confirmVariable(F("  R1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        R1.lockAtIncrement(100, usvariable);
+      }
+      else{
+        R1.lockOpen();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(R1FCLOSE)){
+    confirmVariable(F("  R1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        R1.lockAtIncrement(0, usvariable);
+      }
+      else{
+        R1.lockClose();
+      }
+      displayMenu('1');
+    }
+  }
+  if(programSelected(R1FINC1)){
+    confirmVariable(F("R1 - INCREMENT"), (unsigned short)0, R1.incrementCounter(), (unsigned short)100);
+    if(choiceIsConfirmed()){
+      usvariable1 = usvariable;
+      displayNextProgram(R1FINC2);
+    }
+  }
+  if(programSelected(R1FINC2)){
+  confirmVariable(F("  R1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+  zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      usvariable2 = usvariable;
+      if(usvariable2 == 0){
+        R1.lockAtIncrement(usvariable1);
+      }
+      else{
+        R1.lockAtIncrement(usvariable1, usvariable2);
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(R2OV)){
+    confirmVariable(F("   R2 - OVERRIDE"), 0, "AUTO", "FOPEN", "FCLOSE", "FINCR");
+    if(choiceIsConfirmed()){
+      switch (typeSet) {
+        case 0: R2.unlock();displayMenu('1');break;
+        case 1: displayNextProgram(R2FOPEN);break;
+        case 2: displayNextProgram(R2FCLOSE);break;
+        case 3: displayNextProgram(R2FINC1);break;
+      }
+    }
+  }
+
+  if(programSelected(R2FOPEN)){
+    confirmVariable(F("  R2 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        R2.lockAtIncrement(100, usvariable);
+      }
+      else{
+        R2.lockOpen();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(R2FCLOSE)){
+    confirmVariable(F("  R2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        R2.lockAtIncrement(0, usvariable);
+      }
+      else{
+        R2.lockClose();
+      }
+      displayMenu('1');
+    }
+  }
+  if(programSelected(R2FINC1)){
+    confirmVariable(F("R2 - FORCE TO INC"), (unsigned short)0, R2.incrementCounter(), (unsigned short)100);
+    if(choiceIsConfirmed()){
+      usvariable1 = usvariable;
+      displayNextProgram(R2FINC2);
+    }
+  }
+  if(programSelected(R2FINC2)){
+  confirmVariable(F("  R2 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+  zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      usvariable2 = usvariable;
+      if(usvariable2 == 0){
+        R2.lockAtIncrement(usvariable1);
+      }
+      else{
+        R2.lockAtIncrement(usvariable1, usvariable2);
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(F1OV)){
+    confirmVariable(F("   F1 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
+    if(choiceIsConfirmed()){
+      switch (typeSet) {
+        case 0: F1.unlock();displayMenu('1');break;
+        case 1: displayNextProgram(F1FOPEN);break;
+        case 2: displayNextProgram(F1FCLOSE);break;
+      }
+    }
+  }
+
+  if(programSelected(F1FOPEN)){
+    confirmVariable(F("  F1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        F1.lockOnAndWait(usvariable);
+      }
+      else{
+        F1.lockOn();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(F1FCLOSE)){
+    confirmVariable(F("  F1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        F1.lockOffAndWait(usvariable);
+      }
+      else{
+        F1.lockOff();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(F2OV)){
+    confirmVariable(F("   F2 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
+    if(choiceIsConfirmed()){
+      switch (typeSet) {
+        case 0: F2.unlock();displayMenu('1');break;
+        case 1: displayNextProgram(F2FOPEN);break;
+        case 2: displayNextProgram(F2FCLOSE);break;
+      }
+    }
+  }
+
+  if(programSelected(F2FOPEN)){
+    confirmVariable(F("  F2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        F2.lockOnAndWait(usvariable);
+      }
+      else{
+        F2.lockOn();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(F2FCLOSE)){
+    confirmVariable(F("  F2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        F2.lockOffAndWait(usvariable);
+      }
+      else{
+        F2.lockOff();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(H1OV)){
+    confirmVariable(F("   H1 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
+    if(choiceIsConfirmed()){
+      switch (typeSet) {
+        case 0: H1.unlock();displayMenu('1');break;
+        case 1: displayNextProgram(H1FOPEN);break;
+        case 2: displayNextProgram(H1FCLOSE);break;
+      }
+    }
+  }
+
+  if(programSelected(H1FOPEN)){
+    confirmVariable(F("  H1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        H1.lockOnAndWait(usvariable);
+      }
+      else{
+        H1.lockOn();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(H1FCLOSE)){
+    confirmVariable(F("  H1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        H1.lockOffAndWait(usvariable);
+      }
+      else{
+        H1.lockOff();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(H2OV)){
+    confirmVariable(F("   H2 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
+    if(choiceIsConfirmed()){
+      switch (typeSet) {
+        case 0: H2.unlock();displayMenu('1');break;
+        case 1: displayNextProgram(H2FOPEN);break;
+        case 2: displayNextProgram(H2FCLOSE);break;
+      }
+    }
+  }
+
+  if(programSelected(H2FOPEN)){
+    confirmVariable(F("  H2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        H2.lockOnAndWait(usvariable);
+      }
+      else{
+        H2.lockOn();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(H2FCLOSE)){
+    confirmVariable(F("  H2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
+    zeroEqualInfinity();
+    if(choiceIsConfirmed()){
+      if(usvariable != 0){
+        H2.lockOffAndWait(usvariable);
+      }
+      else{
+        H2.lockOff();
+      }
+      displayMenu('1');
+    }
+  }
+
+  if(programSelected(ADJT24H)){
+    confirmVariable(F("    ADJUST T-24H"), (float)-10, (float)0, (float)10);
+    if(choiceIsConfirmed()){
+      for(int x = 0; x < greenhouse.timepoints.value(); x++){
+        greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
+        greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
+        greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
+        greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
+      }
+      displayMenu('9');
+    }
+  }
+
+  if(programSelected(ADJTNIGHT)){
+    confirmVariable(F("   ADJUST T-NIGHT"), (float)-10, (float)0, (float)10);
+    if(choiceIsConfirmed()){
+      for(int x = 0; x < greenhouse.timepoints.value(); x++){
+        if(!isBetween(Timepoint::sunRise[2],Timepoint::sunRise[1],greenhouse.timepoint[x].hr(),greenhouse.timepoint[x].mn(),Timepoint::sunSet[2],Timepoint::sunSet[1])){
+          greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
+          greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
+          greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
+          greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
+        }
+      }
+      displayMenu('9');
+    }
+  }
+  if(programSelected(ADJTDAY)){
+    confirmVariable(F("    ADJUST T-DAY"), (float)-10, (float)0, (float)10);
+    if(choiceIsConfirmed()){
+      for(int x = 0; x < greenhouse.timepoints.value(); x++){
+        if(isBetween(Timepoint::sunRise[2],Timepoint::sunRise[1],greenhouse.timepoint[x].hr(),greenhouse.timepoint[x].mn(),Timepoint::sunSet[2],Timepoint::sunSet[1])){
+          greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
+          greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
+          greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
+          greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
+        }
+      }
+      displayMenu('9');
+    }
+  }
+  if(programSelected(DIF)){
+    confirmVariable(F("   DIF-TIME"), 0, "ENABLE", "DISABLE");
+    if(choiceIsConfirmed()){
+      if(typeSet == 0){
+        displayNextProgram(DIFTEMP);
+      }
+      if(typeSet == 1){
+        T1.heatingTemp.setValue(T4.heatingTemp.value());
+        T1.heatingTempCloud.setValue(T4.heatingTempCloud.value());
+        T1.coolingTemp.setValue(T4.coolingTemp.value());
+        T1.coolingTempCloud.setValue(T4.coolingTempCloud.value());
+        displayMenu('9');
+      }
+    }
+  }
+  if(programSelected(DIFTEMP)){
+    confirmVariable(F("DIF TEMPERATURE RISE"), (float)0, (float)0, (float) 10);
+    if(choiceIsConfirmed()){
+      T1.heatingTemp.setValue(T4.heatingTemp.value()+fvariable);
+      T1.heatingTempCloud.setValue(T4.heatingTempCloud.value()+fvariable);
+      T1.coolingTemp.setValue(T4.coolingTemp.value()+fvariable);
+      T1.coolingTempCloud.setValue(T4.coolingTempCloud.value()+fvariable);
+      displayMenu('9');
+    }
+  }
+  if(programSelected(PRENIGHT)){
+    confirmVariable(F("   PRENIGHT DROP"), 0, "ENABLE", "DISABLE");
+    if(choiceIsConfirmed()){
+      if(typeSet == 0){
+        displayNextProgram(PRENTEMP);
+      }
+      if(typeSet == 1){
+        T3.heatingTemp.setValue(T2.heatingTemp.value());
+        T3.heatingTempCloud.setValue(T2.heatingTempCloud.value());
+        T3.coolingTemp.setValue(T2.coolingTemp.value());
+        T3.coolingTempCloud.setValue(T2.coolingTempCloud.value());
+        T3.ramping.setValue(T2.ramping.value());
+        displayMenu('9');
+      }
+    }
+  }
+  if(programSelected(PRENTEMP)){
+    confirmVariable(F(" PRENIGHT TEMP DROP"), (float)-10, (float)0, (float) 0);
+    if(choiceIsConfirmed()){
+      T3.heatingTemp.setValue(T2.heatingTemp.value()+fvariable);
+      T3.heatingTempCloud.setValue(T2.heatingTempCloud.value()+fvariable);
+      T3.coolingTemp.setValue(T2.coolingTemp.value()+fvariable);
+      T3.coolingTempCloud.setValue(T2.coolingTempCloud.value()+fvariable);
+      displayNextProgram(PRENSPEED);
+    }
+  }
+  if(programSelected(PRENSPEED)){
+    confirmVariable(F("PREN SPEED(-1C/Xmin)"), (unsigned short)0, (unsigned short)0, (unsigned short) 15);
+    if(choiceIsConfirmed()){
+      T3.ramping.setValue(usvariable);
+      displayMenu('9');
+    }
+  }
+  if(programSelected(R1STAGES)){
+    confirmVariable(F(" ADJ R1 STAGES MODS"), (float)-5, (float)0, (float) 5);
+    if(choiceIsConfirmed()){
+      for(int x = 1; x < greenhouse.stages.value();x++ ){
+        R1.stage[x].mod.setValue(R1.stage[x].mod.value() + fvariable);
+      }
+      displayMenu('5');
+    }
+  }
+  if(programSelected(R2STAGES)){
+    confirmVariable(F(" ADJ R2 STAGES MODS"), (float)-5, (float)0, (float) 5);
+    if(choiceIsConfirmed()){
+      for(int x = 1; x < greenhouse.stages.value();x++ ){
+        R2.stage[x].mod.setValue(R2.stage[x].mod.value() + fvariable);
+      }
+      displayMenu('6');
+    }
+  }
+  if(programSelected(MENU1)){
+    displayMenu('1');
+  }
+  if(programSelected(MENU2)){
+    displayMenu('2');
+  }
+  if(programSelected(MENU3)){
+    displayMenu('3');
+  }
+  if(programSelected(MENU4)){
+    displayMenu('4');
+  }
+  if(programSelected(MENU5)){
+    displayMenu('5');
+  }
+  if(programSelected(MENU6)){
+    displayMenu('6');
+  }
+  if(programSelected(MENU7)){
+    displayMenu('7');
+  }
+  if(programSelected(MENU8)){
+    displayMenu('8');
+  }
+  if(programSelected(MENU9)){
+    displayMenu('9');
+  }
+
+  if(programSelected(R1WIZ)){
+    confirmVariable(F("-----MAIN MENU-----"), 0, "TIME", "ROLLUP", "FAN", "CONFIG");
+    if(choiceIsConfirmed()){
+      switch (typeSet) {
+        case 0:break;
+        case 1: displayNextProgram(R1WIZ1);break;
+        case 2:break;
+        case 3:break;
+      }
+    }
+  }
+
+  if(greenhouse.rollups.value() >= 1){
+    if(programSelected(R1WIZ1)){
+      setParameter(F("ROTATION TIME (UP)"),R1.rotationUp,R1WIZ2);
+    }
+    if(programSelected(R1WIZ2)){
+      setParameter(F("ROTATION TIME (DOWN)"),R1.rotationDown,R1WIZ3);
+    }
+    if(programSelected(R1WIZ3)){
+      confirmVariable(F(" ROLLUP1 : # STEPS"),(unsigned short)1, (unsigned short)greenhouse.stages.value(),(unsigned short)4);
+        if(choiceIsConfirmed()){
+          greenhouse.stages.setValue(usvariable);
+          displayNextProgram(R1WIZ4);
+        }
+    }
+    if(programSelected(R1WIZ4)){
+      confirmVariable(F("STEP 1 : OFFSET(C)"),R1.stage[1].mod.minimum(), R1.stage[1].mod.value(),R1.stage[1].mod.maximum());
+        if(choiceIsConfirmed()){
+          R1.stage[1].mod.setValue(fvariable);
+          if(greenhouse.stages.value() > 1){
+            displayNextProgram(R1WIZ5);
+          }
+          else{
+            displayNextProgram(R1WIZ8);
+          }
+        }
+    }
+    if(programSelected(R1WIZ5)){
+      confirmVariable(F("STEP 2 : OFFSET(C)"),R1.stage[1].mod.value(), R1.stage[2].mod.value(), (float) 5);
+        if(choiceIsConfirmed()){
+          R1.stage[2].mod.setValue(fvariable);
+          if(greenhouse.stages.value() > 2){
+            displayNextProgram(R1WIZ6);
+          }
+          else{
+            displayNextProgram(R1WIZ8);
+          }
+        }
+    }
+    if(programSelected(R1WIZ6)){
+      confirmVariable(F("STEP 3 : OFFSET(C)"),R1.stage[2].mod.value(),R1.stage[3].mod.value(), (float) 5);
+        if(choiceIsConfirmed()){
+          R1.stage[3].mod.setValue(fvariable);
+          if(greenhouse.stages.value() > 3){
+            displayNextProgram(R1WIZ7);
+          }
+          else{
+            displayNextProgram(R1WIZ8);
+          }
+        }
+    }
+    if(programSelected(R1WIZ7)){
+      confirmVariable(F("STEP 4 : OFFSET(C)"),R1.stage[3].mod.value(),R1.stage[4].mod.value(), (float) 5);
+        if(choiceIsConfirmed()){
+          R1.stage[4].mod.setValue(fvariable);
+            displayNextProgram(R1WIZ8);
+        }
+    }
+    if(programSelected(R1WIZ8)){
+      if(greenhouse.stages.value() > 1){
+        setParameter(F("STEP 1 : TARGET(%)"),R1.stage[1].target,R1WIZ9);
+      }
+      else{
+        setParameter(F("STEP 1 : TARGET(%)"),R1.stage[1].target,R1WIZ12);
+      }
+    }
+    if(programSelected(R1WIZ9)){
+      if(greenhouse.stages.value() > 2){
+        setParameter(F("STEP 2 : TARGET(%)"),R1.stage[2].target,R1WIZ10);
+      }
+      else{
+        setParameter(F("STEP 2 : TARGET(%)"),R1.stage[2].target,R1WIZ12);
+      }
+    }
+    if(programSelected(R1WIZ10)){
+      if(greenhouse.stages.value() > 3){
+        setParameter(F("STEP 3 : TARGET(%)"),R1.stage[3].target,R1WIZ11);
+      }
+      else{
+        setParameter(F("STEP 3 : TARGET(%)"),R1.stage[3].target,R1WIZ12);
+      }
+    }
+    if(programSelected(R1WIZ11)){
+        setParameter(F("STEP 4 : TARGET(%)"),R1.stage[4].target,R1WIZ12);
+    }
+    if(programSelected(R1WIZ12)){
+        setParameter(F("PAUSE BETW. STEPS(S)"),R1.pause,MENU5);
+    }
+  }
+  if(codeWithNoDisplay && menu == SET_PARAMETER){
+    menu = MODE_PROGRAM;clearMenu();clearData();
   }
 }
 
-void clearData()
-{
-for(int x = 0; x < Code_lenght-1; x++)
-  {   // This can be used for any array size,
-    Data[x] = 0; //clear array for new data
+void updateFlashCounter(){
+  if(flashingCounter == 0){
+    flashingCounter = 1;
   }
-  return;
+  else if(flashingCounter == 1){
+    flashingCounter = 0;
+  }
 }
 
+void refreshScreen(byte seconds){
+  if(unpressedTimer > (unsigned long) seconds*1000){
+    menu = MODE_DISPLAY;
+    key = '1';
+    clearMenu();
+    clearData();
+  }
+}
+
+void resetTimerBeforeRefresh(){
+ if(keyPressed != NO_KEY && keyPressed != 'D'){
+   unpressedTimer = 0;
+ }
+}
+
+
+void selectActiveKey(){
+ #ifdef KEYPAD_DISPLAY
+ keyPressed = keypad.getKey();
+
+ switch(keyPressed){
+   case '1' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '2' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '3' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '4' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '5' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '6' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '7' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '8' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '9' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '*' : line--;break;
+   case '0' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}if(menu == SET_PARAMETER){jumpIncrements();}break;
+   case '#' : line++;break;
+   case 'A' : menu = MODE_DISPLAY;key = '1';clearMenu();clearData();break;
+   case 'B' : menu = MODE_PROGRAM;clearMenu();clearData();break;
+   case 'C' : menu = MODE_ACTION;clearMenu();clearData();break;
+   case 'D' : break;
+ }
+ resetTimerBeforeRefresh();
+ #endif
+}
 
 void lcdDisplay(){
+    updateFlashCounter();
+
    #ifdef KEYPAD_DISPLAY
-    keyPressed = keypad.getKey();
-
-    switch(keyPressed){
-      case '1' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '2' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '3' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '4' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '5' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '6' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '7' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '8' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '9' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-      case '*' : line--;break;
-      case '0' : break;
-      case '#' : line++;break;
-      case 'A' : menu = MODE_DISPLAY;firstPrint = true; line = 0; key = '1'; lcd.noBlink(); clearData(); homeDisplay();break;
-      case 'B' : menu = MODE_PROGRAM;firstPrint = true; line = 0; lcd.noBlink();clearData();data_count = 0; break;
-      case 'C' : menu = MODE_ACTION;firstPrint = true; action = 0; line = 0;lcd.noBlink();clearData();data_count = 0;break;
-    }
-    if(keyPressed != NO_KEY && keyPressed != 'D'){
-      unpressedTimer = 0;
-    }
-
+    selectActiveKey();
     if(menu == MODE_DISPLAY){
       menuDisplay();
-      if(unpressedTimer > 15000){
-        key = '1';firstPrint = true;
-        unpressedTimer = 0;
-      }
+      refreshScreen(15);
     }
-
     if(menu == MODE_PROGRAM){
       menuProgram();
-      if(unpressedTimer > 15000){
-        menu = MODE_DISPLAY;
-        key = '1';firstPrint = true;
-        unpressedTimer = 0;
-        line = 0;
-        lcd.noBlink();
-        clearData();
-      }
-
+      refreshScreen(15);
     }
     if(menu == SET_PARAMETER){
       menuSetParameter();
-      if(unpressedTimer > 15000){
-        menu = MODE_DISPLAY;
-        key = '1';firstPrint = true;
-        unpressedTimer = 0;
-        line = 0;
-        clearData();
-      }
+      refreshScreen(60);
     }
-
     if(menu == MODE_ACTION){
       menuAction();
-      if(unpressedTimer > 15000){
-        menu = MODE_DISPLAY;
-        key = '1';firstPrint = true;
-      }
+      refreshScreen(15);
     }
-
   #endif
 
   #ifndef KEYPAD_DISPLAY
-  firstPrint = true;
-  lcd.clear();
     homeDisplay();
   #endif
 }

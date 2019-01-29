@@ -52,80 +52,61 @@
 #include "Arduino.h"
 
 //********************LIBRARIES**************************
-#include "Greenhouse_versions.h"
+#include "Greenhouse_7.hardwareSettings.h"
 #include "Greenhouse_2.parameters.h"
+#include "Greenhouse_10.debugLines.h"
+
+
 #include "GreenhouseLib.h"
 
-Greenhouse greenhouse(TIMEZONE, LATITUDE, LONGITUDE, TIMEPOINTS, ROLLUPS, STAGES, FANS, HEATERS);
+Greenhouse greenhouse;
 
 //********************POINTERS**************************
 
-#if ROLLUPS >=1
   Rollup &R1 = greenhouse.rollup[0];
-#endif
-#if ROLLUPS == 2
   Rollup &R2 = greenhouse.rollup[1];
-#endif
-#if FANS >= 1
   Fan &F1 = greenhouse.fan[0];
-#endif
-#if FANS == 2
   Fan &F2 = greenhouse.fan[1];
-#endif
-#if HEATERS >= 1
   Heater &H1 = greenhouse.heater[0];
-#endif
-#if HEATERS == 2
   Heater &H2 = greenhouse.heater[1];
-#endif
-#if TIMEPOINTS >= 1
   Timepoint &T1 = greenhouse.timepoint[0];
-#endif
-#if TIMEPOINTS >= 2
   Timepoint &T2 = greenhouse.timepoint[1];
-#endif
-#if TIMEPOINTS >= 3
   Timepoint &T3 = greenhouse.timepoint[2];
-#endif
-#if TIMEPOINTS >= 4
   Timepoint &T4 = greenhouse.timepoint[3];
-#endif
-#if TIMEPOINTS == 5
   Timepoint &T5 = greenhouse.timepoint[4];
-#endif
+  Alarm &alarm = greenhouse.alarm;
 
 //********************VARIABLES**************************
 
 //Time array
-byteParameter rightNow[6];
-byte rightNowValue[6];
+byte rightNow[6];
 //Temperature inside the greenhouse
-floatParameter greenhouseTemperature;
-floatParameter greenhouseHumidity;
-float coolingTemperature;
-float heatingTemperature;
+float greenhouseTemperature;
+float greenhouseHumidity;
+float outsideTemperature;
+boolean rain;
 
-elapsedMillis exportTimer;
-unsigned short exportCounter = 0;
-unsigned short maxLines = 1440;
-unsigned long exportDelay = 10;
-boolean connectionEstablished = false;
-//flags
 boolean sensorFailure = false;
-boolean EEPROMReset = false;
 
 //********************SENSORS**************************
 //See "Greenhouse_sensors.h" for sensor functions
 #include "Greenhouse_3.sensors.h"
-//********************INTERFACE**************************
+//********************OVERRIDES**************************
 //See "Greenhouse_overrides.h" for overrides functions
 #include "Greenhouse_4.overrides.h"
 //********************INTERFACE**************************
 //See "Greenhouse_interface.h" for LCD display functions
 #include "Greenhouse_5.interface.h"
+//********************IMPORTS/EXPORTS**************************
+//See "Greenhouse_importExport.h" for import/export functions
+#include "Greenhouse_8.import.h"
+#include "Greenhouse_9.export.h"
 //********************ERRORS**************************
 #include "Preprocessor_error_codes.h"
 
+#ifdef UNIT_TEST
+  #include "GreenhouseLib_Tests.h"
+#endif
 
 //***************************************************
 //********************SETUP**************************
@@ -133,7 +114,9 @@ boolean EEPROMReset = false;
 
 void setup() {
   //start communication with serial monitor
-  Serial.begin(9600); // opens serial port, sets data rate to 115200 bps
+  Serial.begin(9600); // opens serial port, sets data rate to 9600 bps
+  delay(100);
+
   //start communication internal temp/humididty sensor
   Wire.begin();
   //start communication with LCD
@@ -142,46 +125,24 @@ void setup() {
   #ifdef KEYPAD_DISPLAY
     keypad.begin( makeKeymap(keys) );
   #endif
-  //Temperature range
-  greenhouseTemperature.setLimits(-180, 100);
-  greenhouseHumidity.setLimits(-100, 100);
-  greenhouseHumidity.setValue(0);
   //last recorded value if probe doesnt reply back at first cycle
-  if(EEPROM.read(1) == 111){
-    float emergencyTemp = EEPROM.read(2);
-    greenhouseTemperature.setValue(emergencyTemp);
-  }
-  else{
-    greenhouseTemperature.setValue(20);
-  }
+    sensorBackup();
   //start communication with temp probe
-  #ifdef DS18B20
     sensors.begin();
     sensors.setResolution(12);
-  #endif
-  #ifdef SHT1X
     sht1x.initSensor();
-  #endif
-  //start communication with humidity probe
-  #ifdef DHT
-    dht.begin();
-  #endif
   //start communication with clock
-  #ifdef CLOCK_DS3231
+  #if RTC == RTC_DS3231
     rtc.begin();
   #endif
-  //start communication with relay driver
-  #ifdef MCP_I2C_OUTPUTS
-    mcp.begin();
+  #if RAIN_SENSOR == HYDREON_RG11
+    pinMode(RAIN_SWITCH, INPUT_PULLUP);
   #endif
+
   //Add safety alarm
-  greenhouse.addAlarm(ACT_LOW, ALARM_PIN);
-  #ifdef ALARM_MAX_TEMP
-    greenhouse.setAlarmMaxTemp(ALARM_MAX_TEMP);
-  #endif
-  #ifdef ALARM_MIN_TEMP
-    greenhouse.setAlarmMinTemp(ALARM_MIN_TEMP);
-  #endif
+  alarm.init(MCP23008, ACT_LOW, ALARM_PIN);
+  alarm.addSequence(1, 200, 1000);
+
   // change RTC settings
   #ifdef RTC_TIME_SET
     rtc.setTime(HOUR_SET, MINUT_SET, SECOND_SET);
@@ -193,334 +154,63 @@ void setup() {
   getDateAndTime();
   getGreenhouseTemp();
   getGreenhouseHum();
-  //set time within greenhouse object
-  greenhouse.setNow(rightNowValue);
+  getRain();
 
-  //calculate hour saving, sunrise, sunset
-  greenhouse.solarCalculations();
+  loadParameters();
 
   //Load parameters from EEPROM or Greenhouse_parameters.h
-  loadParameters();
 
 //********************Parameters*******************
 
   //actual time, timepoint and targetTemp
   greenhouse.startingParameters();
+
+
+
+  #ifdef UNIT_TEST
+    TestRunner::setTimeout(30);
+  #endif
 }
 
 
 //***************************************************
 //*********************LOOP**************************
 //***************************************************
+int x = 0;
 
 void loop() {
-  //Serial.println(greenhouseTemperature.value());
+  x++;
+  //Serial.println(greenhouseTemperature);
   //actual time
   getDateAndTime();
   //actual temperature
   getGreenhouseTemp();
   //actual humididty
   getGreenhouseHum();
+  //rain
+  getRain();
   //diplay infos on LCD screen
   lcdDisplay();
+  #if defined(ALARM_MAX_TEMP) && !defined(ALARM_MIN_TEMP)
+    alarm.above(greenhouseTemperature,ALARM_MAX_TEMP);
+  #endif
+  #if defined(ALARM_MIN_TEMP) && !defined(ALARM_MAX_TEMP)
+    alarm.below(greenhouseTemperature, ALARM_MIN_TEMP);
+  #endif
+  #if defined(ALARM_MIN_TEMP) && defined(ALARM_MAX_TEMP)
+    alarm.offRange(greenhouseTemperature, ALARM_MIN_TEMP, ALARM_MAX_TEMP);
+  #endif
+  alarm.conditionalTo(sensorFailure, 1);
+  alarm.checkAlarm();
   //timepoint and target temperatures definitions, outputs routine
-  greenhouse.fullRoutine(rightNowValue, &coolingTemperature, &heatingTemperature);
-  #if ROLLUPS >= 1 && defined(ROLLUP1_DESHUM)
-    R1.routine(rollup1Deshum, coolingTemperature, greenhouseTemperature.value());
-  #elif ROLLUPS >= 1 && !defined(ROLLUP1_DESHUM)
-    R1.routine(coolingTemperature, greenhouseTemperature.value());
-  #endif
+  greenhouse.fullRoutine(rightNow, greenhouseTemperature);
+  checkOverrides();
 
-  #if ROLLUPS == 2 && defined(ROLLUP1_DESHUM)
-    R2.routine(rollup2Deshum, coolingTemperature, greenhouseTemperature.value());
-  #elif ROLLUPS == 2 && !defined(ROLLUP1_DESHUM)
-    R2.routine(coolingTemperature, greenhouseTemperature.value());
-  #endif
-
-  #if FANS >= 1 && defined(FAN1_DESHUM)
-    F1.routine(fan1Deshum, coolingTemperature, greenhouseTemperature.value());
-  #elif FANS >= 1 && !defined(ROLLUP1_DESHUM)
-    F1.routine(coolingTemperature, greenhouseTemperature.value());
-
-  #endif
-  #if FANS == 2 && defined(FAN2_DESHUM)
-    F2.routine(fan2Deshum, coolingTemperature, greenhouseTemperature.value());
-  #elif FANS == 2 && !defined(ROLLUP1_DESHUM)
-    F2.routine(coolingTemperature, greenhouseTemperature.value());
-  #endif
-
-  #if HEATERS >= 1 && defined(HEATER1_DESHUM)
-    H1.routine(heater1Deshum, heatingTemperature, greenhouseTemperature.value());
-  #elif HEATERS >= 2 && !defined(ROLLUP1_DESHUM)
-    H1.routine(coolingTemperature, greenhouseTemperature.value());
-  #endif
-
-  #if HEATERS == 2
-    H2.routine(heatingTemperature, greenhouseTemperature.value());
-  #endif
-    greenhouse.checkAlarm(greenhouseTemperature.value());
-  #if defined(R1_RECALIBRATE) && ROLLUPS >= 1
-    recalibrateR1();
-  #endif
-  #if defined(R2_RECALIBRATE) && ROLLUPS == 2
-    recalibrateR2();
-  #endif
-  #ifdef FULL_VENTILATION
-    fullVentilation();
-  #endif
-  #if defined(ROLLUP1_DESHUM)||defined(ROLLUP2_DESHUM)||defined(FAN1_DESHUM)||defined(FAN2_DESHUM)||defined(HEATER1_DESHUM)
-    deshumCycle();
-  #endif
-  #ifdef EXCEL_EXPORT
+  #ifdef EXCEL_DATALOGGER
     dataloggingToExcel();
   #endif
-}
-//***************************************************
-//*********************MACROS**************************
-//***************************************************
-
-void loadParameters(){
-    byte isSetUp = FIRST_BOOT;         //random flag number, must differ from default EEPROM memory value
-
-    if(EEPROM[0] != isSetUp){   //flag indicates if EEPROM has been yet configured
-      EEPROMReset = true;
-      rtc.setTime(HOUR_SET, MINUT_SET, SECOND_SET);
-      rtc.setDate(DAY_SET, MONTH_SET, YEAR_SET);
-    }
-    #ifdef COMPUTER_INTERFACE
-      EEPROMReset = true;
-    #endif
-
-    //Define pinout for each devices
-  #if ROLLUPS >= 1
-    R1.initOutputs(ACT_HIGH, ROLLUP1_OPENING_PIN, ROLLUP1_CLOSING_PIN);
+  #ifdef UNIT_TEST
+    TestRunner::run();
   #endif
-  #if ROLLUPS == 2
-    R2.initOutputs(ACT_HIGH, ROLLUP2_OPENING_PIN, ROLLUP2_CLOSING_PIN);
-  #endif
-  #if FANS >= 1
-    F1.initOutput(ACT_HIGH, FAN1_PIN);
-  #endif
-  #if FANS == 2
-    F2.initOutput(ACT_HIGH, FAN2_PIN);
-  #endif
-  #if HEATERS >= 1
-    H1.initOutput(ACT_HIGH, HEATER1_PIN);
-  #endif
-  #if HEATERS == 2
-    H2.initOutput(ACT_HIGH, HEATER2_PIN);
-  #endif
-
-    //If fresh start, set parameters from Greenhouse_parameters.h
-    if(EEPROMReset == true){
-    #if ROLLUPS >= 1
-      R1.setParameters(R1_HYST, R1_ROTUP, R1_ROTDOWN, R1_PAUSE);
-    #endif
-    #if ROLLUPS >= 1 && STAGES >= 1
-      R1.stage[0].mod.setValue(R1_S0_MOD);
-      R1.stage[0].target.setValue(R1_S0_TARGET);
-      R1.stage[1].mod.setValue(R1_S1_MOD);
-      R1.stage[1].target.setValue(R1_S1_TARGET);
-    #endif
-    #if ROLLUPS >= 1 && STAGES >= 2
-      R1.stage[2].mod.setValue(R1_S2_MOD);
-      R1.stage[2].target.setValue(R1_S2_TARGET);
-    #endif
-    #if ROLLUPS >= 1 && STAGES >= 3
-      R1.stage[3].mod.setValue(R1_S3_MOD);
-      R1.stage[3].target.setValue(R1_S3_TARGET);
-    #endif
-    #if ROLLUPS >= 1 && STAGES >= 4
-      R1.stage[4].mod.setValue(R1_S4_MOD);
-      R1.stage[4].target.setValue(R1_S4_TARGET);
-    #endif
-
-    #if ROLLUPS == 2
-      R2.setParameters(R2_HYST, R2_ROTUP, R2_ROTDOWN, R2_PAUSE);
-    #endif
-    #if ROLLUPS == 2 && STAGES >= 1
-      R2.stage[0].mod.setValue(R1_S0_MOD);
-      R2.stage[0].target.setValue(R1_S0_TARGET);
-      R2.stage[1].mod.setValue(R1_S1_MOD);
-      R2.stage[1].target.setValue(R1_S1_TARGET);
-    #endif
-    #if ROLLUPS == 2 && STAGES >= 2
-      R2.stage[2].mod.setValue(R1_S2_MOD);
-      R2.stage[2].target.setValue(R1_S2_TARGET);
-    #endif
-    #if ROLLUPS == 2 && STAGES >= 3
-      R2.stage[3].mod.setValue(R1_S3_MOD);
-      R2.stage[3].target.setValue(R1_S3_TARGET);
-    #endif
-    #if ROLLUPS == 2 && STAGES >= 4
-      R2.stage[4].mod.setValue(R1_S4_MOD);
-      R2.stage[4].target.setValue(R1_S4_TARGET);
-    #endif
-    #if FANS >= 1
-      F1.setParameters(F1_MOD, F1_HYST);
-    #endif
-    #if FANS == 2
-      F2.setParameters(F2_MOD, F2_HYST);
-    #endif
-    #if HEATERS >= 1
-      H1.setParameters(H1_MOD, H1_HYST);
-    #endif
-    #if HEATERS == 2
-      H2.setParameters(H2_MOD, H2_HYST);
-    #endif
-    #if TIMEPOINTS >= 1
-      T1.setParameters(TP1_TYPE, TP1_HOUR, TP1_MN_MOD, TP1_HEAT_SUN, TP1_COOL_SUN, TP1_HEAT_CLOUD, TP1_COOL_CLOUD, TP1_RAMP);
-    #endif
-    #if TIMEPOINTS >= 2
-      T2.setParameters(TP2_TYPE, TP2_HOUR, TP2_MN_MOD, TP2_HEAT_SUN, TP2_COOL_SUN, TP2_HEAT_CLOUD, TP2_COOL_CLOUD, TP2_RAMP);
-    #endif
-    #if TIMEPOINTS >= 3
-      T3.setParameters(TP3_TYPE, TP3_HOUR, TP3_MN_MOD, TP3_HEAT_SUN, TP3_COOL_SUN, TP3_HEAT_CLOUD, TP3_COOL_CLOUD, TP3_RAMP);
-    #endif
-    #if TIMEPOINTS >= 4
-      T4.setParameters(TP4_TYPE, TP4_HOUR, TP4_MN_MOD, TP4_HEAT_SUN, TP4_COOL_SUN, TP4_HEAT_CLOUD, TP4_COOL_CLOUD, TP4_RAMP);
-    #endif
-    #if TIMEPOINTS == 5
-      T5.setParameters(TP5_TYPE, TP5_HOUR, TP5_MN_MOD, TP5_HEAT_SUN, TP5_COOL_SUN, TP5_HEAT_CLOUD, TP5_COOL_CLOUD, TP5_RAMP);
-    #endif
-
-
-    }
-
-    else{
-      #if ROLLUPS >= 1
-        R1.EEPROMGet();
-      #endif
-      #if ROLLUPS == 2
-        R2.EEPROMGet();
-      #endif
-      #if FANS >=1
-        F1.EEPROMGet();
-      #endif
-      #if FANS == 2
-        F2.EEPROMGet();
-      #endif
-      #if HEATERS >=1
-        H1.EEPROMGet();
-      #endif
-      #if HEATERS ==2
-        H2.EEPROMGet();
-      #endif
-
-      #if TIMEPOINTS >= 1
-      T1.EEPROMGet();
-      #endif
-      #if TIMEPOINTS >= 2
-        T2.EEPROMGet();
-      #endif
-      #if TIMEPOINTS >= 3
-        T3.EEPROMGet();
-      #endif
-      #if TIMEPOINTS >= 4
-        T4.EEPROMGet();
-      #endif
-      #if TIMEPOINTS == 5
-        T5.EEPROMGet();
-      #endif
-
-    }
-
-    EEPROM[0] = FIRST_BOOT;
-    EEPROMReset = false;
-}
-
-void dataloggingToExcel(){
-
-  if (exportTimer >= (exportDelay*1000)){
-
-    checkFeedback();
-    if(connectionEstablished){
-      updateExportParameters();
-    }
-    //counter havent started yet
-
-    if(exportCounter == 0){
-      if (connectionEstablished){
-        resetExport();
-        exportCounter++;
-      }
-      else{
-        exportCounter = 0;
-      }
-    }
-    //counter have started
-    else{
-      if(exportCounter < maxLines){
-        if(connectionEstablished){
-          exportData();
-          exportCounter++;
-        }
-      }
-      else{
-        if(connectionEstablished){
-          saveExportAndClear();
-        }
-      }
-    }
-    exportTimer = 0;
-  }
-}
-void checkFeedback(){
-  Serial.println("CELL,GET,O1");
-  int spreadsheetTag = Serial.parseInt();
-
-  if (spreadsheetTag == 0){
-    connectionEstablished = false;
-  }
-  else{
-    connectionEstablished = true;
-  }
-
-}
-void resetExport(){
-  Serial.println("CLEARRANGE,A,2,D,10000");
-  Serial.println("LABEL, Date, Heure, Temperature, Humidite,,Delais, Sauvegarde automatique,,,,,,,,5555");
-  String delay = String(exportDelay);
-  String lines = String(maxLines);
-  Serial.print("CELL,SET,F2,");
-  Serial.println(delay);
-  Serial.print("CELL,SET,G2,");
-  Serial.println(lines);
-}
-void exportData(){
-    String counter = String(exportCounter+1);
-    Serial.print("ROW,SET,");
-    Serial.println(counter);
-    Serial.print("DATA,DATE,TIME,");
-    Serial.print(greenhouseTemperature.value());
-    Serial.print(",");
-    Serial.println(greenhouseHumidity.value());
-}
-
-
-void updateExportParameters(){
-
-  Serial.println("CELL,GET,F2");
-  int tableDelay = Serial.parseInt();
-  exportDelay = tableDelay;
-
-  Serial.println("CELL,GET,G2");
-  int tableMaxLines = Serial.parseInt();
-  if(tableMaxLines == 0){
-    maxLines = 1440;
-    exportCounter = 0;
-  }
-  else{
-    maxLines = tableMaxLines;
-  }
-}
-
-void saveExportAndClear(){
-  String date = rtc.getDateStr();
-  String now = rtc.getTimeStr();
-  String fileName = date +"." + now + ".datalogging";
-  Serial.print("SAVEWORKBOOKAS,");
-  Serial.println(fileName);
-  exportCounter = 0;
 
 }

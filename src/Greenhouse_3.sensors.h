@@ -1,139 +1,114 @@
 
-#ifdef DS18B20
+//#define DEBUG_CLOCK
   #include <OneWire.h>
   #include <DallasTemperature.h>
-  //Create DS18B20 object
-  OneWire oneWire(DS18B20_PIN);
-  DallasTemperature sensors(&oneWire);
-#endif
-
-#ifdef SHT1X
-  #include <SHT1x.h>
-  SHT1x sht1x(SHT1X_DATA, SHT1X_CLOCK);
-#endif
-
-#ifdef DHT11
-  #include <DHT.h>
-  //Create DHT object
-  DHT dht(DHT11_PIN, DHT11);
-#endif
-
-#ifdef DHT22
-  #include <DHT.h>
-  //Create DHT object
-  DHT dht(DHT22_PIN, DHT22);
-#endif
-
-#ifdef CLOCK_DS3231
   #include <DS3231.h>
+  #include <SHT1x.h>
+  //Create DS18B20 object
+  OneWire oneWire(DS18B20_DATA);
+  DallasTemperature sensors(&oneWire);
+  //Create SHT1X object
+  SHT1x sht1x(SHT1X_DATA, SHT1X_CLOCK);
   //Create a RTC object
   DS3231  rtc(SDA, SCL);                // Init the DS3231 using the hardware interface
   Time  t;
-#endif
 
-#ifdef DHT12
-  #include <DHT12.h>
-  //Create DHT object
-  DHT12 DHT;
-#endif
 
 unsigned long counter = 1;
 
+
+void sensorBackup(){
+  if(EEPROM.read(1) == 111){
+    float emergencyTemp = EEPROM.read(2);
+    greenhouseTemperature = emergencyTemp;
+  }
+  else{
+    greenhouseTemperature = 20;
+  }
+  if(EEPROM.read(3) == 111){
+    float emergencyHum = EEPROM.read(4);
+    greenhouseHumidity = emergencyHum;
+  }
+  else{
+    greenhouseHumidity = 50;
+  }
+}
+
 void getDateAndTime(){
+  if(RTC == RTC_DS3231){
 
-  for(int x = 0; x < 6; x++){
-    rightNow[x].setLimits(0,60);
+      t = rtc.getTime();
+      rightNow[5] = t.year-2000;
+      rightNow[4] = t.mon;
+      rightNow[3] = t.date;
+      rightNow[2] = t.hour;
+      rightNow[1] = t.min;
+      rightNow[0] = t.sec;
   }
 
-  #ifdef CLOCK_DS3231
-    t = rtc.getTime();
-    rightNow[5].setValue(t.year-2000);
-    rightNow[4].setValue(t.mon);
-    rightNow[3].setValue(t.date);
-    rightNow[2].setValue(t.hour);
-    rightNow[1].setValue(t.min);
-    rightNow[0].setValue(t.sec);
-  #endif
-
-
-  for(int x = 0; x < 6; x++){
-    rightNowValue[x] = rightNow[x].value();
-  }
 
   #ifdef DEBUG_CLOCK
   for(int x = 0; x < 6; x++){
-    Serial.print(rightNow[x].value());
+    Serial.print(rightNow[x]);
     Serial.print(":");
   }
   Serial.println("");
   #endif
 }
 
+void checkSensorFailure(float parameter,float measuredValue, float errorValue, int recoveryAddress, boolean * sensorFailure){
+      if(measuredValue <= errorValue){
+        byte lastRecordedValue;
+        if(parameter < 0){
+          lastRecordedValue = 0;
+        }
+        else{
+          lastRecordedValue = parameter;
+        }
+        EEPROM.update(recoveryAddress, 111);
+        EEPROM.update(recoveryAddress+1, lastRecordedValue);
+        *sensorFailure = true;
+      }
+      else{
+        *sensorFailure = false;
+      }
+}
 
 void getGreenhouseTemp(){
-  #ifdef DS18B20
+  float temp;
+  #if GH_TEMPERATURE == DS18B20
     sensors.requestTemperatures();
-    float temp = sensors.getTempCByIndex(0);
+    temp = sensors.getTempCByIndex(0);
 
-    if((temp <= -127.00)||(temp >= 85.00)){
-      EEPROM.update(1, 111);
-      EEPROM.update(2, (byte)greenhouseTemperature.value());
-      greenhouseTemperature.setValue(greenhouseTemperature.value());
-      sensorFailure = true;
-        greenhouse.alarmBlast();
-        delay(500);
-        greenhouse.stopAlarm();
-        delay(1000);
-      Serial.println("sensor fault");
-    }
-    else{
-      greenhouseTemperature.setValue(temp);
-      greenhouseTemperature.updateLastValue();
-      sensorFailure = false;
-    }
+    checkSensorFailure(greenhouseTemperature, temp, -127.00,1,&sensorFailure);
   #endif
-
-  #ifdef SHT1X
-    float temp = sht1x.readTemperatureC();
-    //Serial.println(temp);
-
-    if(temp <= -30.00){
-      EEPROM.update(1, 111);
-      EEPROM.update(2, (byte)greenhouseTemperature.value());
-      greenhouseTemperature.setValue(greenhouseTemperature.value());
-      sensorFailure = true;
-        greenhouse.alarmBlast();
-        delay(500);
-        greenhouse.stopAlarm();
-        delay(1000);
-      Serial.println("sensor fault");
-    }
-    else{
-      greenhouseTemperature.setValue(temp);
-      greenhouseTemperature.updateLastValue();
-      sensorFailure = false;
-    }
+  #if GH_TEMPERATURE == SHT1X
+    temp = sht1x.readTemperatureC();
+    checkSensorFailure(greenhouseTemperature, temp, -40.00,1,&sensorFailure);
   #endif
-  #ifdef DHT12
-    DHT.read();
-    greenhouseTemperature.setValue(DHT.temperature);
-  #endif
-
+  if(!sensorFailure){
+    greenhouseTemperature = temp;
+  }
 }
 
 void getGreenhouseHum(){
-
-  #ifdef SHT1X
-    float hum = sht1x.readHumidity();
-    greenhouseHumidity.setValue(hum);
-    //Serial.println(hum);
+  float hum;
+  #if GH_TEMPERATURE == SHT1X
+    hum = sht1x.readHumidity();
+    checkSensorFailure(greenhouseHumidity, hum, 0,3,&sensorFailure);
   #endif
+  if(!sensorFailure){
+    greenhouseHumidity = hum;
+  }
+}
 
-  #ifdef DHT
-    greenhouseHumidity.setValue((float)dht.readHumidity());
-  #endif
-  #ifdef DHT12
-    DHT.read();
-    greenhouseHumidity.setValue(DHT.humidity);
+void getRain(){
+  #if RAIN_SENSOR == HYDREON_RG11
+    if(digitalRead(RAIN_SWITCH) == LOW){
+      rain = true;
+    }
+    else{
+      rain = false;
+    }
   #endif
 }

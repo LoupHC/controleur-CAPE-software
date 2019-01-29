@@ -25,6 +25,8 @@
 #include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
+#include "GreenhouseLib_overrides.h"
+#include "GreenhouseLib_devices.h"
 #include "GreenhouseLib_rollups.h"
 #include "GreenhouseLib_FF.h"
 #include "GreenhouseLib_timing.h"
@@ -35,16 +37,22 @@
 #define GreenhouseLib_h
 
 
-class Greenhouse
+
+
+
+class Greenhouse : public OverrideManager
 {
   public:
     Greenhouse(int timezone, float latitude, float longitude, byte timepoints, byte rollups, byte stages, byte fans, byte heaters);
+    Greenhouse();
     ~Greenhouse();
+    void initGreenhouse(short timezone, float latitude, float longitude, byte timepoints, byte rollups, byte stages, byte fans, byte heaters);
     void setNow(byte rightNow[]);
     void setWeather(byte weather);
     void solarCalculations();
+    void startingTime(byte rightNow[]);
     void startingParameters();
-    void EEPROMUpdate();
+    void EEPROMGet();
 
     TimeLord myLord;
     #if MAX_TIMEPOINTS >= 1
@@ -60,46 +68,48 @@ class Greenhouse
       Heater heater[MAX_HEATERS];
     #endif
 
+
     //Confirm timepoint, cooling/heating temperatures, routine for each outputs
     void fullRoutine(byte rightNow[], float greenhouseTemperature);
     void fullRoutine(byte rightNow[6], float* coolingTemp, float* heatingTemp);
 
-    void checkAlarm(float temperature);
-    void addAlarm(boolean type, byte alarmPin);
-    void setAlarmMaxTemp(float temperature);
-    void setAlarmMinTemp(float temperature);
-    void alarmBlast();
-    void stopAlarm();
-
+/*
+    void enableOverride(unsigned short ID, boolean state);
+    boolean enabled(unsigned short ID);
+*/
     byte rightNow(byte index);
+    byte hr();
+    byte mn();
     byte weather();
     byte nowTimepoint();
     float heatingTemp();
     float coolingTemp();
+    boolean isRamping();
 
 
-
+    shortParameter timezone;         //time zone of your location (Most of Quebec : -5)
+    floatParameter longitude;
+    floatParameter latitude;
+    byteParameter timepoints;        //# of timepoints
+    byteParameter rollups;           //# of rollups
+    byteParameter stages;
+    byteParameter fans;              //# of fans
+    byteParameter heaters;           //# of heaters
+    Alarm alarm;
 
   private:
-
-    byte _timezone;         //time zone of your location (Most of Quebec : -5)
-    float _longitude;
-    float _latitude;
+    byte  _overrideProgramCounter;
     byte _rightNow[6];      //actual time
     byte _sunTime[6];       //for sunrise, sunset calculation
     float _heatingTemp;     //reference temperature for heating devices
     float _coolingTemp;     //reference temperature for cooling devices
     float _newHeatingTemp;     //reference temperature for heating devices
     float _newCoolingTemp;     //reference temperature for cooling devices
+    boolean _ramping;
 
     byte _timepoint;        //actual timepoint
     byte _weather;
 
-    byte _timepoints;        //# of timepoints
-    byte _rollups;           //# of rollups
-    byte _stages;
-    byte _fans;              //# of fans
-    byte _heaters;           //# of heaters
 
     byte _alarmPin;
     boolean _alarmEnabled;
@@ -118,6 +128,8 @@ class Greenhouse
 
     elapsedMillis ramping;  //ramping timer
     elapsedMillis beep;
+
+    int _localIndex;
 
 
 };

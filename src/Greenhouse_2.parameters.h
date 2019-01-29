@@ -30,71 +30,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-//************************************************************
-//****************HARDWARE SETTINGS*********************
-//************************************************************
-//*************SENSORS********************
-//#define DS18B20           //Temperature only
-//#define DHT11             //Temperature and humidity
-//#define DHT12             //Temperature and humidity
-//#define DHT22             //Temperature and humidity
-#define SHT1X               //Temperature and humidity
-#define CLOCK_DS3231        //RTC
-//*************SENSORS PINOUT*********************
-//#define DS18B20_PIN         7 //connect this pin to the DS18B20 data line
-//#define DHT11_PIN           7 //connect this pin to the DHT11 data line
-//#define DHT22_PIN           7 //connect this pin to the DHT22 data line
-#define SHT1X_DATA          6 //connect this pin to the SHT1X data line
-#define SHT1X_CLOCK         7 //connect this pin to the SHT1X clock line
-//*************INTERFACE*********************
-#define I2CADDR_LCD         0x27
-#define I2CADDR_KEY         0x26
-#define KEYPAD_DISPLAY          //Comment to desactivate keypad interface (only main menu)
-//#define COMPUTER_INTERFACE    //Uncomment to desactivate interface programming, only parameters from this sheet are kept in memory
-#define EXCEL_EXPORT
-#define EXPORT_DELAY        10
-
-//************************************************************
-//*******************CONTROL PARAMETERS***********************
-//************************************************************
-
-//********************GREENHOUSE**************************
-#define TIMEPOINTS            4          //# of timepoints
-#define ROLLUPS               2          //# of rollups
-#define STAGES                4          //# of cool stages (for rollups)
-#define FANS                  1          //# of fans
-#define HEATERS               1          //# of heaters
-//********************PINOUT**************************
-#define ROLLUP1_OPENING_PIN   0    //connect this pin to the opening relay (west motor)
-#define ROLLUP1_CLOSING_PIN   1    //connect this pin to the closing relay (west motor)
-#define ROLLUP2_OPENING_PIN   2    //connect this pin to the opening relay (east motor)
-#define ROLLUP2_CLOSING_PIN   3    //connect this pin to the closing relay (east motor)
-#define HEATER1_PIN           4    //connect this pin to the heater relay
-#define HEATER2_PIN           OFF    //connect this pin to the heater relay
-#define FAN1_PIN              5  //Connect this pin to the fan relay
-#define FAN2_PIN              OFF  //Connect this pin to the fan relay
-#define ALARM_PIN             7    //Connect this pin to the safety buzzer
-
-//*************COORD GÉOGRAPHIQUES*********************
-#define TIMEZONE              -5
-#define LATITUDE              46.03
-#define LONGITUDE             -73.56
-
-//TIME AND DATE ARE SET AT FIRST UPLOAD ONLY
-//For subsequent RTC programming :
-//1. Uncomment (by erasing the "//") the line #define RTC_TIME_SET and #define RTC_DATE_SET and upload to set time
-//2. Put back the comment markers("//") and upload again
-//ALWAYS SET TO WINTER TIME
-
-//#define RTC_TIME_SET
-#define HOUR_SET            16
-#define MINUT_SET           07
-#define SECOND_SET          34
-
-//#define RTC_DATE_SET
-#define DAY_SET             19
-#define MONTH_SET           3
-#define YEAR_SET            2018
 //*******************************************************************
 /*
 (SEE Greenhouse_userManual.h FOR MORE DETAILS)
@@ -113,8 +48,8 @@ TIMEPOINTS PARAMETERS - SYNTAX RULES:
 #define TP1_TYPE            SR
 #define TP1_HOUR            0
 #define TP1_MN_MOD          0
-#define TP1_HEAT_SUN        16
-#define TP1_COOL_SUN        20
+#define TP1_HEAT_SUN        20
+#define TP1_COOL_SUN        22
 #define TP1_HEAT_CLOUD      16
 #define TP1_COOL_CLOUD      18
 #define TP1_RAMP            15
@@ -122,30 +57,31 @@ TIMEPOINTS PARAMETERS - SYNTAX RULES:
 #define TP2_TYPE            CLOCK
 #define TP2_HOUR            10
 #define TP2_MN_MOD          0
-#define TP2_HEAT_SUN        18
-#define TP2_COOL_SUN        24
-#define TP2_HEAT_CLOUD      16
-#define TP2_COOL_CLOUD      18
+#define TP2_HEAT_SUN        22
+#define TP2_COOL_SUN        25
+#define TP2_HEAT_CLOUD      18
+#define TP2_COOL_CLOUD      20
 #define TP2_RAMP            15
 //*******************************************************Timepoint 3
 #define TP3_TYPE            SS
 #define TP3_HOUR            -1
 #define TP3_MN_MOD          0
 #define TP3_HEAT_SUN        18
-#define TP3_COOL_SUN        22
+#define TP3_COOL_SUN        20
 #define TP3_HEAT_CLOUD      16
 #define TP3_COOL_CLOUD      18
-#define TP3_RAMP            5
+#define TP3_RAMP            15
 //*******************************************************Timepoint 4
 #define TP4_TYPE            SS
 #define TP4_HOUR            0
 #define TP4_MN_MOD          0
 #define TP4_HEAT_SUN        18
-#define TP4_COOL_SUN        22
+#define TP4_COOL_SUN        20
 #define TP4_HEAT_CLOUD      16
 #define TP4_COOL_CLOUD      18
-#define TP4_RAMP            30
+#define TP4_RAMP            15
 //*******************************************************Timepoint 5
+
 #define TP5_TYPE            SS
 #define TP5_HOUR            0
 #define TP5_MN_MOD          30
@@ -255,11 +191,8 @@ Conditions :
 Action :
  - full opening or full closing cycle
 */
-
-#define R1_RECALIBRATE
-#define R2_RECALIBRATE
-#define SAFETY_DELAY                  30
-
+//#define OVERRIDE8 "FULL_VENTILATION"
+//#define OVERRIDE9 "FULL_VENTILATION"
 
 /*FULL VENTILATION - FIX OVERRIDE
 
@@ -269,9 +202,9 @@ Action :
  - open rollups and start all fans for a while (FULL_VENTILATION_DELAY(min))
 */
 
-#define FULL_VENTILATION
+/*#define FULL_VENTILATION
 #define FULL_VENTILATION_DELAY        5
-
+*/
 
 /*DESHUM CYCLE - RELATIVE OVERRIDE
 
@@ -286,7 +219,7 @@ Action :
   AND/OR
   - activate fan(s)
 */
-
+/*
 #define HEATER1_DESHUM
 #define HEATER1_DESHUM_START_HOUR      6
 #define HEATER1_DESHUM_START_MIN       5
@@ -314,3 +247,65 @@ Action :
 #define ROLLUP2_DESHUM_STOP_MIN        20
 
 #define DESHUM_MININIM                 14
+*/
+
+
+#define R1_FIX
+#define FIX_R1_PRIORITY 3
+#define R1_HRSTART  21
+#define R1_MNSTART  50
+#define R1_HRSTOP 22
+#define R1_MNSTOP 15
+#define R1_TARGET 50
+
+//#define R2_FIX
+#define FIX_R2_PRIORITY 3
+#define R2_HRSTART  5
+#define R2_MNSTART  5
+#define R2_HRSTOP 5
+#define R2_MNSTOP 5
+#define R2_TARGET 50
+
+//#define F1_FIX
+#define FIX_F1_PRIORITY 2
+#define F1_HRSTART  5
+#define F1_MNSTART  5
+#define F1_HRSTOP 5
+#define F1_MNSTOP 5
+#define F1_TARGET  true
+
+//#define F2_FIX
+#define FIX_F2_PRIORITY 2
+#define F2_HRSTART  5
+#define F2_MNSTART  5
+#define F2_HRSTOP 5
+#define F2_MNSTOP 5
+#define F2_TARGET  true
+
+#define H1_FIX
+#define FIX_H1_PRIORITY 2
+#define H1_HRSTART  21
+#define H1_MNSTART  50
+#define H1_HRSTOP 22
+#define H1_MNSTOP 5
+#define H1_TARGET  true
+
+//#define H2_FIX
+#define FIX_H2_PRIORITY 2
+#define H2_HRSTART  5
+#define H2_MNSTART  5
+#define H2_HRSTOP 5
+#define H2_MNSTOP 5
+#define H2_TARGET  true
+
+//#define DESHUM_AUTO_HEAT
+#define DESHUM_PRIORITY    3
+#define DESHUM_HOT         80
+
+#define DESHUM_AUTO_FAN
+#define DESHUM_COLD_PRIORITY    3
+#define DESHUM_COLD        80
+
+#define RAIN_CLOSE
+#define RAIN_PRIORITY      2
+#define RAIN_TARGET        20

@@ -25,13 +25,67 @@
 #include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
-
-
-
+#include "GreenhouseLib_devices.h"
 
 #ifndef GreenhouseLib_FF_h
 #define GreenhouseLib_FF_h
 
+
+class OnOffDevice : public Device
+{
+  public:
+
+      //initialization functions
+      OnOffDevice();
+      ~OnOffDevice();
+
+      void initOutput(byte outputType, boolean relayType, byte pin);
+
+      void lockOn();
+      void lockOff();
+      void lockOnAndWait(int minuts);
+      void lockOffAndWait(int minuts);
+      void unlock();
+      void resetLockTimer();
+      boolean isLock();
+
+      //programmation functions
+      void setParameters(float temp, float hyst);
+
+			//return private variables
+      floatParameter hyst;
+      floatParameter mod;
+      unsigned short nb();
+			boolean isActive();
+      boolean override();
+
+  		unsigned short EEPROMIndexBegin();
+  		unsigned short EEPROMIndexEnd();
+
+      boolean TEST_parameterOffLimits();
+
+
+    protected:
+      Output _output;
+      byte _activeOverride;/*
+      void stop();
+      void start();
+			//Parameters
+      boolean _relayType;
+      boolean _activate;
+      boolean _desactivate;
+			byte _pin;
+*/
+			//Indexes
+			unsigned short _localIndex;
+      static unsigned short _EEPROMindex;
+  		unsigned short _localCounter;
+  		static unsigned short _counter;
+			//Timer
+      elapsedMillis EEPROMTimer;
+
+
+};
 
 
 /*
@@ -41,63 +95,11 @@ Parameters :
 - activation temperature
 - hysteresis
 */
-class Fan
+class Fan : public OnOffDevice
 {
-  public:
-
-      //initialization functions
-      Fan();
-      ~Fan();
-      void initOutput(byte relayType, byte pin);
-
-      //action functions
-      void routine(float target, float temp);
-      void routine(boolean condition, float target, float temp);
-      void forceAction(unsigned short duration, boolean state);
-      void forceAction(boolean state);
-
-      //programmation functions
-      void setParameters(float temp, float hyst);
-      void EEPROMGet();
-      void EEPROMPut();
-
-			//return private variables
-			byte pin();
-      floatParameter hyst;
-      floatParameter mod;
-      unsigned short nb();
-			boolean isActive();
-      boolean override();
-
-
-    private:
-      void watchRoutine();
-      void watchFixOverride();
-      void watchRelativeOverride(boolean condition);
-      void stop();
-      void start();
-      void desactivateRoutine();
-      void activateRoutine();
-			//Parameters
-      boolean _relayType;
-      boolean _activate;
-      boolean _desactivate;
-			byte _pin;
-
-			//Logic variables
-      boolean _routine;
-      boolean _fixOverride;
-      boolean _relativeOverride;
-			//Indexes
-			unsigned short _localIndex;
-      static unsigned short _EEPROMindex;
-  		unsigned short _localCounter;
-  		static unsigned short _counter;
-			//Timer
-      unsigned long _overrideDuration;
-      elapsedMillis overrideTimer;
-      elapsedMillis EEPROMTimer;
-
+public:
+  void routine(float target, float temp);
+  void EEPROMGet();
 };
 
 /*
@@ -108,63 +110,10 @@ Parameters :
 - activation temperature
 */
 
-class Heater
+class Heater : public OnOffDevice
 {
-  public:
-    //initialization functions
-      Heater();
-      ~Heater();
-      void initOutput(byte relayType, byte pin);
-
-      //action functions
-      void routine(float target, float temp);
-      void routine(boolean condition, float target, float temp);
-      void forceAction(unsigned short duration, boolean state);
-      void forceAction(boolean state);
-
-          //programmation functions
-      void setParameters(float temp, float hyst);
-      void EEPROMGet();
-      void EEPROMPut();
-
-			//return private variables
-			byte pin();
-
-      //Parameters
-      floatParameter hyst;
-      floatParameter mod;
-
-      boolean isActive();
-      boolean override();
-      unsigned short nb();
-
-    private:
-      void watchFixOverride();
-      void watchRelativeOverride(boolean condition);
-      void stop();
-      void start();
-      void desactivateRoutine();
-      void activateRoutine();
-			//const parameters
-      boolean _relayType;
-
-      boolean _activate;
-      boolean _desactivate;
-		  byte _pin;
-
-			//logic
-      boolean _routine;
-      boolean _fixOverride;
-      boolean _relativeOverride;
-			//indexes
-      unsigned short _localIndex;
-      static unsigned short _EEPROMindex;
-  		unsigned short _localCounter;
-  		static unsigned short _counter;
-			//timer
-      unsigned long _overrideDuration;
-      elapsedMillis overrideTimer;
-			elapsedMillis EEPROMTimer;
+public:
+  void routine(float target, float temp);
+  void EEPROMGet();
 };
-
 #endif
