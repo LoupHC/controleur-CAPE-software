@@ -22,7 +22,7 @@
   This code is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+  Lesser General Public License for more details.z
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
@@ -37,174 +37,57 @@ Conditions :
 Action :
  - full opening or full closing cycle
 */
-boolean deshum = false;
-#ifdef ROLLUP1_DESHUM
-  boolean rollup1Deshum = false;
-#endif
-#ifdef ROLLUP2_DESHUM
-  boolean rollup2Deshum = false;
-#endif
-#ifdef FAN1_DESHUM
-  boolean fan1Deshum = false;
-#endif
-#ifdef FAN2_DESHUM
-  boolean fan2Deshum = false;
-#endif
-#ifdef HEATER1_DESHUM
-  boolean heater1Deshum = false;
-#endif
-//Override : rollup calibration
-#ifdef R1_RECALIBRATE
-  boolean safetyCycle1 = false;
-  elapsedMillis safetyTimer1;
-#endif
-#ifdef R2_RECALIBRATE
-  boolean safetyCycle2 = false;
-  elapsedMillis safetyTimer2;
-#endif
-//Override : full ventilation
-  boolean fullVentOverride = false;
 
-#if defined(R1_RECALIBRATE) &&  ROLLUPS >= 1
-void recalibrateR1(){
-    if((R1.incrementCounter() == R1.increments())&&(R1.isMoving() == false)){
-      if(safetyCycle1 == false){
-        safetyCycle1 = true;
-        safetyTimer1 = 0;
-      }
-      if(safetyTimer1 > (unsigned long)SAFETY_DELAY*60000){
-        R1.setIncrementCounter(0);
-        R1.forceMove(R1.rotationUp.value(), R1.increments());
-        safetyCycle1 = false;
-      }
-    }
-    else if((R1.incrementCounter() == 0)&&(R1.isMoving() == false)){
-      if(safetyCycle1 == false){
-        safetyCycle1 = true;
-        safetyTimer1 = 0;
-      }
-      if(safetyTimer1 > (unsigned long)SAFETY_DELAY*60000){
-        R1.setIncrementCounter(R1.increments());
-        R1.forceMove(R1.rotationDown.value(), 0);
-        safetyCycle1 = false;
-      }
-    }
-}
-#endif
-#if defined(R2_RECALIBRATE) &&  ROLLUPS == 2
-void recalibrateR2(){
-    if((R2.incrementCounter() == R2.increments())&&(R2.isMoving() == false)){
-      if(safetyCycle2 == false){
-        safetyCycle2 = true;
-        safetyTimer2 = 0;
-      }
-      if(safetyTimer2 > (unsigned long)SAFETY_DELAY*60000){
-        R2.setIncrementCounter(0);
-        R2.forceMove(R2.rotationUp.value(), R2.increments());
-        safetyCycle2 = false;
-      }
-    }
-    else if((R2.incrementCounter() == 0)&&(R2.isMoving() == false)){
-      if(safetyCycle2 == false){
-        safetyCycle2 = true;
-        safetyTimer2 = 0;
-      }
-      if(safetyTimer2 > (unsigned long)SAFETY_DELAY*60000){
-        R2.setIncrementCounter(R2.increments());
-        R2.forceMove(R2.rotationDown.value(), 0);
-        safetyCycle2 = false;
-      }
-    }
+//OVERRIDES ID
+#define FULL_VENTILATION    90
+#define DESHUM_CYCLE_FIX    93
+#define WIND_LOW            95
+#define WIND_STRONG         96
+#define ROLLUP_CALIBRATION  97
+#define FIX_R1              98
+#define FIX_R2              99
+#define FIX_F1              100
+#define FIX_F2              101
+#define FIX_H1              102
+#define FIX_H2              103
+#define RAIN1                104
+#define RAIN2                105
+#define DESHUM_AUTO1         106
+#define DESHUM_AUTO2         107
+#define DESHUM_AUTO_COLD1    108
+#define DESHUM_AUTO_COLD2    109
+
+boolean condition1 = false;
+boolean condition2 = false;
+
+byte mnVent = 1;
+float deshum_hot = 80;
+float deshum_cold = 80;
+
+boolean rainOverride(byte ID, Rollup rollup){
+  float shuttingTemp = greenhouse.coolingTemp() + rollup.stage[0].target.value();
+  byte targetIncrement = 20;
+  if((rain == true)&&(rollup.incrementCounter() >= targetIncrement)&&(greenhouseTemperature >= shuttingTemp )){
+    return true;
   }
-  #endif
-
-/*FULL VENTILATION - FIX OVERRIDE
-
-Conditions :
- -fullVentiliation variable is true
-Action :
- - open rollups and start all fans for a while (FULL_VENTILATION_DELAY)
-*/
-void fullVentilation(){
-  if(fullVentOverride == true){
-      unsigned int timing = FULL_VENTILATION_DELAY*60;
-    #if defined(FULL_VENTILATION) && ROLLUPS >= 1
-      R1.forceMove(timing, R1.increments());
-    #endif
-    #if defined(FULL_VENTILATION) &&  ROLLUPS == 2
-      R2.forceMove(timing, R2.increments());
-    #endif
-    #if defined(FULL_VENTILATION) &&  FANS >= 1
-      F1.forceAction(timing, true);
-    #endif
-    #if defined(FULL_VENTILATION) &&  FANS == 2
-      F2.forceAction(timing, true);
-    #endif
-    fullVentOverride = false;
+  else{
+    return false;
   }
 }
 
 
-/*DESHUM CYCLE - RELATIVE OVERRIDE
 
-Conditions :
-  -between start time and stop time
-  -temperature stays over a minimum
-Action :
-  - open rollups at target increment
-  AND/OR
-  - activate heater
-  AND/OR
-  - activate fan(s)
-*/
-void deshumCycle(){
-  #if defined(ROLLUP1_DESHUM) && ROLLUPS >= 1
-    if((((greenhouse.rightNow(2) == ROLLUP1_DESHUM_START_HOUR)&&(greenhouse.rightNow(1) >= ROLLUP1_DESHUM_START_MIN))||(greenhouse.rightNow(2)>ROLLUP1_DESHUM_START_HOUR))&&(((greenhouse.rightNow(2) == ROLLUP1_DESHUM_STOP_HOUR)&&(greenhouse.rightNow(1) < ROLLUP1_DESHUM_STOP_MIN))||(greenhouse.rightNow(2) < ROLLUP1_DESHUM_STOP_HOUR))&&(greenhouseTemperature.value() > DESHUM_MININIM)&&(deshum == true)){
-      R1.forceMove(ROLLUP1_DESHUM_INCREMENT);
-      if(R1.override() == true){
-        rollup1Deshum = true;
-      }
-    }
-    else{
-      rollup1Deshum = false;
-    }
-  #endif
-  #if defined(ROLLUP2_DESHUM)  && ROLLUPS == 2
-    if((((greenhouse.rightNow(2) == ROLLUP2_DESHUM_START_HOUR)&&(greenhouse.rightNow(1) >= ROLLUP2_DESHUM_START_MIN))||(greenhouse.rightNow(2)>ROLLUP2_DESHUM_START_HOUR))&&(((greenhouse.rightNow(2) == ROLLUP2_DESHUM_STOP_HOUR)&&(greenhouse.rightNow(1) < ROLLUP2_DESHUM_STOP_MIN))||(greenhouse.rightNow(2) < ROLLUP2_DESHUM_STOP_HOUR))&&(greenhouseTemperature.value() > DESHUM_MININIM)&&(deshum == true)){
-      R2.forceMove(ROLLUP2_DESHUM_INCREMENT);
-      if(R2.override() == true){
-        rollup2Deshum = true;
-      }
-    }
-    else{
-      rollup2Deshum = false;
-    }
-  #endif
-  #if defined(FAN1_DESHUM) && FANS >= 1
-    if((((greenhouse.rightNow(2) == FAN1_DESHUM_START_HOUR)&&(greenhouse.rightNow(1) >= FAN1_DESHUM_START_MIN))||(greenhouse.rightNow(2)>FAN1_DESHUM_START_HOUR))&&(((greenhouse.rightNow(2) == FAN1_DESHUM_STOP_HOUR)&&(greenhouse.rightNow(1) < FAN1_DESHUM_STOP_MIN))||(greenhouse.rightNow(2) < FAN1_DESHUM_STOP_HOUR))&&(greenhouseTemperature.value() > DESHUM_MININIM)&&(deshum == true)){
-      F1.forceAction(true);
-      fan1Deshum = true;
-    }
-    else{
-      fan1Deshum = false;
-    }
-  #endif
-  #if defined(FAN2_DESHUM) && FANS == 2
-    if((((greenhouse.rightNow(2) == FAN2_DESHUM_START_HOUR)&&(greenhouse.rightNow(1) >= FAN2_DESHUM_START_MIN))||(greenhouse.rightNow(2)>FAN2_DESHUM_START_HOUR))&&(((greenhouse.rightNow(2) == FAN2_DESHUM_STOP_HOUR)&&(greenhouse.rightNow(1) < FAN2_DESHUM_STOP_MIN))||(greenhouse.rightNow(2) < FAN2_DESHUM_STOP_HOUR))&&(greenhouseTemperature.value() > DESHUM_MININIM)&&(deshum == true)){
-      F2.forceAction(true);
-      fan2Deshum = true;
-    }
-    else{
-      fan2Deshum = false;
-    }
-  #endif
-  #if defined(HEATER1_DESHUM) && HEATERS >= 1
-    if((((greenhouse.rightNow(2) == HEATER1_DESHUM_START_HOUR)&&(greenhouse.rightNow(1) >= HEATER1_DESHUM_START_MIN))||(greenhouse.rightNow(2)>HEATER1_DESHUM_START_HOUR))&&(((greenhouse.rightNow(2) == HEATER1_DESHUM_STOP_HOUR)&&(greenhouse.rightNow(1) < HEATER1_DESHUM_STOP_MIN))||(greenhouse.rightNow(2) < HEATER1_DESHUM_STOP_HOUR))&&(greenhouseTemperature.value() > DESHUM_MININIM)&&(deshum == true)){
-      H1.forceAction(true);
-      heater1Deshum = true;
-    }
-    else{
-      heater1Deshum = false;
-    }
-  #endif
+void checkOverrides(){
+    greenhouse.checkOverride(FIX_R1,R1,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_R2,R2,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_F1,F1,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_F2,F2,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_H1,H1,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_H2,H2, greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(DESHUM_AUTO1,H1,greenhouseHumidity);
+    greenhouse.checkOverride(DESHUM_AUTO2,H2,greenhouseHumidity);
+    greenhouse.checkOverride(DESHUM_AUTO_COLD1,F1,greenhouseHumidity);
+    greenhouse.checkOverride(DESHUM_AUTO_COLD2, F2, greenhouseHumidity);
+    greenhouse.checkOverride(RAIN1, R1, rainOverride(RAIN1, R1));
+    greenhouse.checkOverride(RAIN2, R2, rainOverride(RAIN2, R2));
 }

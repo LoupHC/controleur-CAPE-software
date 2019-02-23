@@ -34,7 +34,7 @@ unsigned short Timepoint::_counter = 0;
 Timepoint::Timepoint(){
 
   _localIndex = TIMEPOINT_INDEX + _EEPROMindex;
-  _EEPROMindex += 24;
+  _EEPROMindex += TIMEPOINT_INDEX_SIZE;
   _localCounter = _counter;
   _counter++;
 
@@ -76,7 +76,7 @@ Timepoint::Timepoint(){
 
 Timepoint::~Timepoint(){}
 
-void Timepoint::setParameters(byte typ, short hr, short mn, float heatTemp, float coolTemp, float heatTempCloud, float coolTempCloud, unsigned short ramp){
+void Timepoint::setParameters(byte  typ, short hr, short mn, float heatTemp, float coolTemp, float heatTempCloud, float coolTempCloud, unsigned short ramp){
     type.setValue(typ);
     setTimepoint(hr, mn);
     coolingTemp.setValue(coolTemp);
@@ -97,7 +97,7 @@ void Timepoint::setParameters(byte typ, short hr, short mn, float heatTemp, floa
       Serial.print(F("Heating temp : "));
       Serial.println(heatingTemp.value());
       Serial.print(F("Ramping : "));
-      Serial.println(ramping);
+      Serial.println(ramping.value());
     #endif
 
 }
@@ -134,19 +134,45 @@ void Timepoint::setTimepoint(short hourMod, short minutMod){
   mnMod.setValue(minutMod);
 
 }
+void Timepoint::updateTimepoint(){
 
-unsigned short Timepoint::hr(){
+  if (type.value() == SR){
+		_time.setTime(sunRise[HOUR], sunRise[MINUT]);
+    _time.addTime(hrMod.value(), mnMod.value());
+		_hr = _time.hour();
+		_mn = _time.minut();
+	}
+	else if (type.value() == CLOCK){
+		_hr = hrMod.value();
+		_mn = mnMod.value();
+  }
+
+  else if (type.value() == SS){
+		_time.setTime(sunSet[HOUR], sunSet[MINUT]);
+    _time.addTime(hrMod.value(), mnMod.value());
+    _hr = _time.hour();
+		_mn = _time.minut();
+	}
+}
+
+short Timepoint::hr(){
   return _hr;
 }
 
-unsigned short Timepoint::mn(){
+short Timepoint::mn(){
   return _mn;
 }
 
 unsigned short Timepoint::nb(){
   return _localCounter;
 }
+unsigned short Timepoint::EEPROMIndexBegin(){
+  return TIMEPOINT_INDEX + (TIMEPOINT_INDEX_SIZE*_localCounter);
+}
 
+unsigned short Timepoint::EEPROMIndexEnd(){
+  return _localIndex;
+}
 void Timepoint::EEPROMPut(){
   type.loadInEEPROM();
   mnMod.loadInEEPROM();

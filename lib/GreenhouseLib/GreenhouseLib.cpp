@@ -22,23 +22,118 @@
 #include "GreenhouseLib.h"
 
 
-Greenhouse::Greenhouse(int timezone, float latitude, float longitude, byte timepoints, byte rollups, byte stages, byte fans, byte heaters){
-  _timepoints = timepoints;
-  _rollups = rollups;
-  _stages = stages;
-  _fans = fans;
-  _heaters = heaters;
-  _timezone = timezone;
-  _latitude = latitude;
-  _longitude = longitude;
+Greenhouse::Greenhouse(int timez, float lat, float longit, byte t, byte r, byte s, byte f, byte h){
+  _localIndex = GREENHOUSE_INDEX;
+  timezone.setLimits(-12, 14);
+  timezone.setAddress(_localIndex);
+  _localIndex += sizeof(short);
+  latitude.setLimits(-90, 90);
+  latitude.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+  longitude.setLimits(-180, 180);
+  longitude.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+  timepoints.setLimits(1, MAX_TIMEPOINTS);
+  timepoints.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  rollups.setLimits(0, MAX_ROLLUPS);
+  rollups.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  stages.setLimits(0, MAX_ROLLUPS);
+  stages.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  fans.setLimits(0, MAX_FANS);
+  fans.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  heaters.setLimits(0, MAX_HEATERS);
+  heaters.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+
+  timepoints.setValue(t);
+  rollups.setValue(r);
+  stages.setValue(s);
+  fans.setValue(f);
+  heaters.setValue(h);
+  timezone.setValue(timez);
+  latitude.setValue(lat);
+  longitude.setValue(longit);
+
   _weather = SUN;
-  _alarmEnabled = true;
-  for (byte x = 0; x < _rollups; x++){
-    rollup[x].setStages(_stages);
+  _ramping = false;
+  _overrideProgramCounter = 0;
+
+  for (byte x = 0; x < rollups.value(); x++){
+    rollup[x].setStages(s);
   }
 }
 
+Greenhouse::Greenhouse(){
+  _localIndex = GREENHOUSE_INDEX;
+
+  timezone.setValue(-5);
+  latitude.setValue(46);
+  longitude.setValue(-73);
+  timepoints.setValue(MAX_TIMEPOINTS);
+  rollups.setValue(MAX_ROLLUPS);
+  stages.setValue(MAX_STAGES);
+  fans.setValue(MAX_FANS);
+  heaters.setValue(MAX_HEATERS);
+
+  timezone.setLimits(-12, 14);
+  timezone.setAddress(_localIndex);
+  _localIndex += sizeof(short);
+
+  latitude.setLimits(-90, 90);
+  latitude.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+
+  longitude.setLimits(-180, 180);
+  longitude.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+
+  timepoints.setLimits(1, MAX_TIMEPOINTS);
+  timepoints.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+
+  rollups.setLimits(0, MAX_ROLLUPS);
+  rollups.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+
+  stages.setLimits(0, MAX_STAGES);
+  stages.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+
+  fans.setLimits(0, MAX_FANS);
+  fans.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+
+  heaters.setLimits(0, MAX_HEATERS);
+  heaters.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+
+
+  _weather = SUN;
+  _ramping = false;
+  _overrideProgramCounter = 0;
+}
+
 Greenhouse::~Greenhouse(){
+}
+
+void Greenhouse::initGreenhouse(short timez, float lat, float longit, byte t, byte r, byte s, byte f, byte h){
+
+  timepoints.setValue(t);
+  rollups.setValue(r);
+  stages.setValue(s);
+  fans.setValue(f);
+  heaters.setValue(h);
+  timezone.setValue(timez);
+  latitude.setValue(lat);
+  longitude.setValue(longit);
+
+  for (byte x = 0; x < rollups.value(); x++){
+    rollup[x].setStages(s);
+  }
 }
 
 void Greenhouse::setNow(byte rightNow[6]){
@@ -46,9 +141,20 @@ void Greenhouse::setNow(byte rightNow[6]){
   for(byte x = 0; x < 6 ; x++){
       _rightNow[x] = rightNow[x];
   }
-
+  if(timezone.value() == -5){
     myLord.DST(_rightNow);
+  }
+
+  #ifdef DEBUG_SOLARCALC
+    if(_rightNow[2]!=rightNow[2]){
+        Serial.println("Heure avancée");
+    }
+    else{
+        Serial.println("Heure normale");
+    }
+  #endif
 }
+
 
 void Greenhouse::fullRoutine(byte rightNow[6], float greenhouseTemperature){
   setNow(rightNow);
@@ -57,30 +163,25 @@ void Greenhouse::fullRoutine(byte rightNow[6], float greenhouseTemperature){
   selectActualProgram();
   startRamping();
   #if MAX_ROLLUPS >= 1
-  for (byte x = 0; x < _rollups; x++){
-    rollup[x].EEPROMPut();
-    rollup[x].routine(_coolingTemp, greenhouseTemperature);
+  for (byte x = 0; x < rollups.value(); x++){
+      rollup[x].routine(_coolingTemp, greenhouseTemperature);
+    //}
   }
   #endif
   #if MAX_FANS >= 1
-  for (byte x = 0; x < _fans; x++){
-    fan[x].EEPROMPut();
-    fan[x].routine(_coolingTemp, greenhouseTemperature);
+  for (byte x = 0; x < fans.value(); x++){
+      fan[x].routine(_coolingTemp, greenhouseTemperature);
+    //}
   }
   #endif
   #if MAX_HEATERS >= 1
-  for (byte x = 0; x < _heaters; x++){
-    heater[x].EEPROMPut();
-    heater[x].routine(_heatingTemp, greenhouseTemperature);
+  for (byte x = 0; x < heaters.value(); x++){
+      heater[x].routine(_heatingTemp, greenhouseTemperature);
+    //}
   }
   #endif
-  for (byte x = 0; x < _timepoints; x++){
-    timepoint[x].EEPROMPut();
-  }
-  if(_alarmEnabled){
-    checkAlarm(greenhouseTemperature);
-  }
 }
+
 
 void Greenhouse::fullRoutine(byte rightNow[6], float* coolingTemp, float* heatingTemp){
   setNow(rightNow);
@@ -88,30 +189,12 @@ void Greenhouse::fullRoutine(byte rightNow[6], float* coolingTemp, float* heatin
   checkProgramSuccession();
   selectActualProgram();
   startRamping();
-  #if MAX_ROLLUPS >= 1
-  for (byte x = 0; x < _rollups; x++){
-    rollup[x].EEPROMPut();
-  }
-  #endif
-  #if MAX_FANS >= 1
-  for (byte x = 0; x < _fans; x++){
-    fan[x].EEPROMPut();
-  }
-  #endif
-  #if MAX_HEATERS >= 1
-  for (byte x = 0; x < _heaters; x++){
-    heater[x].EEPROMPut();
-  }
-  #endif
-  for (byte x = 0; x < _timepoints; x++){
-    timepoint[x].EEPROMPut();
-  }
   *coolingTemp = _coolingTemp;
   *heatingTemp = _heatingTemp;
 }
 
 void Greenhouse::solarCalculations(){
-  initTimeLord(_timezone, _latitude, _longitude);
+  initTimeLord(timezone.value(), latitude.value(), longitude.value());
   //Première lecture d'horloge pour définir le lever et coucher du soleil
   setSunrise();
   setSunset();
@@ -132,6 +215,11 @@ void Greenhouse::setSunrise(){
   myLord.SunRise(_sunTime); ///On détermine l'heure du lever du soleil
   Timepoint::sunRise[HOUR] = (short)_sunTime[HOUR];
   Timepoint::sunRise[MINUT] = (short)_sunTime[MINUT];
+  for(int x = 0; x < timepoints.value();x++){
+    if(timepoint[x].type.value() == SR){
+      timepoint[x].updateTimepoint();
+    }
+  }
 
   #ifdef DEBUG_SOLARCALC
     Serial.print("lever du soleil :");Serial.print(Timepoint::sunRise[HOUR]);  Serial.print(":");  Serial.println(Timepoint::sunRise[MINUT]);
@@ -147,12 +235,20 @@ void Greenhouse::setSunset(){
   myLord.SunSet(_sunTime); // Computes Sun Set. Prints:
   Timepoint::sunSet[HOUR] = (short)_sunTime[HOUR];
   Timepoint::sunSet[MINUT] = (short)_sunTime[MINUT];
+  for(int x = 0; x < timepoints.value();x++){
+    if(timepoint[x].type.value() == SS){
+      timepoint[x].updateTimepoint();
+    }
+  }
   #ifdef DEBUG_SOLARCALC
     Serial.print("coucher du soleil :");  Serial.print(Timepoint::sunSet[HOUR]);  Serial.print(":");  Serial.println(Timepoint::sunSet[MINUT]);
     Serial.println("----");
   #endif
 }
-
+void Greenhouse::startingTime(byte rightNow[6]){
+  setNow(rightNow);
+  solarCalculations();
+}
 void Greenhouse::startingParameters(){
   //Exécution du programme
   selectActualProgram();
@@ -160,12 +256,11 @@ void Greenhouse::startingParameters(){
 
 }
 void Greenhouse::checkProgramSuccession(){
-  if(_timepoints > 1){
-    for(int x = 1; x < _timepoints;x++){
+  if(timepoints.value() > 1){
+    for(int x = 1; x < timepoints.value();x++){
       if (((timepoint[x].hr() == timepoint[x-1].hr())  && (timepoint[x].mn() < timepoint[x-1].mn()))||(timepoint[x].hr() < timepoint[x-1].hr())){
         timepoint[x].type.setValue(timepoint[x-1].type.value());
         timepoint[x].setTimepoint(timepoint[x-1].hrMod.value(),timepoint[x-1].mnMod.value());
-        Serial.println("Error");
       }
     }
   }
@@ -177,22 +272,22 @@ void Greenhouse::selectActualProgram(){
       Serial.println("----");
       Serial.print ("Heure actuelle ");Serial.print(" : ");Serial.print(_rightNow[HOUR] );Serial.print(" : ");Serial.println(_rightNow[MINUT]);
     #endif
-    for (byte y = 0; y < (_timepoints-1); y++){
+    for (byte y = 0; y < (timepoints.value()-1); y++){
 
     #ifdef DEBUG_PROGRAM
       Serial.print ("Programme "); Serial.print(y+1);Serial.print(" : ");Serial.print(timepoint[y].hr());Serial.print(" : ");Serial.println(timepoint[y].mn());
     #endif
       if (((_rightNow[HOUR] == timepoint[y].hr())  && (_rightNow[MINUT] >= timepoint[y].mn()))||((_rightNow[HOUR] > timepoint[y].hr()) && (_rightNow[HOUR] < timepoint[y+1].hr()))||((_rightNow[HOUR] == timepoint[y+1].hr())  && (_rightNow[MINUT] <timepoint[y+1].mn()))){
-          _timepoint = y+1;
-        }
+            _timepoint = y+1;
+      }
     }
 
     #ifdef DEBUG_PROGRAM
-      Serial.print ("Programme ");Serial.print(_timepoints);Serial.print(" : ");Serial.print(timepoint[_timepoints-1].hr());Serial.print(" : ");Serial.println(timepoint[_timepoints-1].mn());
+      Serial.print ("Programme ");Serial.print(timepoints.value());Serial.print(" : ");Serial.print(timepoint[timepoints.value()-1].hr());Serial.print(" : ");Serial.println(timepoint[timepoints.value()-1].mn());
     #endif
 
-    if (((_rightNow[HOUR] == timepoint[_timepoints-1].hr())  && (_rightNow[MINUT] >= timepoint[_timepoints-1].mn()))||(_rightNow[HOUR] > timepoint[_timepoints-1].hr())||(_rightNow[HOUR] < timepoint[0].hr())||((_rightNow[HOUR] == timepoint[0].hr())  && (_rightNow[MINUT] < timepoint[0].mn()))){
-      _timepoint = _timepoints;
+    if (((_rightNow[HOUR] == timepoint[timepoints.value()-1].hr())  && (_rightNow[MINUT] >= timepoint[timepoints.value()-1].mn()))||(_rightNow[HOUR] > timepoint[timepoints.value()-1].hr())||(_rightNow[HOUR] < timepoint[0].hr())||((_rightNow[HOUR] == timepoint[0].hr())  && (_rightNow[MINUT] < timepoint[0].mn()))){
+      _timepoint = timepoints.value();
     }
     #ifdef DEBUG_PROGRAM
       Serial.print ("Program is : ");
@@ -227,13 +322,13 @@ void Greenhouse::startRamping(){
   if (ramping > rampTime){
 
     if (_newCoolingTemp > _coolingTemp){
-      _coolingTemp += 0.5;
+      _coolingTemp += 1;
       if(_coolingTemp > _newCoolingTemp){
         _coolingTemp = _newCoolingTemp;
       }
     }
     else if (_newCoolingTemp < _coolingTemp){
-      _coolingTemp -= 0.5;
+      _coolingTemp -= 1;
       if(_coolingTemp < _newCoolingTemp){
         _coolingTemp = _newCoolingTemp;
       }
@@ -252,6 +347,12 @@ void Greenhouse::startRamping(){
     }
     ramping = 0;
   }
+  if((_newCoolingTemp == _coolingTemp)&&(_newHeatingTemp == _heatingTemp)){
+    _ramping = false;
+  }
+  else{
+    _ramping = true;
+  }
 }
 
 void Greenhouse::setWeather(byte weather){
@@ -262,6 +363,13 @@ byte Greenhouse::rightNow(byte index){
   return _rightNow[index];
 }
 
+byte Greenhouse::hr(){
+  return _rightNow[2];
+}
+
+byte Greenhouse::mn(){
+  return _rightNow[1];
+}
 byte Greenhouse::weather(){
   return _weather;
 }
@@ -274,96 +382,139 @@ float Greenhouse::heatingTemp(){
 float Greenhouse::coolingTemp(){
   return _coolingTemp;
 }
+boolean Greenhouse::isRamping(){
+  if (_ramping == true){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
 
-void Greenhouse::checkAlarm(float temperature){
-  if(_alarmMin != OFF_VAL){
-    if(temperature < _alarmMin){
-      alarmBlast();
+void Greenhouse::EEPROMGet(){
+  for (byte x = 0; x < rollups.value(); x++){
+    rollup[x].setStages(stages.value());
+  }
+
+  #ifdef DEBUG_EEPROM
+    Serial.println(F("-------------------"));
+    Serial.print(F("Address: "));
+    Serial.print(timezone.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(timezone.value());
+    Serial.println(F(" - (Timezone)"));
+    Serial.print(F("Address: "));
+    Serial.print(latitude.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(latitude.value());
+    Serial.println(F("   - (Latitude)"));
+    Serial.print(F("Address: "));
+    Serial.print(longitude.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(longitude.value());
+    Serial.println(F("   - (Longitude)"));
+    Serial.print(F("Address: "));
+    Serial.print(timepoints.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(timepoints.value());
+    Serial.println(F("   - (Timepoints)"));
+    Serial.print(F("Address: "));
+    Serial.print(rollups.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(rollups.value());
+    Serial.println(F("   - (Rollups)"));
+    Serial.print(F("Address: "));
+    Serial.print(stages.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(stages.value());
+    Serial.println(F("   - (Stages)"));
+    Serial.print(F("Address: "));
+    Serial.print(fans.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(fans.value());
+    Serial.println(F("   - (Fans)"));
+    Serial.print(F("Address: "));
+    Serial.print(heaters.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(heaters.value());
+    Serial.println(F("   - (Heaters)"));
+
+  for (int x = 0; x < MAX_CLOCK_OV;x++){
+    if(clockOv[x].enabled.value()){
+      Serial.print(F("-------CLOCK OVERRIDE "));
+      Serial.print(clockOv[x].ID.value());
+      Serial.println(F("-------"));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].hrStart.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].hrStart.value());
+      Serial.println(F(" - (Start hour)"));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].mnStart.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].mnStart.value());
+      Serial.println(F("   - (Start minute) "));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].hrStop.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].hrStop.value());
+      Serial.println(F("   - (Stop hour) "));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].mnStop.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].mnStop.value());
+      Serial.println(F("   - (Stop minute) "));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].target.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].target.value());
+      Serial.println(F("   - (Target increment) "));
     }
-    else if(temperature > _alarmMax){
-      alarmBlast();
+  }
+  for (int x = 0; x < MAX_FLOAT_OV;x++){
+    if(floatOv[x].enabled.value()){
+      Serial.print(F("-------FLOAT OVERRIDE "));
+      Serial.print(floatOv[x].ID.value());
+      Serial.println(F("-------"));
+      Serial.print(F("Address: "));
+      Serial.print(floatOv[x].comparator.address());
+      Serial.print(F(" - Value :"));
+      if(floatOv[x].comparator.value() == ABOVE){
+        Serial.print (" ABOVE ");
+      }
+      else if(floatOv[x].comparator.value() == BELOW){
+        Serial.print (" BELOW ");
+      }
+      Serial.println(F("   - (Comparator) "));
+      Serial.print(F("Address: "));
+      Serial.print(floatOv[x].hyst.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(floatOv[x].hyst.value());
+      Serial.println(F("   - (Hysteresis) "));
+      Serial.print(F("Address: "));
+      Serial.print(floatOv[x].floatVar.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(floatOv[x].floatVar.value());
+      Serial.println(F("   - (Treshold) "));
+      Serial.print(F("Address: "));
+      Serial.print(floatOv[x].target.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(floatOv[x].target.value());
+      Serial.println(F("   - (Target increment) "));
     }
-    else{
-      stopAlarm();
+  }
+
+  for (int x = 0; x < MAX_BOOL_OV;x++){
+    if(boolOv[x].enabled.value()){
+      Serial.print(F("-------BOOL OVERRIDE "));
+      Serial.print(boolOv[x].ID.value());
+      Serial.println(F("-------"));
+      Serial.print(F("Address: "));
+      Serial.print(boolOv[x].target.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(boolOv[x].target.value());
+      Serial.println(F("   - (Target increment) "));
     }
   }
-  if(_alarmMax != OFF_VAL){
-  }
-}
-void Greenhouse::addAlarm(boolean relayType, byte alarmPin){
-  if (_alarmPin != OFF){
-    _alarmRelayType = relayType;
-    _alarmPin = alarmPin;
-    _alarmEnabled = true;
-    _alarmMax = OFF_VAL;
-    _alarmMin = OFF_VAL;
-    #ifndef MCP_I2C_OUTPUTS
-        pinMode(_alarmPin, OUTPUT);
-        if(_alarmRelayType == ACT_LOW){
-          digitalWrite(_alarmPin, HIGH);
-        }
-        else{
-          digitalWrite(_alarmPin, LOW);
-        }
-    #endif
-      #ifdef MCP_I2C_OUTPUTS
-          mcp.pinMode(_alarmPin, OUTPUT);
-          if(_alarmRelayType == ACT_LOW){
-            mcp.digitalWrite(_alarmPin, HIGH);
-          }
-          else{
-            mcp.digitalWrite(_alarmPin, LOW);
-          }
-    #endif
-
-  }
-
-}
-void Greenhouse::setAlarmMaxTemp(float temperature){
-  _alarmMax = temperature;
-}
-void Greenhouse::setAlarmMinTemp(float temperature){
-  _alarmMin = temperature;
-}
-void Greenhouse::alarmBlast(){
-  if(_alarmEnabled){
-    #ifndef MCP_I2C_OUTPUTS
-      if(_alarmRelayType == ACT_LOW){
-        digitalWrite(_alarmPin, LOW);
-      }
-      else{
-        digitalWrite(_alarmPin, HIGH);
-      }
-    #endif
-
-    #ifdef MCP_I2C_OUTPUTS
-      if(_alarmRelayType == ACT_LOW){
-        mcp.digitalWrite(_alarmPin, LOW);
-      }
-      else{
-        mcp.digitalWrite(_alarmPin, HIGH);
-      }
-    #endif
-  }
-}
-void Greenhouse::stopAlarm(){
-  if(_alarmEnabled){
-    #ifndef MCP_I2C_OUTPUTS
-        if(_alarmRelayType == ACT_LOW){
-          digitalWrite(_alarmPin, HIGH);
-        }
-        else{
-          digitalWrite(_alarmPin, LOW);
-        }
-      #endif
-        #ifdef MCP_I2C_OUTPUTS
-          if(_alarmRelayType == ACT_LOW){
-            mcp.digitalWrite(_alarmPin, HIGH);
-          }
-          else{
-            mcp.digitalWrite(_alarmPin, LOW);
-          }
-      #endif
-      _alarmIsTriggered = false;
-  }
+  #endif
 }

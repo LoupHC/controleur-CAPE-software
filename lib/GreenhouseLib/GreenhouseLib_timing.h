@@ -38,11 +38,14 @@ class Timepoint
 
 		Timepoint();
     ~Timepoint();
-		void setParameters(byte type, short hour, short min, float heatingTemp, float coolingTemp, unsigned short ramping);
-		void setParameters(byte type, short hour, short min, float heatingTemp, float coolingTemp, float heatingTempCloud, float coolingTempCloud, unsigned short ramping);
+		void setParameters(byte  type, short hour, short min, float heatingTemp, float coolingTemp, unsigned short ramping);
+		void setParameters(byte  type, short hour, short min, float heatingTemp, float coolingTemp, float heatingTempCloud, float coolingTempCloud, unsigned short ramping);
 		void setTimepoint(short hour, short min);
+		void updateTimepoint();
     void EEPROMGet();
     void EEPROMPut();
+		//float coolingTemp();
+		//float heatingTemp();
 
 		byteParameter type;
 		shortParameter hrMod;
@@ -52,9 +55,12 @@ class Timepoint
 		floatParameter heatingTempCloud;
 		floatParameter coolingTempCloud;
 		uShortParameter ramping;
-		unsigned short hr();
- 		unsigned short mn();
+		short hr();
+ 		short mn();
     unsigned short nb();
+
+		unsigned short EEPROMIndexBegin();
+		unsigned short EEPROMIndexEnd();
 
 		static short sunRise[3];
 		static short sunSet[3];
@@ -64,6 +70,11 @@ class Timepoint
 		short _hr;
 		short _mn;
 		timeParameter _time;
+		boolean _active;
+
+		float _heatingTempInc;
+		float _coolingTempInc;
+		float _weatherAdjust;
 
   	unsigned short _localIndex;
   	static unsigned short _EEPROMindex;

@@ -1,0 +1,109 @@
+
+#include "Arduino.h"
+#include "EEPROM.h"
+#include "elapsedMillis.h"
+#include "Parameters.h"
+#include "Defines.h"
+
+#include <Wire.h>
+#include "Adafruit_MCP23008.h"
+
+extern  Adafruit_MCP23008 mcp;
+
+#ifndef GreenhouseLib_devices_h
+#define GreenhouseLib_devices_h
+
+class Override{
+  public:
+    boolean active;
+    byte target;
+    /*
+    bool active;
+    byteParameter type;
+    byteParameter ID;
+    boolParameter enabled;
+    byteParameter hrStart;
+    byteParameter mnStart;
+    byteParameter hrStop;
+    byteParameter mnStop;
+    byteParameter comparator;
+    floatParameter floatVar;
+    floatParameter hyst;
+    boolParameter boolVar;
+    elapsedMillis counter;
+    byteParameter target;*/
+};
+
+class Output{
+  public:
+    Output();
+    ~Output();
+    void init(byte relayType, byte pin);
+    void init(byte outputType, byte relayType, byte pin);
+    void stop();
+    void start();
+    byte pin();
+    boolean isActive();
+  private:
+//Parameters
+    void setRelayType(byte relayType);
+    void setOutput(byte outputType);
+    boolean _outputType;
+    boolean _relayType;
+    boolean _activate;
+    boolean _desactivate;
+    byte _pin;
+
+    static boolean _MCP23008IsInitialized;
+};
+
+class Device {
+  public:
+    //override functions
+    byte activeOverride();
+    void setOverride(byte priority, byte target);
+    void disableOverride(byte priority);
+    void checkOverrideTimer();
+    void printOverrides();
+
+    Override overRide[MAX_OVERRIDES];
+    elapsedMillis overrideTimer;
+    bool lockedAndWaiting;
+    int overrideWaitingTime;
+
+};
+
+struct Sequence{
+  unsigned short onTime;
+  unsigned short offTime;
+};
+
+class Alarm
+{
+  public :
+    Alarm();
+    ~Alarm();
+    void init(byte outputType, boolean relayType, byte alarmPin);
+    //Single alarm setup
+    void above(float parameter, float value);
+    void below(float parameter, float value);
+    void offRange(float parameter, float minimum, float maximum);
+    void conditionalTo(boolean value);
+    //Multiple alarm setup
+    void addSequence(byte number, unsigned short on, unsigned short off);
+    void above(float parameter, float value, byte sequence);
+    void below(float parameter, float value, byte sequence);
+    void offRange(float parameter, float minimum, float maximum, byte sequence);
+    void conditionalTo(boolean value, byte sequence);
+    //Execute the alarm
+    void checkAlarm();
+    boolean isActive();
+
+  private :
+    Output output;
+    elapsedMillis counter;
+    Sequence sequence[MAX_ALARM_SEQUENCES];
+    byte _sequencePlaying;
+};
+
+#endif

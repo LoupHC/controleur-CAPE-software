@@ -22,6 +22,7 @@
 
 #include "Arduino.h"
 #include "EEPROM.h"
+#include "Defines.h"
 
 #ifndef Parameters_h
 #define Parameters_h
@@ -34,24 +35,19 @@ class floatParameter
     ~floatParameter();
     void setAddress(int adress);
     void setValue(float value);
-    void setLastValue(float value);
-    void updateLastValue();
     void setLimits(float minimum, float maximum);
     void loadInEEPROM();
+    void getInEEPROM();
     float minimum();
     float maximum();
     int address();
     float value();
-    float lastValue();
-    boolean valueHasChanged();
     boolean isOffLimit();
 
   private:
     int _address;
     float _minimum;
     float _maximum;
-    float _value;
-    float _lastValue;
 };
 
 class uShortParameter
@@ -61,15 +57,12 @@ class uShortParameter
     ~uShortParameter();
     void setAddress(int adress);
     void setValue(unsigned short value);
-    void setLastValue(unsigned short value);
-    void updateLastValue();
     void setLimits(unsigned short minimum, unsigned short maximum);
     void loadInEEPROM();
+    void getInEEPROM();
     unsigned short minimum();
     unsigned short maximum();
     unsigned short value();
-    unsigned short lastValue();
-    boolean valueHasChanged();
     int address();
     boolean isOffLimit();
 
@@ -77,8 +70,6 @@ class uShortParameter
     int _address;
     unsigned short _minimum;
     unsigned short _maximum;
-    unsigned short _value;
-    unsigned short _lastValue;
 };
 
 class shortParameter
@@ -92,11 +83,10 @@ class shortParameter
     void updateLastValue();
     void setLimits(short minimum, short maximum);
     void loadInEEPROM();
+    void getInEEPROM();
     short minimum();
     short maximum();
     short value();
-    short lastValue();
-    boolean valueHasChanged();
     int address();
     boolean isOffLimit();
 
@@ -104,8 +94,6 @@ class shortParameter
     int _address;
     short _minimum;
     short _maximum;
-    short _value;
-    short _lastValue;
 };
 
 class byteParameter
@@ -115,24 +103,35 @@ class byteParameter
     ~byteParameter();
     void setValue(byte value);
     void setAddress(int adress);
-    void setLastValue(byte value);
-    void updateLastValue();
     void setLimits(byte minimum, byte maximum);
     void loadInEEPROM();
+    void getInEEPROM();
     byte minimum();
     byte maximum();
-    byte value();
-    byte lastValue();
-    boolean valueHasChanged();
     int address();
     boolean isOffLimit();
+    byte value();
 
   private:
     int _address;
     byte _minimum;
     byte _maximum;
-    byte _value;
-    byte _lastValue;
+};
+
+class boolParameter
+{
+  public:
+    boolParameter();
+    ~boolParameter();
+    void setValue(bool value);
+    void setAddress(int adress);
+    void loadInEEPROM();
+    void getInEEPROM();
+    boolean value();
+    int address();
+
+  private:
+    int _address;
 };
 
 class timeParameter
@@ -144,8 +143,8 @@ class timeParameter
     void setTime(short hour, short minut);
     void addTime(short hour, short minut);
     void subTime(short hour, short minut);
-    short hour();
-    short minut();
+    unsigned short hour();
+    unsigned short minut();
     int address();
 
   private:
@@ -153,5 +152,8 @@ class timeParameter
     short _hour;
     short _minut;
 };
+
+boolean isBetween(byte startHour, byte startMin, byte actualHour, byte actualMin, byte stopHour, byte stopMin);
+
 
 #endif

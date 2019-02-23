@@ -25,6 +25,7 @@
 #include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
+#include "GreenhouseLib_devices.h"
 
 #ifndef GreenhouseLib_rollups_h
 #define GreenhouseLib_rollups_h
@@ -71,31 +72,33 @@ Parameters :
 - pause time between increments (max. 250 sec.)
 */
 
-class Rollup
+
+class Rollup : public Device
 {
   public:
     //initialization functions
     Rollup();
     ~Rollup();
-    void initOutputs(boolean relayType, byte rOpen, byte rClose);
+    void initOutputs(byte outputType, boolean relayType, byte rOpen, byte rClose);
     void initStage(Stage stage, float mod, byte inc);
+
+    void lockOpen();
+    void lockClose();
+    void lockAtIncrement(byte increment);
+    void resetLockTimer();
+    void lockAtIncrement(byte increment, int minuts);
+    void unlock();
+    boolean isLock();
 
     //routihe functions
 		void routine(float target, float temp);
-		void routine(boolean condition, float target, float temp);
-    //Override
-    void forceMove(unsigned short duration, unsigned short targetIncrement);
-    void forceMove(unsigned short targetIncrement);
 
     //Parameters functions
     void setParameters(float hyst, unsigned short rotationUp, unsigned short rotationDown, unsigned short pause);
     void setStages(byte stages);
     void setIncrementCounter(unsigned short increment);
     void EEPROMGet();
-    void EEPROMPut();
-
 		//return private variables
-
     Stage stage[MAX_STAGES];
     floatParameter hyst;
     uShortParameter rotationUp;
@@ -104,6 +107,7 @@ class Rollup
 
     unsigned short increments();
 
+    //byte activeOverride();
     unsigned short incrementCounter();
     boolean isMoving();
     boolean isWaiting();
@@ -112,17 +116,19 @@ class Rollup
     boolean closing();
     unsigned short nb();
 
+		unsigned short EEPROMIndexBegin();
+		unsigned short EEPROMIndexEnd();
+
+    boolean TEST_parameterOffLimits();
+
 
 
     //Parameters
   private:
     byte _increments;
     //const parameters
-    byte _openingPin;
-    byte _closingPin;
-    boolean _relayType;
-    boolean _activate;
-    boolean _desactivate;
+    Output _openingPin;
+    Output _closingPin;
 
 		//Logic variables
 		unsigned short _incrementCounter;
@@ -130,19 +136,18 @@ class Rollup
     unsigned long _downStep;
     unsigned long _pauseTime;
 		unsigned long _moveTime;
-    unsigned long _overrideDuration;
+
+    unsigned short _targetIncement;
     short _incrementMove;
     short _stageMove;
-    boolean _opening;
-    boolean _closing;
     boolean _routine;
-    boolean _fixOverride;
-    boolean _relativeOverride;
+    byte _activeOverride;
     boolean _routineCycle;
 		unsigned short _stage;
     unsigned short _upperStage;
     unsigned short _lowerStage;
 		unsigned short _stages;
+    boolean _reset;
 
 		//Timers
 		elapsedMillis rollupTimer;
@@ -154,28 +159,20 @@ class Rollup
 		unsigned short _localCounter;
 		static unsigned short _counter;
 
-    void openOrClose(float temp, float targetTemp);
-    void openToInc(unsigned short targetStage, unsigned short targetIncrement);
 		//private functions
-    void action(byte pin, boolean state);
-    //Mode MAN_TEMP
     //Actions
     void watchRoutine();
-    void watchFixOverride();
-    void watchRelativeOverride(boolean condition);
-    void startMove(short stageMove, short incrementMove);
-    void startMove(String type, short incrementMove);
+    void watchOverride();
+    void updatePosition(float temp, float targetTemp);
+    void updatePosition(byte overrideNumber);
+    void startMove();
     void stopMove();
     void resumeCycle(String type);
-    void startOpening();
-    void stopOpening();
-    void startClosing();
-    void stopClosing();
-    void desactivateRoutine(String type);
-    void activateRoutine();
+
     void calibrateStages();
-    void checkTimings();
+    void updateTimings();
     void checkStageSuccession();
+
 		void printPause();
 		void printEndPause();
     void debugPrints();
