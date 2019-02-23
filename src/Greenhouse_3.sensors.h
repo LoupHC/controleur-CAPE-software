@@ -16,16 +16,20 @@
 
 unsigned long counter = 1;
 
+<<<<<<< HEAD
 int startMin = 0;
 int startHour = 0;
 int startDay = 1;
 int startMonth = 1;
 int startYear = 0;
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 
 void sensorBackup(){
   if(EEPROM.read(1) == 111){
     float emergencyTemp = EEPROM.read(2);
     greenhouseTemperature = emergencyTemp;
+<<<<<<< HEAD
   }
   else{
     greenhouseTemperature = 20;
@@ -35,10 +39,22 @@ void sensorBackup(){
     greenhouseHumidity = emergencyHum;
   }
   else{
+=======
+  }
+  else{
+    greenhouseTemperature = 20;
+  }
+  if(EEPROM.read(3) == 111){
+    float emergencyHum = EEPROM.read(4);
+    greenhouseHumidity = emergencyHum;
+  }
+  else{
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
     greenhouseHumidity = 50;
   }
 }
 
+<<<<<<< HEAD
 void testTime(){
     if(startMin > 59){
       startMin = 0;
@@ -58,6 +74,8 @@ void testTime(){
     }
 }
 
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 void getDateAndTime(){
   if(RTC == RTC_DS3231){
 
@@ -68,6 +86,7 @@ void getDateAndTime(){
       rightNow[2] = t.hour;
       rightNow[1] = t.min;
       rightNow[0] = t.sec;
+<<<<<<< HEAD
   }
   if(RTC == TEST_CLOCKF){
 
@@ -93,6 +112,8 @@ void getDateAndTime(){
 
     startDay++;
     testTime();
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
   }
 
 

@@ -8,8 +8,11 @@
 #define DHT22               1003//Temperature and humidity
 #define SHT1X               1004//Temperature and humidity
 #define RTC_DS3231          2000//RTC
+<<<<<<< HEAD
 #define TEST_CLOCKF         2001//RTC
 #define TEST_CLOCKFF        2002//RTC
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 #define HYDREON_RG11        3000//Rain sensor
 //************************************************************
 //****************INTERFACE ID*********************
@@ -43,7 +46,11 @@
 
 //*************DATA IMPORT/EXPORT*********************
 
+<<<<<<< HEAD
 //#define UNIT_TEST         //Uncomment to run unit-tests
+=======
+#define UNIT_TEST         //Uncomment to run unit-tests
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 
 #define EXCEL_PROGRAMMER
 

@@ -60,7 +60,10 @@
 //EEPROM indexation
 #define ROLLUP_INDEX      10
 #define FAN_INDEX         101
+<<<<<<< HEAD
 #define HEATER_INDEX         125
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 #define TIMEPOINT_INDEX   150
 
 
@@ -72,7 +75,10 @@
 
 #define ROLLUP_INDEX_SIZE       50
 #define FAN_INDEX_SIZE          8
+<<<<<<< HEAD
 #define HEATER_INDEX_SIZE          8
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 #define TIMEPOINT_INDEX_SIZE    24
 #define CLOCKOV_INDEX_SIZE      10
 #define FLOATOV_INDEX_SIZE      15

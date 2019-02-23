@@ -24,6 +24,41 @@
 //****************************************************
 //******************FAN FUNCTIONS************************
 //****************************************************************/
+<<<<<<< HEAD
+
+void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
+  //define opening/closing pins
+  _output.init(outputType, relayType, pin);
+=======
+unsigned short OnOffDevice::_EEPROMindex = 0;
+unsigned short OnOffDevice::_counter = 0;
+
+OnOffDevice::OnOffDevice(){
+    _localIndex = FAN_INDEX + _EEPROMindex;
+    _EEPROMindex += FAN_INDEX_SIZE;
+    _localCounter = _counter;
+    _counter++;
+
+    mod.setLimits(0, 10);
+    mod.setAddress(_localIndex);
+    _localIndex += sizeof(float);
+
+    hyst.setLimits(0,5);
+    hyst.setAddress(_localIndex);
+    _localIndex += sizeof(float);
+
+    EEPROMTimer = 0;
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+}
+
+void OnOffDevice::lockOn(){
+  _activeOverride = OFF_VAL;
+  overRide[0].target = true;
+  overRide[0].active = true;
+
+<<<<<<< HEAD
+=======
+OnOffDevice::~OnOffDevice(){}
 
 void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
   //define opening/closing pins
@@ -35,6 +70,7 @@ void OnOffDevice::lockOn(){
   overRide[0].target = true;
   overRide[0].active = true;
 
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 }
 
 void OnOffDevice::lockOff(){
@@ -103,7 +139,22 @@ boolean OnOffDevice::isActive(){
   }
 }
 
+<<<<<<< HEAD
 
+=======
+unsigned short OnOffDevice::nb(){
+  return _localCounter;
+}
+
+unsigned short OnOffDevice::EEPROMIndexBegin(){
+  return FAN_INDEX + (FAN_INDEX_SIZE*_localCounter);
+}
+
+unsigned short OnOffDevice::EEPROMIndexEnd(){
+  return _localIndex;
+}
+
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 boolean OnOffDevice::TEST_parameterOffLimits(){
   if(hyst.isOffLimit()||mod.isOffLimit()){
     return true;
@@ -113,6 +164,7 @@ boolean OnOffDevice::TEST_parameterOffLimits(){
   }
 }
 
+<<<<<<< HEAD
 unsigned short Fan::_EEPROMindex = 0;
 unsigned short Fan::_counter = 0;
 
@@ -131,6 +183,9 @@ Fan::Fan(){
     _localIndex += sizeof(float);
 
 }
+=======
+
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 
 void Fan::EEPROMGet(){
   #ifdef DEBUG_EEPROM
@@ -177,6 +232,7 @@ void Fan::routine(float target, float temp){
     }
   }
 
+<<<<<<< HEAD
   unsigned short Fan::nb(){
     return _localCounter;
   }
@@ -231,6 +287,34 @@ void Heater::routine(float target, float temp){
     }
   }
 
+=======
+/*
+Start or stop the fan when a certain temperature is reached
+Adjust to an external target temperature (Mode VAR_TEMP)
+*/
+void Heater::routine(float target, float temp){
+    checkOverrideTimer();
+    _activeOverride = activeOverride();
+    if(_activeOverride != OFF_VAL){
+      if((bool)overRide[_activeOverride].target == true){
+        _output.start();
+      }
+      else if((bool)overRide[_activeOverride].target == false){
+        _output.stop();
+      }
+    }
+    else{
+        float activationTemp = target + mod.value();
+        if (temp > (activationTemp + hyst.value())) {
+          	_output.stop();
+        }
+        else if (temp < activationTemp) {
+          	_output.start();
+        }
+    }
+  }
+
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 void Heater::EEPROMGet(){
 /*
   hyst.getInEEPROM();

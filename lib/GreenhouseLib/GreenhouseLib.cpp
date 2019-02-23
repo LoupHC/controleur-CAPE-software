@@ -144,6 +144,7 @@ void Greenhouse::setNow(byte rightNow[6]){
   if(timezone.value() == -5){
     myLord.DST(_rightNow);
   }
+<<<<<<< HEAD
 
   #ifdef DEBUG_SOLARCALC
     if(_rightNow[2]!=rightNow[2]){
@@ -153,6 +154,8 @@ void Greenhouse::setNow(byte rightNow[6]){
         Serial.println("Heure normale");
     }
   #endif
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 }
 
 

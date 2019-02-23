@@ -36,6 +36,12 @@ class OnOffDevice : public Device
   public:
 
       //initialization functions
+<<<<<<< HEAD
+=======
+      OnOffDevice();
+      ~OnOffDevice();
+
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
       void initOutput(byte outputType, boolean relayType, byte pin);
 
       void lockOn();
@@ -55,9 +61,16 @@ class OnOffDevice : public Device
 			boolean isActive();
       boolean override();
 
+  		unsigned short EEPROMIndexBegin();
+  		unsigned short EEPROMIndexEnd();
 
       boolean TEST_parameterOffLimits();
 
+<<<<<<< HEAD
+      boolean TEST_parameterOffLimits();
+
+=======
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 
     protected:
       Output _output;
@@ -69,9 +82,21 @@ class OnOffDevice : public Device
       boolean _activate;
       boolean _desactivate;
 			byte _pin;
+<<<<<<< HEAD
 
 			//Timer
       elapsedMillis EEPROMTimer;*/
+
+=======
+*/
+			//Indexes
+			unsigned short _localIndex;
+      static unsigned short _EEPROMindex;
+  		unsigned short _localCounter;
+  		static unsigned short _counter;
+			//Timer
+      elapsedMillis EEPROMTimer;
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 
 
 };
@@ -87,6 +112,7 @@ Parameters :
 class Fan : public OnOffDevice
 {
 public:
+<<<<<<< HEAD
   Fan();
   void routine(float target, float temp);
   void EEPROMGet();
@@ -100,6 +126,10 @@ private:
   unsigned short _localIndex;
   static unsigned short _EEPROMindex;
 
+=======
+  void routine(float target, float temp);
+  void EEPROMGet();
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 };
 
 /*
@@ -113,6 +143,7 @@ Parameters :
 class Heater : public OnOffDevice
 {
 public:
+<<<<<<< HEAD
   Heater();
   void routine(float target, float temp);
   void EEPROMGet();
@@ -125,6 +156,9 @@ private:
   static unsigned short _counter;
   unsigned short _localIndex;
   static unsigned short _EEPROMindex;
+=======
+  void routine(float target, float temp);
+  void EEPROMGet();
+>>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 };
-
 #endif
