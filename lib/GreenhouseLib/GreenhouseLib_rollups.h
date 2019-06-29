@@ -72,7 +72,6 @@ Parameters :
 - pause time between increments (max. 250 sec.)
 */
 
-
 class Rollup : public Device
 {
   public:
@@ -84,26 +83,27 @@ class Rollup : public Device
 
     void lockOpen();
     void lockClose();
+    void lockOpenAndWait(unsigned long seconds);
+    void lockCloseAndWait(unsigned long seconds);
     void lockAtIncrement(byte increment);
-    void resetLockTimer();
-    void lockAtIncrement(byte increment, int minuts);
-    void unlock();
-    boolean isLock();
-
+    void lockAtIncrement(byte increment, unsigned long seconds);
+    void forceStop();
     //routihe functions
 		void routine(float target, float temp);
 
     //Parameters functions
-    void setParameters(float hyst, unsigned short rotationUp, unsigned short rotationDown, unsigned short pause);
-    void setStages(byte stages);
+    void setParameters(byte stages, float hyst, unsigned short rotationUp, unsigned short rotationDown, unsigned short pause, bool enabled);
     void setIncrementCounter(unsigned short increment);
     void EEPROMGet();
 		//return private variables
-    Stage stage[MAX_STAGES];
+    byteParameter stages;
     floatParameter hyst;
     uShortParameter rotationUp;
     uShortParameter rotationDown;
     uShortParameter pause;
+
+
+    Stage stage[MAX_STAGES];
 
     unsigned short increments();
 
@@ -120,11 +120,12 @@ class Rollup : public Device
 		unsigned short EEPROMIndexEnd();
 
     boolean TEST_parameterOffLimits();
-
+    void setTest(boolean state);
 
 
     //Parameters
   private:
+    boolean _test;
     byte _increments;
     //const parameters
     Output _openingPin;
@@ -169,6 +170,7 @@ class Rollup : public Device
     void stopMove();
     void resumeCycle(String type);
 
+    void autoAdjustStages();
     void calibrateStages();
     void updateTimings();
     void checkStageSuccession();

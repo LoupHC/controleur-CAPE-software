@@ -14,7 +14,7 @@
 //#define DEBUG_ROLLUP1_STATE
 //#define DEBUG_ROLLUP2_STATE
 //#define DEBUG_ROLLUP1_CYCLE
-//#define DEBUG_FAN
+//#define DEBUG_DEVICE
 //#define DEBUG_HEATER
 //#define DEBUG_EEPROM
 //#define DEBUG_TIMEPOINTS
@@ -22,26 +22,24 @@
 //#define DEBUG_SOLARCALC
 //#define DEBUG_CLOCK
 //#define DEBUG_SETUP
+//#define DEBUG_RAMPING
 
-#define TEST_MODE
+//#define TEST_MODE
 
 //Don't change these values unless you know what you are doing
 
 #ifndef MAX_ROLLUPS
-  #define MAX_ROLLUPS 2
+  #define MAX_ROLLUPS 3
 #endif
 
 #ifndef MAX_TIMEPOINTS
-  #define MAX_TIMEPOINTS 5
+  #define MAX_TIMEPOINTS 4
 #endif
 
-#ifndef MAX_FANS
-  #define MAX_FANS 2
+#ifndef MAX_DEVICES
+  #define MAX_DEVICES 5
 #endif
 
-#ifndef MAX_HEATERS
-  #define MAX_HEATERS 2
-#endif
 
 #ifndef MAX_STAGES
   #define MAX_STAGES 6
@@ -51,35 +49,32 @@
   #define MAX_OVERRIDES 5
 #endif
 
-#define MAX_CLOCK_OV    10
-#define MAX_FLOAT_OV    10
-#define MAX_BOOL_OV     10
+#define MAX_CLOCK_OV    3
+//humidity
+#define MAX_FLOAT_OV    1
+//rain
+//wind
+//outsideTemp
+#define MAX_BOOL_OV     3
 
 #define MAX_ALARM_SEQUENCES 3
 
 //EEPROM indexation
 #define ROLLUP_INDEX      10
-#define FAN_INDEX         101
-<<<<<<< HEAD
-#define HEATER_INDEX         125
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-#define TIMEPOINT_INDEX   150
+#define DEVICE_INDEX         121
+#define TIMEPOINT_INDEX   220
 
 
-#define GREENHOUSE_INDEX        3000
-#define CLOCKOV_INDEX           3020
-#define FLOATOV_INDEX           3120
-#define BOOLOV_INDEX            3300
+#define GREENHOUSE_INDEX        2000
+#define CLOCKOV_INDEX           2100
+#define FLOATOV_INDEX           2500
+#define BOOLOV_INDEX            3000
 
 
 #define ROLLUP_INDEX_SIZE       50
-#define FAN_INDEX_SIZE          8
-<<<<<<< HEAD
-#define HEATER_INDEX_SIZE          8
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+#define DEVICE_INDEX_SIZE       11
 #define TIMEPOINT_INDEX_SIZE    24
+
 #define CLOCKOV_INDEX_SIZE      10
 #define FLOATOV_INDEX_SIZE      15
 #define BOOLOV_INDEX_SIZE       8
@@ -95,7 +90,8 @@
 #define MCP23008     0
 
 #define OFF_VAL 255
-#define OFF     255
+#define AUTO_WEATHER 255
+#define OFF 255
 
 #define HOUR 2
 #define MINUT 1
@@ -113,9 +109,23 @@
 #define ABOVE 1
 #define BELOW 2
 
-#define SUN   0
+#define SUN   100
 #define CLOUD 1
 
+#define FANTYPE   0
+#define HEATERTYPE 1
+#define VALVTYPE 2
+
+#define LOCK 50
+
+#define DS18B20_TEMP 0
+#define STH1X_TEMP 1
+#define OFF_TEMP 2
+
+#define OFF_RAIN 3
+#define RG11_BUCKET 2
+#define NO_CONTACT 1
+#define NC_CONTACT 0
 
 
 #endif

@@ -29,7 +29,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/*ROLLUP CALIBRATION - FIXOV OVERRIDE
+/*ROLLUP CALIBRATION - FIX OVERRIDE
 
 Conditions :
  - rollup has been fully open or fully close for a while (SAFETY_DELAY)
@@ -39,17 +39,23 @@ Action :
 */
 
 //OVERRIDES ID
-//#define FULL_VENTILATION    90
-//#define DESHUM_CYCLE_FIXOV    93
-//#define ROLLUP_CALIBRATION  97
-
-#define WINDOV            95
-#define CLOCKOV1                 96
-#define CLOCKOV2                 97
-#define CLOCKOV3                 98
-#define RAINOV                99
-#define OUTTEMP                100
-#define DESHUM              106
+#define FULL_VENTILATION    90
+#define DESHUM_CYCLE_FIX    93
+#define WIND_LOW            95
+#define WIND_STRONG         96
+#define ROLLUP_CALIBRATION  97
+#define FIX_R1              98
+#define FIX_R2              99
+#define FIX_F1              100
+#define FIX_F2              101
+#define FIX_H1              102
+#define FIX_H2              103
+#define RAIN1                104
+#define RAIN2                105
+#define DESHUM_AUTO1         106
+#define DESHUM_AUTO2         107
+#define DESHUM_AUTO_COLD1    108
+#define DESHUM_AUTO_COLD2    109
 
 boolean condition1 = false;
 boolean condition2 = false;
@@ -60,7 +66,7 @@ float deshum_cold = 80;
 
 boolean rainOverride(byte ID, Rollup rollup){
   float shuttingTemp = greenhouse.coolingTemp() + rollup.stage[0].target.value();
-  byte targetIncrement = rollup.overrideTarget(RAINOV);
+  byte targetIncrement = 20;
   if((rain == true)&&(rollup.incrementCounter() >= targetIncrement)&&(greenhouseTemperature >= shuttingTemp )){
     return true;
   }
@@ -72,19 +78,16 @@ boolean rainOverride(byte ID, Rollup rollup){
 
 
 void checkOverrides(){
-
-  for (byte x = 0; x < greenhouse.rollups.value(); x++){
-    greenhouse.rollup[x].checkOverride(CLOCKOV1,greenhouse.hr(), greenhouse.mn());
-    greenhouse.rollup[x].checkOverride(CLOCKOV2,greenhouse.hr(), greenhouse.mn());
-    greenhouse.rollup[x].checkOverride(CLOCKOV3,greenhouse.hr(), greenhouse.mn());
-    greenhouse.rollup[x].checkOverride(RAINOV, rainOverride(RAINOV, R1));
-    //greenhouse.rollup[x].checkOverride(WIND, windSpeed);
-    //greenhouse.rollup[x].checkOverride(OUTTEMP, greenhouseTemperature);
-  }
-  for (byte x = 0; x < greenhouse.devices.value(); x++){
-    greenhouse.device[x].checkOverride(CLOCKOV1,greenhouse.hr(), greenhouse.mn());
-    greenhouse.device[x].checkOverride(CLOCKOV2,greenhouse.hr(), greenhouse.mn());
-    greenhouse.device[x].checkOverride(CLOCKOV3,greenhouse.hr(), greenhouse.mn());
-    greenhouse.device[x].checkOverride(DESHUM,greenhouseHumidity);
-  }
+    greenhouse.checkOverride(FIX_R1,R1,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_R2,R2,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_F1,F1,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_F2,F2,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_H1,H1,greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(FIX_H2,H2, greenhouse.hr(), greenhouse.mn());
+    greenhouse.checkOverride(DESHUM_AUTO1,H1,greenhouseHumidity);
+    greenhouse.checkOverride(DESHUM_AUTO2,H2,greenhouseHumidity);
+    greenhouse.checkOverride(DESHUM_AUTO_COLD1,F1,greenhouseHumidity);
+    greenhouse.checkOverride(DESHUM_AUTO_COLD2, F2, greenhouseHumidity);
+    greenhouse.checkOverride(RAIN1, R1, rainOverride(RAIN1, R1));
+    greenhouse.checkOverride(RAIN2, R2, rainOverride(RAIN2, R2));
 }

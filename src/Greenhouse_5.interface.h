@@ -38,6 +38,12 @@
 #define SET_PARAMETER     21
 #define ACTION            3
 
+
+#define ROLLUP_MENU_CONSTANT      1000
+#define DEVICE_MENU_CONSTANT      2000
+#define TIMEPOINT_MENU_CONSTANT   3000
+#define GENERIC_MENU_CONSTANT     5000
+
 //********************LCD parameters *******************
 //Features :
 // - 20x4 LCD display
@@ -80,6 +86,10 @@ LiquidCrystal_I2C  lcd(I2CADDR_LCD, 2, 1, 0, 4, 5, 6, 7);
 #define I2C_OUTPUTS               //Comment this line if you don't use MCP23008 I/O Expander (Comment as well MCP_I2C_OUTPUTS on the Defines.h file of GreenhouseLib)
 
 //********************Display variables*******************
+unsigned int menuID;
+unsigned int lastMenuID[30];
+unsigned int menuPosition = 0;
+
 char key = '1';
 short menu = MODE_DISPLAY;
 boolean firstPrint = true;
@@ -88,173 +98,13 @@ boolean fastMinus = false;
 const byte Code_lenght = 5; // Give enough room for 4 chars + NULL char
 char Data[Code_lenght] = "0000"; // 4 is the number of chars it can hold + the null char = 5
 
-const char SETDAY[Code_lenght]    = "0001";
-const char SETMONTH[Code_lenght]  = "0002";
-const char SETYEAR[Code_lenght]   = "0003";
-const char SETHOUR[Code_lenght]   = "0004";
-const char SETMIN[Code_lenght]    = "0005";
-
-const char MAIN[Code_lenght]      = "0010";
-
-const char R1HYST[Code_lenght]    = "1100";
-const char R1STEPS[Code_lenght]   = "1104";
-const char R1ROTUP[Code_lenght]   = "1101";
-const char R1ROTDOWN[Code_lenght] = "1102";
-const char R1PAUSE[Code_lenght]   = "1103";
-const char R1S1MOD[Code_lenght]   = "1110";
-const char R1S1TARG[Code_lenght]  = "1111";
-const char R1S2MOD[Code_lenght]   = "1120";
-const char R1S2TARG[Code_lenght]  = "1121";
-const char R1S3MOD[Code_lenght]   = "1130";
-const char R1S3TARG[Code_lenght]  = "1131";
-const char R1S4MOD[Code_lenght]   = "1140";
-const char R1S4TARG[Code_lenght]  = "1141";
-const char R1S5MOD[Code_lenght]   = "1150";
-const char R1S5TARG[Code_lenght]  = "1151";
-const char R2HYST[Code_lenght]    = "1200";
-const char R2ROTUP[Code_lenght]   = "1201";
-const char R2ROTDOWN[Code_lenght] = "1202";
-const char R2PAUSE[Code_lenght]   = "1203";
-const char R2S1MOD[Code_lenght]   = "1210";
-const char R2S1TARG[Code_lenght]  = "1211";
-const char R2S2MOD[Code_lenght]   = "1220";
-const char R2S2TARG[Code_lenght]  = "1221";
-const char R2S3MOD[Code_lenght]   = "1230";
-const char R2S3TARG[Code_lenght]  = "1231";
-const char R2S4MOD[Code_lenght]   = "1240";
-const char R2S4TARG[Code_lenght]  = "1241";
-const char R2S5MOD[Code_lenght]   = "1250";
-const char R2S5TARG[Code_lenght]  = "1251";
-const char F1HYST[Code_lenght]    = "2100";
-const char F1MOD[Code_lenght]     = "2101";
-const char F2HYST[Code_lenght]    = "2200";
-const char F2MOD[Code_lenght]     = "2201";
-const char H1HYST[Code_lenght]    = "3100";
-const char H1MOD[Code_lenght]     = "3101";
-const char H2HYST[Code_lenght]    = "3200";
-const char H2MOD[Code_lenght]     = "3201";
-const char T1TYPE[Code_lenght]    = "4100";
-const char T1HOUR[Code_lenght]    = "4101";
-const char T1MIN[Code_lenght]     = "4102";
-const char T1HEATT[Code_lenght]   = "4103";
-const char T1COOLT[Code_lenght]   = "4104";
-const char T1RAMP[Code_lenght]    = "4105";
-const char T2TYPE[Code_lenght]    = "4200";
-const char T2HOUR[Code_lenght]    = "4201";
-const char T2MIN[Code_lenght]     = "4202";
-const char T2HEATT[Code_lenght]   = "4203";
-const char T2COOLT[Code_lenght]   = "4204";
-const char T2RAMP[Code_lenght]    = "4205";
-const char T3TYPE[Code_lenght]    = "4300";
-const char T3HOUR[Code_lenght]    = "4301";
-const char T3MIN[Code_lenght]     = "4302";
-const char T3HEATT[Code_lenght]   = "4303";
-const char T3COOLT[Code_lenght]   = "4304";
-const char T3RAMP[Code_lenght]    = "4305";
-const char T4TYPE[Code_lenght]    = "4400";
-const char T4HOUR[Code_lenght]    = "4401";
-const char T4MIN[Code_lenght]     = "4402";
-const char T4HEATT[Code_lenght]   = "4403";
-const char T4COOLT[Code_lenght]   = "4404";
-const char T4RAMP[Code_lenght]    = "4405";
-const char T5TYPE[Code_lenght]    = "4500";
-const char T5HOUR[Code_lenght]    = "4501";
-const char T5MIN[Code_lenght]     = "4502";
-const char T5HEATT[Code_lenght]   = "4503";
-const char T5COOLT[Code_lenght]   = "4504";
-const char T5RAMP[Code_lenght]    = "4505";
-const char TESTRELAYS[Code_lenght]= "5555";
-const char TESTIIC[Code_lenght]   = "6666";
-
-
-const char ADJT24H[Code_lenght]   = "4001";
-const char ADJTNIGHT[Code_lenght] = "4002";
-const char ADJTDAY[Code_lenght]   = "4003";
-const char DIF[Code_lenght]       = "4004";
-const char DIFTEMP[Code_lenght]   = "4005";
-const char PRENIGHT[Code_lenght]  = "4006";
-const char PRENTEMP[Code_lenght]  = "4007";
-const char PRENSPEED[Code_lenght] = "4008";
-<<<<<<< HEAD
-const char ADJTWEA[Code_lenght]   = "4009";
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-
-
-const char R1OV[Code_lenght]      = "5110";
-const char R1FOPEN[Code_lenght]   = "5111";
-const char R1FCLOSE[Code_lenght]  = "5112";
-const char R1FINC1[Code_lenght]   = "5113";
-const char R1FINC2[Code_lenght]   = "5114";
-
-const char R2OV[Code_lenght]      = "5120";
-const char R2FOPEN[Code_lenght]   = "5121";
-const char R2FCLOSE[Code_lenght]  = "5122";
-const char R2FINC1[Code_lenght]   = "5123";
-const char R2FINC2[Code_lenght]   = "5124";
-
-const char F1OV[Code_lenght]      = "5210";
-const char F1FOPEN[Code_lenght]   = "5211";
-const char F1FCLOSE[Code_lenght]  = "5212";
-
-const char F2OV[Code_lenght]      = "5220";
-const char F2FOPEN[Code_lenght]   = "5221";
-const char F2FCLOSE[Code_lenght]  = "5222";
-
-const char H1OV[Code_lenght]      = "5310";
-const char H1FOPEN[Code_lenght]   = "5311";
-const char H1FCLOSE[Code_lenght]  = "5312";
-
-const char H2OV[Code_lenght]      = "5320";
-const char H2FOPEN[Code_lenght]   = "5321";
-const char H2FCLOSE[Code_lenght]  = "5322";
-
-const char R1STAGES[Code_lenght]  = "6001";
-const char R2STAGES[Code_lenght]  = "6002";
-
-const char MENU1[Code_lenght]  = "1000";
-const char MENU2[Code_lenght]  = "2000";
-const char MENU3[Code_lenght]  = "3000";
-const char MENU4[Code_lenght]  = "4000";
-const char MENU5[Code_lenght]  = "5000";
-const char MENU6[Code_lenght]  = "6000";
-const char MENU7[Code_lenght]  = "7000";
-const char MENU8[Code_lenght]  = "8000";
-const char MENU9[Code_lenght]  = "9000";
-
-<<<<<<< HEAD
-=======
-const char R1WIZ[Code_lenght]  = "0100";
-const char R1WIZ1[Code_lenght]  = "0101";
-const char R1WIZ2[Code_lenght]  = "0102";
-const char R1WIZ3[Code_lenght]  = "0103";
-const char R1WIZ4[Code_lenght]  = "0104";
-const char R1WIZ5[Code_lenght]  = "0105";
-const char R1WIZ6[Code_lenght]  = "0106";
-const char R1WIZ7[Code_lenght]  = "0107";
-const char R1WIZ8[Code_lenght]  = "0108";
-const char R1WIZ9[Code_lenght]  = "0109";
-const char R1WIZ10[Code_lenght] = "0110";
-const char R1WIZ11[Code_lenght] = "0111";
-const char R1WIZ12[Code_lenght] = "0112";
-
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-
-
-
-
-
 elapsedMillis unpressedTimer;
 elapsedMillis pressedTimer;
 
 float fvariable;
 unsigned short usvariable, usvariable1, usvariable2;
-<<<<<<< HEAD
-short svariable, svariable1, svariable2;
-=======
-short svariable;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-byte typeSet;
+short svariable, svariable1, svariable2, svariable3, svariable4;
+byte selectedElement;
 unsigned short hourSet;
 unsigned short minSet;
 
@@ -262,11 +112,7 @@ byte increment = 0;
 short line = 0;
 short maxLine;
 short lastline = 0;
-<<<<<<< HEAD
 short smodif, smodif1, smodif2 = 0;
-=======
-short smodif = 0;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 float fmodif = 0;
 
 boolean confirm = false;
@@ -307,7 +153,6 @@ byte rains[8] = {
   B01000,
 };
 
-<<<<<<< HEAD
 byte wind1[8] ={
   B00000,
   B00010,
@@ -329,8 +174,6 @@ byte wind2[8] = {
   B00000,
   B00000
 };
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 byte humids[8] = {
   B00100,
   B01010,
@@ -352,8 +195,132 @@ byte locks[8] = {
   B00000,
 };
 
+byte up[8] = {
+  B00100,
+  B01110,
+  B10101,
+  B00100,
+  B00100,
+  B00100,
+  B00100,
+  B00100,
+};
+byte down[8] = {
+  B00100,
+  B00100,
+  B00100,
+  B00100,
+  B00100,
+  B10101,
+  B01110,
+  B00100,
+};
+
+byte target[] = {
+  B00000,
+  B01110,
+  B10001,
+  B10101,
+  B10001,
+  B01110,
+  B00000,
+  B00000
+};
+
+const byte MAIN = 0;
+const byte ROTUP = 1;
+const byte ROTDOWN = 2;
+const byte TYPE = 1;
+const byte STARTTEMP = 2;
+const byte STOPTEMP = 3;
+const byte PAUSE= 3;
+const byte HYST= 4;
+const byte SETSTAGES= 5;
+const byte S1TEMP= 10;
+const byte S2TEMP= 20;
+const byte S3TEMP= 30;
+const byte S4TEMP= 40;
+const byte S1TARGET= 11;
+const byte S2TARGET= 21;
+const byte S3TARGET= 31;
+const byte S4TARGET= 41;
+
+const byte HOME = 0;
+const byte CONFIG = 1;
+const byte HOURSET = 2;
+const byte MINSET = 3;
+const byte DAY = 4;
+const byte MONTH = 5;
+const byte YEAR = 6;
+const byte SETLATITUDE = 7;
+const byte SETLONGITUDE = 8;
+const byte SETTIMEZONE = 9;
+const byte ENABLEDAYNIGHT = 10;
+const byte REF = 11;
+const byte WEATHERADJUST = 12;
+const byte WEATHER = 13;
+
+const byte TEMPERATURES = 14;
+const byte SELECTSENSORS = 15;
+const byte INSIDETEMPSENSOR = 16;
+const byte FACTORYSETTINGS = 17;
+const byte ADJUST = 18;
+const byte ADJUST24H = 19;
+const byte ADJUSTVR = 20;
+const byte ENTERCODE = 21;
+const byte SETDIF = 22;
+const byte SETPRENIGHT = 23;
+const byte AUTO= 50;
+const byte FOPEN = 51;
+const byte FCLOSE = 52;
+const byte FINC1 = 53;
+const byte FINC2 = 54;
+
+const byte OVERRIDE = 60;
+const byte FIXOV1 = 61;
+const byte FIXOV2 = 62;
+const byte FIXOV3 = 63;
+const byte FIXOV4 = 64;
+const byte HUMIDITY1= 65;
+const byte HUMIDITY2= 66;
+const byte RAIN1= 67;
+const byte RAIN2= 68;
+const byte WIND= 69;
+const byte BREAKER= 70;
+const byte OUTSIDE= 72;
+const byte PERIODS = 73;
+const byte ENABLE= 74;
+const byte INSTRUCT= 75;
+const byte PROGRAM = 76;
 
 
+const byte ALARM = 76;
+const byte MAXTEMP= 77;
+const byte MINTEMP= 78;
+
+
+const byte TESTS = 79;
+const byte TESTTEMP = 80;
+
+const byte WEATHERRATIO = 81;
+const byte INSIDETEMP = 82;
+const byte OUTSIDETEMP = 83;
+const byte LUXMETER = 84;
+const byte WINDSENSOR = 85;
+const byte RAINSENSOR = 86;
+
+const byte INSIDETEMPDATA = 87;
+const byte OUTSIDETEMPDATA = 88;
+const byte WEATHERDATA = 89;
+const byte RADIATIONDATA = 90;
+const byte CURRENTSENSOR = 91;
+
+const byte STARTTIME = 1;
+const byte HEATINGSUN = 3;
+const byte COOLINGSUN = 4;
+const byte HEATINGCLOUD = 5;
+const byte COOLINGCLOUD = 6;
+const byte RAMPING = 7;
 
 //***************************************************
 //********************MACROS**************************
@@ -375,13 +342,80 @@ void clearMenu(){
   increment = 0;
   lastline = 0;
   smodif = 0;
-<<<<<<< HEAD
   smodif1 = 0;
   smodif2 = 0;
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
   fmodif = 0;
+  lcd.clear();
   lcd.noBlink();
+}
+
+boolean nextIsConfirmed(){
+  if((keyPressed == 'D')&&(unpressedTimer > 300)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+boolean backIsConfirmed(){
+  if((keyPressed == 'C')&&(unpressedTimer > 300)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+boolean choiceIsConfirmed(){
+  if(nextIsConfirmed() || backIsConfirmed()){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+void resetMenuCount(){
+  menuPosition = 0;menuID = 5000;
+}
+
+void display(unsigned short id){
+  if(menu == MODE_DISPLAY){
+    clearMenu();
+    resetMenuCount();
+    lastMenuID[menuPosition] = menuID;
+    menuID = id;
+    menuPosition++;
+  }
+  else if(backIsConfirmed()){
+    clearMenu();
+    menuPosition--;
+    menuID = lastMenuID[menuPosition];
+  }
+  else{
+    clearMenu();
+    lastMenuID[menuPosition] = menuID;
+    menuID = id;
+    menuPosition++;
+  }
+}
+unsigned int rollupId(unsigned int nb, unsigned int parameter){
+  unsigned int fullId = ROLLUP_MENU_CONSTANT+(nb*100)+parameter;
+  return fullId;
+}
+unsigned int stageId(unsigned int rollupnb, unsigned int stagenb, unsigned int parameter){
+  unsigned int fullId = ROLLUP_MENU_CONSTANT+(rollupnb*100)+(rollupnb*100)+parameter;
+  return fullId;
+}
+
+unsigned int deviceId(unsigned int nb, unsigned int parameter){
+  unsigned int fullId = DEVICE_MENU_CONSTANT+(nb*100)+parameter;
+  return fullId;
+}
+
+unsigned int timepointId(unsigned int nb, unsigned int parameter){
+  unsigned int fullId = TIMEPOINT_MENU_CONSTANT+(nb*100)+parameter;
+  return fullId;
 }
 
 void serialPrintDigits(int digits){
@@ -399,81 +433,115 @@ void lcdPrintDigits(int digits){
   lcd.print(digits);
 }
 
-void initLCD(byte length, byte width){
+const byte CLOCKS = 1;
+const byte HUMIDS = 2;
+const byte RAINS = 3;
+const byte LOCKS = 4;
+const byte UPS = 5;
+const byte DOWNS = 6;
+const byte TARGETS = 7;
 
+
+void initLCD(byte length, byte width){
   lcd.begin(length, width);
   lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE);
   lcd.setBacklight(HIGH);
   lcd.clear();
-  lcd.createChar(1,clocks);
-  lcd.createChar(2,humids);
-  lcd.createChar(3,rains);
-  lcd.createChar(4,locks);
+  lcd.createChar(CLOCKS,clocks);
+  lcd.createChar(HUMIDS,humids);
+  lcd.createChar(RAINS,rains);
+  lcd.createChar(LOCKS,locks);
+  lcd.createChar(UPS,up);
+  lcd.createChar(DOWNS,down);
+  lcd.createChar(TARGETS,target);
+}
+void printWeather(byte weather){
+  if(greenhouse.weatheradjust.value() == true){
+    if(weather >= 1 && weather <= 30){
+     lcd.print("(CLD)");
+    }
+    else if(weather > 30 && weather <= 70){
+     lcd.print("(MIX)");
+    }
+    else{
+      lcd.print("(SUN)");
+    }
+  }
 }
 
-void lcdPrintOutput(String item, byte _column, byte _row, Fan fan){
+void printWeather(){
+  printWeather(greenhouse.weather());
+}
 
-    //Fan
-    lcd.setCursor(_column, _row); lcd.print(F("          "));
-    lcd.setCursor(_column, _row); lcd.print(item);
-    if(fan.isActive() == true){
-        lcd.print(F("ON "));
-      }
-    else{
-      lcd.print(F("OFF"));
-    }
-    if(fan.override() == true){
-      //lcd.setCursor(_column+8, _row);
-      //lcd.print ("*");
-    }
-    else{
-      //lcd.setCursor(_column+8, _row);
-      //lcd.print (" ");
-    }
+String  printTimepoint(int nb){
+  switch (nb){
+    case 0 : return "DIF";break;
+    case 1 : return "DAY";break;
+    case 2 : return "PREN";break;
+    case 3 : return "NIGHT";break;
+  }
+  return "";
 }
-void lcdPrintOutput(String item, byte _column, byte _row, Heater heater){
-    lcd.setCursor(_column, _row); lcd.print(F("          "));
-    lcd.setCursor(_column, _row); lcd.print(item);
-    if(heater.isActive() == true){
-        lcd.print(F("ON "));
-      }
-    else{
-      lcd.print(F("OFF"));
-    }
-    if(heater.override() == true){
-      //lcd.setCursor(_column+8, _row);
-      //lcd.print ("*");
-    }
-    else{
-      //  lcd.setCursor(_column+8, _row);
-      //lcd.print (" ");
-    }
-}
-void lcdPrintRollups(String side, String opening, String closing, byte _column, byte _row, Rollup rollup){
-  //East rollup
+void lcdPrintOutput(String item, byte _column, byte _row, OnOffDevice device){
+
+    //Device
   lcd.setCursor(_column, _row); lcd.print(F("          "));
-  lcd.setCursor(_column, _row);
-  if(rollup.incrementCounter() == OFF_VAL){lcd.print(F(""));}
-  else if (rollup.opening() == true){lcd.print(opening);}
-  else if (rollup.closing() == true){lcd.print(closing);}
-  else if(rollup.isWaiting()){
-    if(flashingCounter == 0){
-      lcd.print(side); lcd.print(rollup.incrementCounter());lcd.print(F("%"));
+  if(device.isActivated()){
+    lcd.setCursor(_column, _row); lcd.print(item);
+    if(device.isOn() == true){
+        lcd.print(F("ON "));
+      }
+    else{
+      lcd.print(F("OFF"));
     }
-    else if(flashingCounter == 1){
-      lcd.print(F("          "));
+    if(device.isLock()){
+      lcd.setCursor(_column+8, _row);
+      lcd.write((byte)LOCKS);
+    }
+    else if(device.isActive(CLOCKOV1)||device.isActive(CLOCKOV2)||device.isActive(CLOCKOV3)){
+      lcd.setCursor(_column+8, _row);
+      lcd.write((byte)CLOCKS);
+    }
+    else if(device.isActive(DESHUM)){
+      lcd.setCursor(_column+8, _row);
+      lcd.write((byte)HUMIDS);
     }
   }
-  else{lcd.print(side); lcd.print(rollup.incrementCounter());lcd.print(F("%"));}
-  if(rollup.override() == true){
-    //lcd.setCursor(_column+8, _row);
-    //lcd.print ("*");
-  }
-  else{
-      //lcd.setCursor(_column+8, _row);
-      //lcd.print (" ");
+}
+
+void lcdPrintRollups(String side, String opening, String closing, byte _column, byte _row, Rollup rollup){
+  lcd.setCursor(_column, _row); lcd.print(F("           "));
+
+  if(rollup.isActivated()){
+    lcd.setCursor(_column, _row);
+    if(rollup.incrementCounter() == OFF_VAL){lcd.print(side); }
+    else if (rollup.opening() == true){lcd.print(opening);}
+    else if (rollup.closing() == true){lcd.print(closing);}
+    else if(rollup.isWaiting()){
+      if(flashingCounter == 0){
+        lcd.print(side); lcd.print(rollup.incrementCounter());lcd.print(F("%"));
+      }
+      else if(flashingCounter == 1){
+        lcd.print(F("          "));
+      }
     }
+    else{lcd.print(side); lcd.print(rollup.incrementCounter());lcd.print(F("%"));}
+
+    if(rollup.isLock()){
+        lcd.setCursor(_column+8, _row);
+        lcd.write((byte)LOCKS);
+    }
+    else if(rollup.isActive(CLOCKOV1)||rollup.isActive(CLOCKOV2)||rollup.isActive(CLOCKOV3)){
+      lcd.setCursor(_column+8, _row);
+      lcd.write((byte)CLOCKS);
+    }
+    else if(rollup.isEnabled(RAINOV) && rain == true){
+      lcd.setCursor(_column+8, _row);
+      lcd.write((byte)RAINS);
+    }
+
   }
+}
 void lcdPrintTemp(byte _row){
 
     lcd.setCursor(0,_row); lcd.print(F("         "));
@@ -487,194 +555,255 @@ void lcdPrintTemp(byte _row){
       else if(sensorFailure == true){lcd.print(F("!!!"));}
     }
 }
+boolean heaterIsActive(int nb){
+  if((greenhouse.device[nb].type.value() == HEATERTYPE)&&(greenhouse.device[nb].isActivated())){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+boolean fanIsActive(int nb){
+  if((greenhouse.device[nb].type.value() == FANTYPE)&&(greenhouse.device[nb].isActivated())){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+boolean closeFromCoolingTemp(){
+  if((greenhouseTemperature> greenhouse.coolingTemp())|| (greenhouseTemperature > (greenhouse.coolingTemp() - ((greenhouse.coolingTemp()-greenhouse.heatingTemp())/2)) && (greenhouseTemperature < greenhouse.coolingTemp()))){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+boolean heatingDeviceIsActive(){
+  if(heaterIsActive(0) || heaterIsActive(1)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+boolean coolingDeviceIsActive(){
+    if((fanIsActive(0)||fanIsActive(1)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated())){
+      return true;
+    }
+    else{
+      return false;
+    }
+}
+boolean someDeviceIsActive(){
+  if(heaterIsActive(0) || heaterIsActive(1)||fanIsActive(0)||fanIsActive(1)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+byte heatingDevices(){
+  int x = 0;
+  if(heaterIsActive(0)){x++;}
+  if(heaterIsActive(1)){x++;}
+  return x;
+}
+
+byte otherHeatingDevices(int nb){
+  int x = 0;
+  if(nb == 0){
+    if(heaterIsActive(1)){x++;}
+  }
+  else if(nb == 1){
+    if(heaterIsActive(0)){x++;}
+  }
+  return x;
+}
+
+byte coolingDevices(){
+  int x = 0;
+  if(heaterIsActive(0)){x++;}
+  if(heaterIsActive(1)){x++;}
+  if(greenhouse.rollup[0].isActivated()){x++;}
+  if(greenhouse.rollup[1].isActivated()){x++;}
+  return x;
+}
+
+void printClosestTarget(){
+  if(coolingDeviceIsActive()){
+    if(/*greenhouseTemperature > greenhouse.coolingTemp() ||*/ !heatingDeviceIsActive()){
+      lcd.setCursor(10,0);
+      lcd.write(TARGETS);
+      lcd.print((int)greenhouse.coolingTemp());
+      lcd.print("C");
+    }
+  }
+  if(heatingDeviceIsActive()){
+    if(/*greenhouseTemperature < greenhouse.heatingTemp() ||*/ !coolingDeviceIsActive()){
+        lcd.setCursor(10,0);
+        lcd.write(TARGETS);
+        lcd.print((int)greenhouse.heatingTemp());
+        lcd.print("C");
+    }
+    else/* if(greenhouseTemperature > greenhouse.heatingTemp() && greenhouseTemperature < greenhouse.coolingTemp())*/{
+      lcd.setCursor(10,0);
+      if(greenhouse.daynight.value() == false){
+        lcd.write(TARGETS);
+      }
+      lcd.print((int)greenhouse.heatingTemp());
+      lcd.print("-");
+      lcd.print((int)greenhouse.coolingTemp());
+      lcd.print("C");
+    }
+  }
+
+}
 
 void lcdPrintTarget(){
   lcd.setCursor(9,0); lcd.print(F("           "));
   lcd.setCursor(9,0);
-  lcd.print(F("|"));
-if(greenhouse.isRamping()){
-  if(flashingCounter == 0){
-    lcd.print((int)greenhouse.heatingTemp()); lcd.print(F("-"));lcd.print((int)greenhouse.coolingTemp());
-    if(greenhouse.weather() == SUN){
-     lcd.print("(SUN)");
+    lcd.print(F("|"));
+  if(greenhouse.isRamping()){
+    if(flashingCounter == 0){
+      printClosestTarget();
+      if(greenhouse.daynight.value() == true){
+        lcd.setCursor(15,0);
+        switch(greenhouse.nowTimepoint()){
+          case 1: lcd.print(F("(DIF)"));break;
+          case 2: lcd.print(F("(DAY)"));break;
+          case 3: lcd.print(F("(PRE)"));break;
+          case 4: lcd.print(F("(NGT)"));break;
+        }
+      }
     }
-    else{
-     lcd.print("(CLD)");
+    else if(flashingCounter == 1){
+      lcd.print(F("          "));
     }
-  }
-  else if(flashingCounter == 1){
-    lcd.print(F("          "));
-  }
-}
-else{
-  lcd.print((int)greenhouse.heatingTemp()); lcd.print(F("-"));lcd.print((int)greenhouse.coolingTemp());
-  if(greenhouse.weather() == SUN){
-   lcd.print("(SUN)");
   }
   else{
-   lcd.print("(CLD)");
+    printClosestTarget();
+    if(greenhouse.daynight.value() == true){
+
+      lcd.setCursor(15,0);
+      switch(greenhouse.nowTimepoint()){
+        case 1: lcd.print(F("(DIF)"));break;
+        case 2: lcd.print(F("(DAY)"));break;
+        case 3: lcd.print(F("(PRE)"));break;
+        case 4: lcd.print(F("(NGT)"));break;
+      }
+    }
   }
-}
 
 
 
 }
 
 void lcdPrintTime(byte _row){
-    lcd.setCursor(0,_row); lcdPrintDigits(greenhouse.rightNow(2)); lcd.print(F(":")); lcdPrintDigits(greenhouse.rightNow(1));lcd.print(F(":")); lcdPrintDigits(greenhouse.rightNow(0)); // lcd.print(F(" |")); lcdPrintDigits(greenhouse.rightNow(3)); lcd.print(F("/")); lcdPrintDigits(greenhouse.rightNow(4)); lcd.print(F("/")); lcdPrintDigits(2000+greenhouse.rightNow(5));
-    lcd.setCursor(9,_row); lcd.print(F("|(TIMEP: ")); lcd.print(greenhouse.nowTimepoint()); lcd.print(F(") "));
+  lcd.setCursor(0,_row); lcdPrintDigits(greenhouse.rightNow(2)); lcd.print(F(":")); lcdPrintDigits(greenhouse.rightNow(1));lcd.print(F(":")); lcdPrintDigits(greenhouse.rightNow(0)); lcd.print(F(" |"));
+  lcdPrintDigits(greenhouse.rightNow(3)); lcd.print(F("/")); lcdPrintDigits(greenhouse.rightNow(4));
+  if(greenhouse.weatheradjust.value() == true){
+    printWeather();
+  }
+  else{
+     lcd.print(F("/")); lcdPrintDigits(2000+greenhouse.rightNow(5));
+  }
 }
 
 void lcdPrintOutputs(){
   if(greenhouse.rollups.value() >= 1){
-    lcdPrintRollups("R1:","OPENING", "CLOSING", 0, 2, R1);
+    lcdPrintRollups("R1: ","OPENING", "CLOSING", 0, 2, R1);
   }
-<<<<<<< HEAD
 
   if(greenhouse.rollups.value() == 2){
-    lcdPrintRollups("|R2:","|OPENING", "|CLOSING", 9, 2, R2);
+    lcdPrintRollups("|R2: ","|OPENING", "|CLOSING", 9, 2, R2);
   }
 
-=======
-
-  if(greenhouse.rollups.value() == 2){
-    lcdPrintRollups("|R2:","|OPENING", "|CLOSING", 9, 2, R2);
+  if((greenhouse.devices.value() >= 1)){
+    if(D1.type.value() == FANTYPE){
+      lcdPrintOutput("F1: ", 0, 3, D1);
+    }
+    else if(D1.type.value() == HEATERTYPE){
+        lcdPrintOutput("H1: ", 0, 3, D1);
+    }
+    else if(D1.type.value() == VALVTYPE){
+        lcdPrintOutput("V1: ", 0, 3, D1);
+    }
   }
-
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-  if((greenhouse.fans.value() == 1)&&(greenhouse.heaters.value() == 0)){
-    lcdPrintOutput("F1: ", 0, 3, F1);
+  if(greenhouse.devices.value() >= 2){
+    if(D2.type.value() == FANTYPE){
+      lcdPrintOutput("|F2: ", 9, 3, D2);
+    }
+    else if(D2.type.value() == HEATERTYPE){
+      lcdPrintOutput("|H2: ", 9, 3, D2);
+    }
+    else if(D2.type.value() == VALVTYPE){
+      lcdPrintOutput("|V2: ", 9, 3, D2);
+    }
   }
-  else if((greenhouse.fans.value() >= 1)&&(greenhouse.heaters.value() >= 1)){
-    lcdPrintOutput("F1: ", 0, 3, F1);
-    lcdPrintOutput("|H1: ", 9, 3, H1);
-  }
-  else if((greenhouse.fans.value() == 2)&&(greenhouse.heaters.value() == 0)){
-    lcdPrintOutput("F1: ", 0, 3, F1);
-    lcdPrintOutput("|F2: ", 9, 3, F2);
-  }
-  else if((greenhouse.fans.value() == 0)&&(greenhouse.heaters.value() == 1)){
-    lcdPrintOutput("H1: ", 0, 3, H1);
-  }
-  else if((greenhouse.fans.value() == 0)&&(greenhouse.heaters.value() == 2)){
-    lcdPrintOutput("H1: ", 0, 3, H1);
-    lcdPrintOutput("|H2: ", 9, 3, H2);
-  }
-  else{
+  if(greenhouse.devices.value() == 0){
     lcd.setCursor(0, 3);
-    lcd.print(F("                    "));
+    lcd.print(F("               "));
   }
-  if(greenhouse.isActive(FIX_R1)){
-      lcd.setCursor(8, 3);
-      lcd.write((byte)1);
-  }
-  if(greenhouse.isActive(FIX_R2)){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)1);
-  }
-  if(greenhouse.isActive(FIX_F1)){
-      lcd.setCursor(8, 3);
-      lcd.write((byte)1);
-  }
-  if(greenhouse.isActive(FIX_F2)){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)1);
-  }
-  if(greenhouse.isActive(FIX_H1)&&greenhouse.fans.value() == 0){
-      lcd.setCursor(8, 3);
-      lcd.write((byte)1);
-  }
-  if(greenhouse.isActive(FIX_H1)&&greenhouse.fans.value() >= 1){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)1);
-  }
-  if(greenhouse.isActive(FIX_H2)){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)1);
-  }
+}
 
-  if(greenhouse.isActive(DESHUM_AUTO1)&&greenhouse.fans.value() == 0){
-      lcd.setCursor(8, 3);
-      lcd.write((byte)2);
+void yearRoundStartTime(){
+  lcd.clear();
+  lcd.setCursor(14,0); lcdPrintDigits(greenhouse.rightNow(3)); lcd.print(F("/")); lcdPrintDigits(greenhouse.rightNow(4));//lcd.print(F("/")); lcdPrintDigits(greenhouse.rightNow(5)); // lcd.print(F(" |")); lcdPrintDigits(greenhouse.rightNow(3)); lcd.print(F("/")); lcdPrintDigits(greenhouse.rightNow(4)); lcd.print(F("/")); lcdPrintDigits(2000+greenhouse.rightNow(5));
+  if (greenhouse.dif.value() == true){
+    lcd.setCursor(0,0);lcd.print(F("DIF: ")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
+
+    switch (T1.type.value()){
+      case 0: lcd.print("(SR)");break;
+      case 1: lcd.print("(CL)");break;
+      case 2: lcd.print("(SS)");break;
+    }
   }
-  if(greenhouse.isActive(DESHUM_AUTO1)&&greenhouse.fans.value() >= 1){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)2);
+  lcd.setCursor(0,1);lcd.print(F("DAY: ")); lcdPrintDigits(T2.hr());lcd.print(F(":"));lcdPrintDigits(T2.mn());
+  switch (T2.type.value()){
+    case 0: lcd.print("(SR)");break;
+    case 1: lcd.print("(CL)");break;
+    case 2: lcd.print("(SS)");break;
   }
-  if(greenhouse.isActive(DESHUM_AUTO2)){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)2);
+  if (greenhouse.prenight.value() == true){
+    lcd.setCursor(0,2);lcd.print(F("PRE: ")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());
+
+    switch (T3.type.value()){
+      case 0: lcd.print("(SR)");break;
+      case 1: lcd.print("(CL)");break;
+      case 2: lcd.print("(SS)");break;
+    }
   }
-  if(greenhouse.isActive(DESHUM_AUTO_COLD1)){
-      lcd.setCursor(8, 3);
-      lcd.write((byte)2);
-  }
-  /*if(greenhouse.isActive(DESHUM_AUTO_COLD2)){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)2);
-  }*/
-  if(rain == true){
-      lcd.setCursor(8, 2);
-      lcd.write((byte)3);
-  }
-  if((rain == true)&& (greenhouse.rollups.value() == 2)){
-      lcd.setCursor(19, 2);
-      lcd.write((byte)3);
-  }
-  if(R1.isLock()){
-      lcd.setCursor(8, 2);
-      lcd.write((byte)4);
-  }
-  if(R2.isLock()){
-      lcd.setCursor(19, 2);
-      lcd.write((byte)4);
-  }
-  if(F1.isLock()){
-      lcd.setCursor(8, 3);
-      lcd.write((byte)4);
-  }
-  if(F2.isLock()){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)4);
-  }
-  if(H1.isLock()&&greenhouse.fans.value() == 0){
-      lcd.setCursor(8, 3);
-      lcd.write((byte)4);
-  }
-  if(H1.isLock()&&greenhouse.fans.value() >= 1){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)4);
-  }
-  if(H2.isLock()){
-      lcd.setCursor(19, 3);
-      lcd.write((byte)4);
+  lcd.setCursor(0,3);lcd.print(F("NGT: ")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());
+  switch (T4.type.value()){
+    case 0: lcd.print("(SR)");break;
+    case 1: lcd.print("(CL)");break;
+    case 2: lcd.print("(SS)");break;
   }
 }
 
 void homeDisplay(){
+  menu = MODE_DISPLAY;
+  lcd.noBlink();
+  if(clockTest == TEST_CLOCKFF){
+    yearRoundStartTime();
+  }
+  else{
+    if(firstPrint == true){
+      lcd.clear();
+      lcdPrintTemp(0);
+      lcdPrintTime(1);
+      lcdPrintOutputs();
+      firstPrint = false;
+    }
 
-  if(firstPrint == true){
-    lcd.clear();
     lcdPrintTemp(0);
+    lcdPrintTarget();
     lcdPrintTime(1);
     lcdPrintOutputs();
-    firstPrint = false;
-  }
-
-  lcdPrintTemp(0);
-  lcdPrintTarget();
-  lcdPrintTime(1);
-  lcdPrintOutputs();
-}
-
-void printHeader(String header, short maxLineOfMenu){
-
-  //clear + print header
-  if(firstPrint == true){
-    unpressedTimer = 0;
-    lcd.clear();
-    lcd.setCursor(0,0);lcd.print(header);
-    maxLine = maxLineOfMenu;
   }
 }
 
@@ -687,323 +816,6 @@ void adjustLine(){
     line = 0;
   }
 }
-
-void rollupDisplay(Rollup rollup){
-
-  printHeader("ROLLUP - PARAMET ",3);
-  if(firstPrint == true){
-    lcd.print("(");
-    lcd.print(rollup.nb()+1);
-    lcd.print(")");
-    firstPrint = false;
-  }
-  adjustLine();
-
-  //print content
-  for(int x = 1; x < 4; x++){
-    int writeLine = x+line;
-    if (writeLine > maxLine){
-      writeLine = maxLine;
-    }
-    switch(writeLine){
-      case 1: lcd.setCursor(0,x);lcd.print(F("UP: ")); lcd.print(rollup.rotationUp.value());lcd.print(F("s")); lcd.setCursor(9,x);lcd.print(F("|DOWN: ")); lcd.print(rollup.rotationDown.value());lcd.print(F("s"));break;
-      case 2: lcd.setCursor(0,x);lcd.print(F("Pause: ")); lcd.print(rollup.pause.value());lcd.print(F("s"));break;
-      case 3:  lcd.setCursor(0,x);lcd.print(F("Hyst:  "));  lcd.print(rollup.hyst.value());lcd.print(F("C"));break;
-    }
-  }
-}
-
-void stageDisplay(Rollup rollup){
-
-  float stageTemp1 = greenhouse.coolingTemp() + rollup.stage[1].mod.value();
-  float stageTemp2 = greenhouse.coolingTemp() + rollup.stage[2].mod.value();
-  float stageTemp3 = greenhouse.coolingTemp() + rollup.stage[3].mod.value();
-  float stageTemp4 = greenhouse.coolingTemp() + rollup.stage[4].mod.value();
-
-  printHeader("ROLLUP - STAGES ",greenhouse.stages.value());
-  if(firstPrint == true){
-    lcd.print("(");
-    lcd.print(rollup.nb()+1);
-    lcd.print(")");
-    firstPrint = false;
-  }
-  adjustLine();
-
-  //print content
-  int maxLines = greenhouse.stages.value()+1;
-  if(maxLines > 4){
-    maxLines = 4;
-  }
-  for(int x = 1; x < maxLines; x++){
-    int writeLine = x+line;
-    if (writeLine > maxLine){
-      writeLine = maxLine;
-    }
-    switch(writeLine){
-      case 1:  lcd.setCursor(0,x);lcd.print(F("S1: ")); lcd.print(stageTemp1);lcd.print(F("-"));lcd.print(stageTemp2);lcd.print(F("-")); lcd.print(rollup.stage[1].target.value()); lcd.print(F("%"));break;
-      case 2:  lcd.setCursor(0,x);lcd.print(F("S2: ")); lcd.print(stageTemp2);lcd.print(F("-"));lcd.print(stageTemp3);lcd.print(F("-")); lcd.print(rollup.stage[2].target.value()); lcd.print(F("%"));break;
-      case 3:  lcd.setCursor(0,x);lcd.print(F("S3: ")); lcd.print(stageTemp3);lcd.print(F("-"));lcd.print(stageTemp4);lcd.print(F("-")); lcd.print(rollup.stage[3].target.value()); lcd.print(F("%"));break;
-      case 4:  lcd.setCursor(0,x);lcd.print(F("S4: ")); lcd.print(stageTemp4);lcd.print(F("- ... "));lcd.print(F("-")); lcd.print(rollup.stage[4].target.value()); lcd.print(F("%"));break;
-    }
-  }
-}
-
-void fanDisplay(Fan fan){
-
-  float onTemp = greenhouse.coolingTemp() + fan.mod.value();
-  float offTemp = greenhouse.coolingTemp() + fan.mod.value() - fan.hyst.value();
-
-  printHeader("FAN - PARAMETERS ",3);
-  if(firstPrint == true){
-    lcd.print("(");
-    lcd.print(fan.nb()+1);
-    lcd.print(")");
-    firstPrint = false;
-  }
-  adjustLine();
-
-  //print content
-  for(int x = 1; x < 4; x++){
-    int writeLine = x+line;
-    if (writeLine > maxLine){
-      writeLine = maxLine;
-    }
-    switch(writeLine){
-      case 1: lcd.setCursor(0,x);lcd.print(F("Activ. temp: ")); lcd.print(onTemp);lcd.print(F("C"));break;
-      case 2: lcd.setCursor(0,x);lcd.print(F("Shut. temp: ")); lcd.print(offTemp);lcd.print(F("C"));break;
-      case 3: lcd.setCursor(0,x);lcd.print(F("MOD:")); if(fan.mod.value() >= 0){lcd.print(F(" "));}lcd.print(fan.mod.value()); lcd.setCursor(9,3);lcd.print(F("|HYST: ")); lcd.print(fan.hyst.value());break;
-    }
-  }
-}
-
-void heaterDisplay(Heater heater){
-
-  float onTemp = greenhouse.heatingTemp() + heater.mod.value();
-  float offTemp = greenhouse.heatingTemp() + heater.mod.value() + heater.hyst.value();
-
-  printHeader("HEATER - PARAMET ",3);
-  if(firstPrint == true){
-    lcd.print("(");
-    lcd.print(heater.nb()+1);
-    lcd.print(")");
-    firstPrint = false;
-  }
-  adjustLine();
-
-  //print content
-  for(int x = 1; x < 4; x++){
-    int writeLine = x+line;
-    if (writeLine > maxLine){
-      writeLine = maxLine;
-    }
-    switch(writeLine){
-      case 1: lcd.setCursor(0,x);lcd.print(F("Activ. temp: ")); lcd.print(onTemp);lcd.print(F("C"));break;
-      case 2: lcd.setCursor(0,x);lcd.print(F("Shut. temp: ")); lcd.print(offTemp);lcd.print(F("C"));break;
-      case 3: lcd.setCursor(0,x);lcd.print(F("MOD:")); if(heater.mod.value() >= 0){lcd.print(F(" "));}lcd.print(heater.mod.value()); lcd.setCursor(9,3);lcd.print(F("|HYST: ")); lcd.print(heater.hyst.value());break;
-    }
-  }
-}
-
-void timepointsDisplay(){
-  printHeader("TIMEPOINTS - TIME",greenhouse.timepoints.value());
-  if(firstPrint == true){
-    firstPrint = false;
-  }
-  adjustLine();
-
-  //print content
-  int maxLines = greenhouse.timepoints.value()+1;
-  if(maxLines > 4){
-    maxLines = 4;
-  }
-  for(int x = 1; x < maxLines; x++){
-    int writeLine = x+line;
-    if (writeLine > maxLine){
-      writeLine = maxLine;
-    }
-
-    switch(writeLine){
-      case 1:
-      if (greenhouse.timepoints.value() > 1){
-        lcd.setCursor(0,x);lcd.print(F("TP1: ")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());lcd.print(F("-")); lcdPrintDigits(T2.hr());lcd.print(F(":"));lcdPrintDigits(T2.mn());
-
-        switch (T1.type.value()){
-          case 0: lcd.print("(SR)");break;
-          case 1: lcd.print("(CL)");break;
-          case 2: lcd.print("(SS)");break;
-        }
-      }
-      break;
-      case 2:
-      if (greenhouse.timepoints.value() == 2){
-        lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcdPrintDigits(T2.hr());lcd.print(F(":"));lcdPrintDigits(T2.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
-      }else if (greenhouse.timepoints.value() > 2){
-        lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcdPrintDigits(T2.hr());lcd.print(F(":"));lcdPrintDigits(T2.mn());lcd.print(F("-")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());
-      }
-      if (greenhouse.timepoints.value() >= 2){
-        switch (T2.type.value()){
-          case 0: lcd.print("(SR)");break;
-          case 1: lcd.print("(CL)");break;
-          case 2: lcd.print("(SS)");break;
-        }
-      }
-      break;
-      case 3:
-      if (greenhouse.timepoints.value() == 3){
-        lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
-      }else if (greenhouse.timepoints.value() > 3){
-        lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcdPrintDigits(T3.hr());lcd.print(F(":"));lcdPrintDigits(T3.mn());lcd.print(F("-")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());
-      }
-      if (greenhouse.timepoints.value() >= 3){
-        switch (T3.type.value()){
-          case 0: lcd.print("(SR)");break;
-          case 1: lcd.print("(CL)");break;
-          case 2: lcd.print("(SS)");break;
-        }
-      }
-      break;
-      case 4:
-      if (greenhouse.timepoints.value() == 4){
-        lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcdPrintDigits(T4.hr());lcd.print(F(":"));lcdPrintDigits(T4.mn());lcd.print(F("-")); lcdPrintDigits(T1.hr());lcd.print(F(":"));lcdPrintDigits(T1.mn());
-      }
-      if (greenhouse.timepoints.value() == 4){
-        switch (T4.type.value()){
-          case 0: lcd.print("(SR)");break;
-          case 1: lcd.print("(CL)");break;
-          case 2: lcd.print("(SS)");break;
-        }
-      }
-      break;
-   }
-  }
-}
-
-void temperaturesDisplay(){
-
-  if(greenhouse.weather() == SUN){
-    printHeader("TIMEP - TEMP(SUN)",greenhouse.timepoints.value());
-  }
-  else if(greenhouse.weather() == CLOUD){
-    printHeader("TIMEP - TEMP(CLOUD)",greenhouse.timepoints.value());
-  }
-  if(firstPrint == true){
-    firstPrint = false;
-  }
-
-  adjustLine();
-
-  //print content
-  int maxLines = greenhouse.timepoints.value()+1;
-  if(maxLines > 4){
-    maxLines = 4;
-  }
-  for(int x = 1; x < maxLines; x++){
-    int writeLine = x+line;
-    if (writeLine > maxLine){
-      writeLine = maxLine;
-    }
-    if(greenhouse.weather() == SUN){
-      switch(writeLine){
-        if (greenhouse.timepoints.value() >= 1){
-          case 1: lcd.setCursor(0,x);lcd.print(F("TP1: ")); lcd.print(T1.heatingTemp.value());lcd.print(F("-")); lcd.print(T1.coolingTemp.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);lcd.print(T1.ramping.value());break;
-        }
-        if (greenhouse.timepoints.value() >= 2){
-          case 2: lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcd.print(T2.heatingTemp.value());lcd.print(F("-")); lcd.print(T2.coolingTemp.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);lcd.print(T2.ramping.value());break;
-        }
-        if (greenhouse.timepoints.value() >= 3){
-          case 3: lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcd.print(T3.heatingTemp.value());lcd.print(F("-")); lcd.print(T3.coolingTemp.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x); lcd.print(T3.ramping.value());break;
-        }
-        if (greenhouse.timepoints.value() == 4){
-          case 4: lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcd.print(T4.heatingTemp.value());lcd.print(F("-")); lcd.print(T4.coolingTemp.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x); lcd.print(T4.ramping.value());break;
-        }
-      }
-    }
-    else if(greenhouse.weather() == CLOUD){
-      switch(writeLine){
-        if (greenhouse.timepoints.value() >= 1){
-          case 1: lcd.setCursor(0,x);lcd.print(F("TP1: ")); lcd.print(T1.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T1.coolingTempCloud.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x); lcd.print(T1.ramping.value());break;
-        }
-        if (greenhouse.timepoints.value() >= 2){
-          case 2: lcd.setCursor(0,x);lcd.print(F("TP2: ")); lcd.print(T2.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T2.coolingTempCloud.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);  lcd.print(T2.ramping.value());break;
-        }
-        if (greenhouse.timepoints.value() >= 2){
-          case 3: lcd.setCursor(0,x);lcd.print(F("TP3: ")); lcd.print(T3.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T3.coolingTempCloud.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);  lcd.print(T3.ramping.value());break;
-        }
-        if (greenhouse.timepoints.value() >= 2){
-          case 4: lcd.setCursor(0,x);lcd.print(F("TP4: ")); lcd.print(T4.heatingTempCloud.value());lcd.print(F("-")); lcd.print(T4.coolingTempCloud.value());
-            lcd.setCursor(16,x);lcd.print(F(" R  ")); lcd.setCursor(18,x);  lcd.print(T4.ramping.value());break;
-        }
-      }
-    }
-  }
-}
-void geoDisplay(){
-
-}
-
-void sensorsDisplay(){
-
-}
-
-void menuDisplay(){
-
-    if(key == '1'){
-      homeDisplay();
-    }
-    else if (key == '2'){
-      if (greenhouse.rollups.value() >= 1){
-        rollupDisplay(R1);
-      }
-    }
-    else if (key == '3'){
-      if(greenhouse.rollups.value() == 2){
-        rollupDisplay(R2);
-      }
-    }
-    else if (key == '5'){
-      if (greenhouse.rollups.value() >= 1){
-        stageDisplay(R1);
-      }
-    }
-    else if (key == '6'){
-      if (greenhouse.rollups.value() == 2){
-        stageDisplay(R2);
-      }
-    }
-    else if (key == '4'){
-      if (greenhouse.fans.value() >= 1){
-        fanDisplay(F1);
-      }
-      else if ((greenhouse.fans.value() == 0)&&(greenhouse.heaters.value() >= 1)){
-        heaterDisplay(H1);
-      }
-    }
-    else if (key == '7'){
-      if ((greenhouse.fans.value() == 2)){
-        fanDisplay(F2);
-      }
-      else if ((greenhouse.fans.value() >= 1)&&(greenhouse.heaters.value() >= 1)){
-        heaterDisplay(H1);
-      }
-      else if ((greenhouse.heaters.value() == 2)){
-        heaterDisplay(H2);
-      }
-    }
-    else if (key == '8'){
-      timepointsDisplay();
-    }
-    else if (key == '9'){
-      temperaturesDisplay();
-    }
-  }
-
 void select(){
 
   lcd.setCursor(0,2);
@@ -1029,146 +841,17 @@ void select(){
   }
 }
 
-boolean choiceIsConfirmed(){
-  if((keyPressed == 'D')&&(unpressedTimer > 300)){
-    return true;
-  }
-  else{
-    return false;
-  }
-}
 
 void displayMenu(char index){
-<<<<<<< HEAD
   clearMenu(); menu = MODE_DISPLAY;key = index;firstPrint = true; unpressedTimer = 0; line = 0;
-=======
-  menu = MODE_DISPLAY;key = index;firstPrint = true; unpressedTimer = 0; line = 0;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 }
 
 void displayNextProgram(const char* id){
   for(int x = 0; x < Code_lenght;x++){
       Data[x] = id[x];
   }
-<<<<<<< HEAD
-=======
-  lcd.clear();
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
   clearMenu();
 }
-
-void menuAction(){
-    if(keyPressed == 'C'){
-      lcd.clear();
-      lcd.print("---SELECT ACTION----");
-    }
-<<<<<<< HEAD
-    if(keyPressed == '2'){
-      menu = SET_PARAMETER;
-      displayNextProgram(R1OV);
-    }
-    if(keyPressed == '3'){
-      menu = SET_PARAMETER;
-      displayNextProgram(R2OV);
-    }
-    if(keyPressed == '4'){
-      menu = SET_PARAMETER;
-      displayNextProgram(F1OV);
-    }
-    if(keyPressed == '7'){
-      menu = SET_PARAMETER;
-      displayNextProgram(H1OV);
-    }
-    if(keyPressed == '9'){
-      menu = SET_PARAMETER;
-      displayNextProgram(ADJT24H);
-    }
-=======
-    if(keyPressed == '2'){
-      menu = SET_PARAMETER;
-      displayNextProgram(R1OV);
-    }
-    if(keyPressed == '3'){
-      menu = SET_PARAMETER;
-      displayNextProgram(R2OV);
-    }
-    if(keyPressed == '4'){
-      menu = SET_PARAMETER;
-      displayNextProgram(F1OV);
-    }
-    if(keyPressed == '7'){
-      menu = SET_PARAMETER;
-      displayNextProgram(H1OV);
-    }
-    if(keyPressed == '9'){
-      menu = SET_PARAMETER;
-      displayNextProgram(ADJT24H);
-    }
-    /*
-    if(keyPressed == '1'){
-      action = 1;
-      lcd.clear();
-      if(greenhouse.weather() == SUN){
-        lcd.print("CLOUDY DAY?");
-      }
-      if(greenhouse.weather() == CLOUD){
-        lcd.print("SUNNY DAY?");
-      }
-    }
-    if(keyPressed == '2'){
-      action = 2;
-
-      lcd.clear();
-      lcd.print("FULL VENTILATION?");
-    }
-    if(keyPressed == '3'){
-      action = 3;
-      lcd.clear();
-      *//*if (deshum == true){
-        lcd.print("DISABLE DESHUM?");
-      }
-      else if(deshum == false){
-        lcd.print("ENABLE DESHUM?");
-      }*//*
-    }
-    if(action != 0){
-      select();
-    }
-    if(keyPressed == 'D'){
-      displayMenu('1');
-      lcd.noBlink();
-      switch(action){
-        case 1:
-          if(confirm == true){
-            if(greenhouse.weather() == SUN){
-              greenhouse.setWeather(CLOUD);
-            }
-            else if(greenhouse.weather() == CLOUD){
-              greenhouse.setWeather(SUN);
-            }
-            key = '9';
-          }
-        break;
-        case 2:
-          if(confirm == true){
-              //fullVentOverride = true;
-            }
-        break;
-        case 3:
-          if(confirm == true){*//*
-            if(deshum == true){
-              deshum = false;
-            }
-            else if (deshum == false){
-              deshum = true;
-            }*//*
-          }
-        break;
-      }
-      action = 0;
-    }*/
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-  }
 
 
 void menuProgram(){
@@ -1203,7 +886,6 @@ void menuProgram(){
 
 void jumpIncrements(){
   increment++;
-<<<<<<< HEAD
   if(increment > 1){
     increment = 0;
   }
@@ -1216,34 +898,23 @@ short sincrement(){
   else{
     return 10;
   }
-=======
-  if(increment > 2){
-    increment = 0;
-  }
-}
 
-short sincrement(){
+}
+short minincrement(){
   if (increment == 0){
-    return 1;
-  }
-  else if (increment == 1){
     return 10;
   }
   else{
-    return 100;
+    return 60;
   }
 
 }
-
 float fincrement(){
   if (increment == 0){
-    return 0.5;
-  }
-  else if (increment == 1){
     return 1;
   }
   else{
-    return 10;
+    return 0.1;
   }
 }
 
@@ -1271,115 +942,6 @@ void adjustusvariable(unsigned short min, unsigned short value, unsigned short m
   lastline = line;
 
 }
-void adjustsvariable(short min, short value, short max){
-  svariable = value + smodif;
-
-  if (line > lastline){
-    smodif += sincrement();
-  }
-  else if (line < lastline){
-    smodif -= sincrement();
-  }
-
-  if(svariable > max){
-    svariable = max;
-    line -= 1;
-    smodif = max - value;
-  }
-  else if(svariable < min){
-    svariable = min;
-    line += 1;
-    smodif = min - value;
-  }
-  lastline = line;
-}
-
-
-
-void adjustfvariable(float min, float value, float max){
-  fvariable = value + fmodif;
-  if (line > lastline){
-    fmodif += fincrement();
-  }
-  else if (line < lastline){
-    fmodif -= fincrement();
-  }
-  if(fvariable > max){
-    fvariable = max;
-    line -= 1;
-    fmodif = max - value;
-  }
-  else if(fvariable < min){
-    fvariable = min;
-    line += 1;
-    fmodif = min - value;
-  }
-  lastline = line;
-}
-
-void confirmVariable(const __FlashStringHelper* variableName, float min, float value, float max){
-  adjustfvariable(min,value,max);
-  firstPrint = false;
-  codeWithNoDisplay = false;
-
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("[min] [value] [max]");
-  lcd.setCursor(3,3);
-  lcd.print("[");
-  lcd.print((short)min);
-  lcd.print("][");
-  lcd.print(fvariable);
-  lcd.print("][");
-  lcd.print((short)max);
-  lcd.print("]");
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-
-}
-
-float fincrement(){
-  if (increment == 0){
-    return 0.5;
-  }
-  else{
-    return 0.5;
-  }
-}
-<<<<<<< HEAD
-
-void adjustusvariable(unsigned short min, unsigned short value, unsigned short max){
-  svariable = value + smodif;
-
-  if (line > lastline){
-    smodif += sincrement();
-  }
-  else if (line < lastline){
-    smodif -= sincrement();
-  }
-
-  if(svariable > (short)max){
-    svariable = (short)max;
-    line -= 1;
-    smodif = max - value;
-  }
-  else if(svariable < (short)min){
-    svariable = (short)min;
-    line += 1;
-    smodif = min - value;
-  }
-  usvariable = (unsigned short) svariable;
-  lastline = line;
-=======
-void confirmVariable(const __FlashStringHelper* variableName, unsigned short min, unsigned short value, unsigned short max){
-  adjustusvariable(min,value,max);
-  firstPrint = false;
-  codeWithNoDisplay = false;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-
-}
-<<<<<<< HEAD
 void adjustsvariable(short min, short value, short max){
   svariable = value + smodif;
 
@@ -1408,10 +970,10 @@ void adjusttimevariable(short min_hour, short hour, short max_hour, short min_mi
   svariable2 = min + smodif2;
 
   if (line > lastline){
-    smodif2 += 10;
+    smodif2 += minincrement();
   }
   else if (line < lastline){
-    smodif2 -= 10;
+    smodif2 -= minincrement();
   }
 
   if((svariable2 >= 60)&&(svariable1 >= 0)){
@@ -1433,31 +995,6 @@ void adjusttimevariable(short min_hour, short hour, short max_hour, short min_mi
 
   if(svariable1 > max_hour){
     svariable1 = max_hour;
-=======
-void confirmVariable(const __FlashStringHelper* variableName, short min, short value, short max){
-  adjustsvariable(min,value,max);
-  firstPrint = false;
-  codeWithNoDisplay = false;
-
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print(" [min][value][max] ");
-  lcd.setCursor(3,3);
-  lcd.print("[");
-  lcd.print(min);
-  lcd.print("] [");
-  lcd.print(svariable);
-  lcd.print("] [");
-  lcd.print(max);
-  lcd.print("]");
-}
-void confirmVariable(const __FlashStringHelper* variableName, byte typeValue, String item1, String item2){
-  short type = (short)typeValue + line;
-  if(type > 1){
-    type = 1;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
     line -= 1;
   }
   else if(svariable1 < min_hour){
@@ -1470,27 +1007,12 @@ void confirmVariable(const __FlashStringHelper* variableName, byte typeValue, St
   lastline = line;
 }
 
-<<<<<<< HEAD
 
 
 void adjustfvariable(float min, float value, float max){
   fvariable = value + fmodif;
   if (line > lastline){
     fmodif += fincrement();
-=======
-  firstPrint = false;
-  codeWithNoDisplay = false;
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to scroll)");
-  lcd.setCursor(7,3);
-  lcd.print("[");
-  switch (typeSet){
-    case 0: lcd.print(item1);break;
-    case 1: lcd.print(item2);break;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
   }
   else if (line < lastline){
     fmodif -= fincrement();
@@ -1507,312 +1029,501 @@ void adjustfvariable(float min, float value, float max){
   }
   lastline = line;
 }
-void confirmVariable(const __FlashStringHelper* variableName, byte typeValue, String item1, String item2,String item3){
-  short type = (short)typeValue + line;
-  if(type > 2){
-    type = 2;
-    line -= 1;
-  }
-  if(type < 0){
-    type = 0;
-    line += 1;
-  }
-  typeSet = type;
 
-<<<<<<< HEAD
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, float min, float value, float max){
+
+
+void printHeader(const __FlashStringHelper* variableName){
+
+  if(firstPrint == true){
+    lcd.setCursor(0,0);
+    lcd.print(F("                   "));
+  }
+  firstPrint = false;
+  codeWithNoDisplay = false;
+
+  lcd.noBlink();
+  lcd.setCursor(0,0);
+  lcd.print(variableName);
+}
+void printHeader(String header, const __FlashStringHelper* variableName){
+
+  if(firstPrint == true){
+    lcd.setCursor(0,0);
+    lcd.print(F("                   "));
+  }
+  firstPrint = false;
+  codeWithNoDisplay = false;
+
+  lcd.setCursor(0,0);
+  lcd.print(header);
+  lcd.print(variableName);
+}
+void printHeader(const __FlashStringHelper* longName,const __FlashStringHelper* shortName,  byte weather, byte nb){
+
+  if(firstPrint == true){
+    lcd.setCursor(0,0);
+    lcd.print(F("                   "));
+  }
+  firstPrint = false;
+  codeWithNoDisplay = false;
+
+  lcd.setCursor(0,0);
+  if(greenhouse.daynight.value() == true){
+    lcd.print(printTimepoint(nb));
+    lcd.print(F(" - "));
+    lcd.print(shortName);
+    }
+  else{
+    lcd.print(longName);
+  }
+}
+
+void printScrollingInstructions(){
+  lcd.setCursor(0,1);
+  lcd.print(F("*# : scroll"));
+  lcd.setCursor(0,2);
+  lcd.print(F("D  : select"));
+}
+void printScrollingInstructionsShort(){
+  lcd.setCursor(0,1);
+  lcd.print(F("*#:scroll | D:select"));
+  lcd.setCursor(0,2);
+  lcd.print(F("D  : select"));
+}
+void printAdjustInstructions(){
+  lcd.setCursor(0,1);
+  lcd.print(F("*# : adjust"));
+  lcd.setCursor(0,2);
+  lcd.print(F("D  : confirm/next"));
+}
+void printAdjustInstructionsShort(){
+  lcd.setCursor(0,1);
+  lcd.print(F("*#:adjust|D:conf/nxt"));
+}
+void printConfirmInstructions(){
+  lcd.setCursor(0,1);
+  lcd.print(F("Press 'D' to confirm"));
+  lcd.setCursor(0,2);
+  lcd.print(F("Press 'C' to cancel"));
+}
+void printReviewInstructions(){
+  lcd.setCursor(0,1);
+  lcd.print(F("Review of parameters"));
+  lcd.setCursor(0,2);
+  lcd.print(F("is required before "));
+  lcd.setCursor(0,3);
+  lcd.print(F("activation (press D)"));
+}
+
+void printCursor(float number, float increment, byte row, byte line){
+  byte cursor = 0;
+  if(number > 9){
+    cursor +=1;
+  }
+  if(number > 99){
+    cursor +=1;
+  }
+  if (increment == 10){
+    cursor -=1;
+  }
+  if (increment == 0.1){
+    cursor +=2;
+  }
+  lcd.setCursor((row + cursor), line);
+  lcd.blink();
+}
+void confirmVariable(float min, float value, float max){
   adjustfvariable(min,value,max);
-  firstPrint = false;
-  codeWithNoDisplay = false;
-
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to adjust)");
   lcd.setCursor(0,3);
-  lcd.print("      [");
+  lcd.print(F("      ["));
   lcd.print(fvariable);
-  lcd.print("]    ");
+  lcd.print(F("]    "));
+  printCursor(fvariable, fincrement(),7,3);
+}
 
-=======
-  firstPrint = false;
-  codeWithNoDisplay = false;
-  lcd.noBlink();
+void confirmVariable(const __FlashStringHelper* header, float min, float value, float max, float ref, byte pos){
+  adjustfvariable(min,value,max);/*
   lcd.setCursor(0,1);
-  lcd.print(variableName);
+  lcd.print("                    ");
   lcd.setCursor(0,2);
-  lcd.print("(Press *# to scroll)");
-  lcd.setCursor(7,3);
-  lcd.print("[");
-  switch (typeSet){
-    case 0: lcd.print(item1);break;
-    case 1: lcd.print(item2);break;
-    case 2: lcd.print(item3);break;
+  lcd.print("                    ");*/
+
+
+  if(pos == 1){
+    lcd.setCursor(7,1);
+    lcd.print(header);
+    lcd.setCursor(6,2);
+    lcd.print(F(">["));
+    lcd.print(fvariable);
+    lcd.print(F("]  "));
+    if(greenhouse.weatheradjust.value() == true){
+      lcd.setCursor(0,2);
+      lcd.print(F("SUN"));
+      lcd.setCursor(0,3);
+      lcd.print(F("CLD"));
+      lcd.setCursor(3,3);
+      lcd.setCursor(6,3);
+      lcd.print(F(" ["));
+      lcd.print(ref);
+      lcd.print(F("]  "));
+    }
+    printCursor(fvariable, fincrement(),8,2);
+    lcd.blink();
   }
-  lcd.print("]   ");
+  else if(pos == 2 && greenhouse.weatheradjust.value() == true){
+    lcd.setCursor(0,2);
+    lcd.print(F("SUN"));
+    lcd.setCursor(0,3);
+    lcd.print(F("CLD"));
+    lcd.setCursor(3,3);
+    lcd.setCursor(7,1);
+    lcd.print(header);
+    lcd.setCursor(6,2);
+    lcd.print(F(" ["));
+    lcd.print(ref);
+    lcd.print(F("]  "));
+    lcd.setCursor(6,3);
+    lcd.print(F(">["));
+    lcd.print(fvariable);
+    lcd.print(F("]  "));
+    lcd.setCursor(11,3);
+    printCursor(fvariable, fincrement(),8,3);
+    lcd.blink();
+  }
 }
-
-void confirmVariable(const __FlashStringHelper* variableName, byte typeValue, String item1, String item2,String item3,String item4 ){
-  short type = (short)typeValue + line;
-  if(type > 3){
-    type = 3;
-    line -= 1;
-  }
-  if(type < 0){
-    type = 0;
-    line += 1;
-  }
-  typeSet = type;
-
-  firstPrint = false;
-  codeWithNoDisplay = false;
-  lcd.noBlink();
+void confirmVariable(float min, float value, float max, float ref1,float ref2,float ref3, byte pos){
+  adjustfvariable(min,value,max);/*
   lcd.setCursor(0,1);
-  lcd.print(variableName);
+  lcd.print("                    ");
   lcd.setCursor(0,2);
-  lcd.print("(Press *# to scroll)");
-  lcd.setCursor(7,3);
-  lcd.print("[");
-  switch (typeSet){
-    case 0: lcd.print(item1);break;
-    case 1: lcd.print(item2);break;
-    case 2: lcd.print(item3);break;
-    case 3: lcd.print(item4);break;
+  lcd.print("                    ");*/
+
+  if(pos == 1){
+    lcd.setCursor(0,1);
+    lcd.print(F("    Heating  Cooling"));
+    lcd.setCursor(3,2);
+    lcd.print(F(">["));
+    lcd.print(fvariable);
+    lcd.print(F("]  "));
+    lcd.setCursor(13,2);
+    lcd.print(F("["));
+    lcd.print(ref1);
+    lcd.print(F("]   "));
+    if(greenhouse.weatheradjust.value() == true){
+      lcd.setCursor(0,2);
+      lcd.print(F("SUN"));
+      lcd.setCursor(0,3);
+      lcd.print(F("CLD"));
+      lcd.setCursor(3,3);
+      lcd.print(F(" ["));
+      lcd.print(ref2);
+      lcd.print(F("]  "));
+      lcd.setCursor(12,3);
+      lcd.print(F(" ["));
+      lcd.print(ref3);
+      lcd.print(F("]   "));
+    }
+    printCursor(fvariable, fincrement(),5,2);
+    lcd.blink();
   }
-  lcd.print("]   ");
+
+  else if(pos == 2){
+    lcd.setCursor(0,1);
+    lcd.print(F("    Heating  Cooling"));
+    lcd.setCursor(3,2);
+    lcd.print(F(" ["));
+    lcd.print(ref1);
+    lcd.print(F("] "));
+    lcd.setCursor(12,2);
+    lcd.print(F(">["));
+    lcd.print(fvariable);
+    lcd.print(F("]   "));
+    if(greenhouse.weatheradjust.value() == true){
+      lcd.setCursor(0,2);
+      lcd.print(F("SUN"));
+      lcd.setCursor(0,3);
+      lcd.print(F("CLD"));
+      lcd.setCursor(3,3);
+      lcd.print(F(" ["));
+      lcd.print(ref2);
+      lcd.print(F("] "));
+      lcd.setCursor(12,3);
+      lcd.print(F(" ["));
+      lcd.print(ref3);
+      lcd.print(F("]   "));
+    }
+    printCursor(fvariable, fincrement(),14,2);
+    lcd.blink();
+  }
+  else if(pos == 3){
+    lcd.setCursor(0,1);
+    lcd.print(F("    Heating  Cooling"));
+    lcd.setCursor(3,2);
+    lcd.print(F(" ["));
+    lcd.print(ref1);
+    lcd.print(F("] "));
+    lcd.setCursor(12,2);
+    lcd.print(F(" ["));
+    lcd.print(ref2);
+    lcd.print(F("]   "));
+    if(greenhouse.weatheradjust.value() == true){
+      lcd.setCursor(0,2);
+      lcd.print(F("SUN"));
+      lcd.setCursor(0,3);
+      lcd.print(F("CLD"));
+      lcd.setCursor(3,3);
+      lcd.print(F(">["));
+      lcd.print(fvariable);
+      lcd.print(F("] "));
+      lcd.setCursor(12,3);
+      lcd.print(F(" ["));
+      lcd.print(ref3);
+      lcd.print(F("]   "));
+    }
+    printCursor(fvariable, fincrement(),5,3);
+    lcd.blink();
+  }
+  else if(pos == 4){
+    lcd.setCursor(0,1);
+    lcd.print(F("    Heating  Cooling "));
+    lcd.setCursor(3,2);
+    lcd.print(F(" ["));
+    lcd.print(ref1);
+    lcd.print(F("] "));
+    lcd.setCursor(12,2);
+    lcd.print(F(" ["));
+    lcd.print(ref2);
+    lcd.print(F("]   "));
+    if(greenhouse.weatheradjust.value() == true){
+      lcd.setCursor(0,2);
+      lcd.print(F("SUN"));
+      lcd.setCursor(0,3);
+      lcd.print(F("CLD"));
+      lcd.setCursor(3,3);
+      lcd.print(F(" ["));
+      lcd.print(ref3);
+      lcd.print(F("] "));
+      lcd.setCursor(12,3);
+      lcd.print(F(">["));
+      lcd.print(fvariable);
+      lcd.print(F("]   "));
+    }
+    printCursor(fvariable, fincrement(),14,3);
+    lcd.blink();
+  }
+}
+void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* secondLine,  float min, float value, float max, float reference){
+  adjustfvariable(min,value,max);
+  lcd.setCursor(0,1);
+  lcd.print(header);
+  lcd.print(reference);lcd.print("C");
+  lcd.setCursor(0,2);
+  lcd.print(secondLine);lcd.print(reference + fvariable);lcd.print("C");
+  lcd.setCursor(0,3);
+  lcd.print(F("MOD :       ["));
+  if(fvariable >= 0){lcd.print("+");}
+  lcd.print(fvariable);
+  lcd.print(F("]"));
+  printCursor(fvariable, fincrement(),14,3);
+  lcd.blink();
+}/*
+void confirmVariable(const __FlashStringHelper* secondLine,const __FlashStringHelper* thirdLine,  float min, float value, float max, float reference1, float reference2){
+  adjustfvariable(min,value,max);
+  lcd.setCursor(0,2);
+  lcd.print(secondLine);lcd.print(reference + fvariable);lcd.print("C");
+  lcd.setCursor(0,3);
+  lcd.print(thirdLine);lcd.print(reference + fvariable);lcd.print("C");
+}*/
+void confirmVariableLESS(const __FlashStringHelper* header,const __FlashStringHelper* secondLine, float min, float value, float max, float reference){
+  adjustfvariable(min,value,max);
+  lcd.setCursor(0,1);
+  lcd.print(header);
+  lcd.print(reference);lcd.print("C");
+  lcd.setCursor(0,2);
+  lcd.print(secondLine);lcd.print(reference - fvariable);lcd.print("C");
+  lcd.setCursor(0,3);
+  lcd.print(F("MOD :       ["));
+  if(fvariable >= 0){lcd.print("-");}
+  lcd.print(fvariable);
+  lcd.print(F("]"));
+  printCursor(fvariable, fincrement(),14,3);
 }
 
-void setParameter(const __FlashStringHelper* variableName, floatParameter &parameter, const char* returnid){
-    confirmVariable(variableName,parameter.minimum(),parameter.value(),parameter.maximum());
-    if(choiceIsConfirmed()){
-      parameter.setValue(fvariable);
-      displayNextProgram(returnid);
-    }
-}
-void setParameter(const __FlashStringHelper* variableName, uShortParameter &parameter, const char* returnid){
-    confirmVariable(variableName,parameter.minimum(),parameter.value(),parameter.maximum());
-    if(choiceIsConfirmed()){
-      parameter.setValue(usvariable);
-      displayNextProgram(returnid);
-    }
-}
-void setParameter(const __FlashStringHelper* variableName, shortParameter &parameter, const char* returnid){
-    confirmVariable(variableName,parameter.minimum(),parameter.value(),parameter.maximum());
-    if(choiceIsConfirmed()){
-      parameter.setValue(svariable);
-      displayNextProgram(returnid);
-    }
-}
-void setParameter(const __FlashStringHelper* variableName, byteParameter &parameter, const char* returnid){
-    confirmVariable(variableName,(unsigned short)parameter.minimum(),(unsigned short)parameter.value(),(unsigned short)parameter.maximum());
-    if(choiceIsConfirmed()){
-      parameter.setValue(svariable);
-      displayNextProgram(returnid);
-    }
-}
-void checkIIC(){
-  lcd.noBlink();
-  lcd.setCursor(0,0);
-  lcd.print("----I2C DEVICES-----");
 
-  byte error, address;
-  int nDevices = 0;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-
-}
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, unsigned short min, unsigned short value, unsigned short max){
+void confirmVariable(byte min, byte value, byte max){
   adjustusvariable(min,value,max);
-  firstPrint = false;
-  codeWithNoDisplay = false;
-
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to adjust)");
   lcd.setCursor(0,3);
-  lcd.print("       [");
+  lcd.print(F("       ["));
   lcd.print(usvariable);
-  lcd.print("]   ");
+  lcd.print(F("]   "));
+  printCursor(usvariable, sincrement(),8,3);
 }
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, short min, short value, short max){
+
+void confirmVariable(unsigned short min, unsigned short value, unsigned short max){
+  adjustusvariable(min,value,max);
+  lcd.setCursor(0,3);
+  lcd.print(F("       ["));
+  lcd.print(usvariable);
+  lcd.print(F("]   "));
+  printCursor(usvariable, sincrement(),8,3);
+}
+void confirmVariable(short min, short value, short max){
   adjustsvariable(min,value,max);
-  firstPrint = false;
-  codeWithNoDisplay = false;
-
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to adjust)");
   lcd.setCursor(0,3);
-  lcd.print("       [");
+  lcd.print(F("       ["));
   lcd.print(svariable);
-  lcd.print("]   ");
+  lcd.print(F("]   "));
+  printCursor(svariable, sincrement(),8,3);
 }
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, short min_hour, short hour, short max_hour, short min_min, short min, short max_min){
+void confirmVariable(short min, short value, short max, float reference){
+  adjustsvariable(min,value,max);
+  lcd.setCursor(0,3);
+  lcd.print(F("       ["));
+  lcd.print(svariable);
+  lcd.print(F("]"));
+  printCursor(svariable, sincrement(),8,3);
+
+}
+void confirmVariable(short min_hour, short hour, short max_hour, short min_min, short min, short max_min){
   adjusttimevariable(min_hour, hour, max_hour, min_min, min, max_min);
-  firstPrint = false;
-  codeWithNoDisplay = false;
-
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to adjust)");
   lcd.setCursor(0,3);
-  lcd.print("     [");
+  lcd.print(F("     ["));
   lcdPrintDigits(svariable1);
-  lcd.print("]:[");
+  lcd.print(F("]:["));
   lcdPrintDigits(svariable2);
-  lcd.print("]   ");
+  lcd.print(F("]   "));
 }
 
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, byte typeValue, String item1, String item2){
-  short type = (short)typeValue + line;
-  if(type > 1){
-    type = 1;
-    line -= 1;
-  }
-  if(type < 0){
-    type = 0;
-    line += 1;
-  }
-  typeSet = type;
-
-  firstPrint = false;
-  codeWithNoDisplay = false;
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to scroll)");
-  lcd.setCursor(0,3);
-  lcd.print("      [");
-  switch (typeSet){
-    case 0: lcd.print(item1);break;
-    case 1: lcd.print(item2);break;
-  }
-  lcd.print("]   ");
+void printListElement(String element, byte line){
+  //int cursor = (20-(element.length()))/2;
+  lcd.setCursor(0,line);
+  lcd.print(element);
 }
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, byte typeValue, String item1, String item2,String item3){
-  short type = (short)typeValue + line;
-  if(type > 2){
-    type = 2;
-    line -= 1;
-  }
-  if(type < 0){
-    type = 0;
-    line += 1;
-  }
-  typeSet = type;
-
-  firstPrint = false;
-  codeWithNoDisplay = false;
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to scroll)");
-  lcd.setCursor(0,3);
-  lcd.print("      [");
-  switch (typeSet){
-    case 0: lcd.print(item1);break;
-    case 1: lcd.print(item2);break;
-    case 2: lcd.print(item3);break;
-  }
-  lcd.print("]   ");
+void printBrackettedListElement(String element, byte line){
+  //int cursor = (20-(element.length()+2))/2;
+  lcd.setCursor(0,line);
+  lcd.print(F("> "));
+  lcd.setCursor(2,line);
+  lcd.print(element);
+  //lcd.print(F("]"));
 }
 
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, byte typeValue, String item1, String item2,String item3,String item4 ){
-  short type = (short)typeValue + line;
-  if(type > 3){
-    type = 3;
-    line -= 1;
-  }
-  if(type < 0){
-    type = 0;
-    line += 1;
-  }
-  typeSet = type;
+char buffer[30];
 
-  firstPrint = false;
-  codeWithNoDisplay = false;
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
-  lcd.setCursor(0,2);
-  lcd.print("(Press *# to scroll)");
-  lcd.setCursor(0,3);
-  lcd.print("      [");
-  switch (typeSet){
-    case 0: lcd.print(item1);break;
-    case 1: lcd.print(item2);break;
-    case 2: lcd.print(item3);break;
-    case 3: lcd.print(item4);break;
-  }
-  lcd.print("]   ");
-}
-
-void confirmVariable(const __FlashStringHelper* header,const __FlashStringHelper* variableName, byte typeValue, String item[], byte menuLenght){
+void confirmVariable(unsigned short typeValue, const char* const item[] PROGMEM, const int menuLenght){
   short type = (short)typeValue + line;
+
+  for(int x = 1; x <= 3; x++  ){
+    lcd.setCursor(0,x);
+    lcd.print(F("                    "));
+  }
+
   if(type > menuLenght-1){
-    type = menuLenght-1;
     line -= 1;
+    type = menuLenght-1;
   }
   if(type < 0){
-    type = 0;
     line += 1;
+    type = 0;
   }
-  typeSet = type;
+  selectedElement = type;
 
-  firstPrint = false;
-  codeWithNoDisplay = false;
-  lcd.noBlink();
-  lcd.setCursor(0,1);
-  lcd.print(header);
-  lcd.print(variableName);
+  if(selectedElement != 0){
+    byte prevElement = selectedElement -1;
+    //printListElement(item[prevElement],3);
+    strcpy_P(buffer, (char*)pgm_read_word(&(item[prevElement])));
+    lcd.setCursor(0,3);
+    lcd.print(buffer);
+
+  }
+  if(selectedElement != menuLenght-1){
+    byte nextElement = selectedElement +1;
+    //printListElement(item[nextElement],1);
+    strcpy_P(buffer, (char*)pgm_read_word(&(item[nextElement])));
+    lcd.setCursor(0,1);
+    lcd.print(buffer);
+  }
+
+  strcpy_P(buffer, (char*)pgm_read_word(&(item[selectedElement])));
   lcd.setCursor(0,2);
-  lcd.print("(Press *# to scroll)");
-  lcd.setCursor(0,3);
-  lcd.print("      [");
-  lcd.print(item[typeSet]);
-  lcd.print("]   ");
+  lcd.print(">");
+  lcd.print(buffer);
+  //printBrackettedListElement(item[selectedElement],2);
+
 }
 
-void setParameter(const __FlashStringHelper* header,const __FlashStringHelper* variableName, floatParameter &parameter, const char* returnid){
-    confirmVariable(header,variableName,parameter.minimum(),parameter.value(),parameter.maximum());
+void confirmVariable(unsigned short typeValue, const String item[], const int menuLenght){
+  short type = (short)typeValue + line;
+
+  for(int x = 1; x <= 3; x++  ){
+    lcd.setCursor(0,x);
+    lcd.print(F("                    "));
+  }
+
+  if(type > menuLenght-1){
+    line -= 1;
+    type = menuLenght-1;
+  }
+  if(type < 0){
+    line += 1;
+    type = 0;
+  }
+  selectedElement = type;
+
+  if(selectedElement != 0){
+    byte prevElement = selectedElement -1;
+    printListElement(item[prevElement],3);
+  }
+  if(selectedElement != menuLenght-1){
+    byte nextElement = selectedElement +1;
+    printListElement(item[nextElement],1);
+  }
+  printBrackettedListElement(item[selectedElement],2);
+
+}
+
+void setParameter(String header, const __FlashStringHelper* variableName, floatParameter &parameter, unsigned int returnid){
+  printHeader(header, variableName);
+  printAdjustInstructions();
+    confirmVariable(parameter.minimum(),parameter.value(),parameter.maximum());
     if(choiceIsConfirmed()){
       parameter.setValue(fvariable);
-      displayNextProgram(returnid);
+      display(returnid);
     }
 }
-void setParameter(const __FlashStringHelper* header,const __FlashStringHelper* variableName, uShortParameter &parameter, const char* returnid){
-    confirmVariable(header,variableName,parameter.minimum(),parameter.value(),parameter.maximum());
+void setParameter(String header,const __FlashStringHelper* variableName, uShortParameter &parameter, unsigned int returnid){
+  printHeader(header, variableName);
+  printAdjustInstructions();
+  confirmVariable(parameter.minimum(),parameter.value(),parameter.maximum());
     if(choiceIsConfirmed()){
       parameter.setValue(usvariable);
-      displayNextProgram(returnid);
+      display(returnid);
     }
 }
-void setParameter(const __FlashStringHelper* header,const __FlashStringHelper* variableName, shortParameter &parameter, const char* returnid){
-    confirmVariable(header,variableName,parameter.minimum(),parameter.value(),parameter.maximum());
+void setParameter(String header,const __FlashStringHelper* variableName, shortParameter &parameter, unsigned int returnid){
+  printHeader(header, variableName);
+  printAdjustInstructions();
+    confirmVariable(parameter.minimum(),parameter.value(),parameter.maximum());
     if(choiceIsConfirmed()){
       parameter.setValue(svariable);
-      displayNextProgram(returnid);
+      display(returnid);
     }
 }
+
+void setParameter(String header,const __FlashStringHelper* variableName, byteParameter &parameter, unsigned int returnid){
+  printHeader(header, variableName);
+  printAdjustInstructions();
+    confirmVariable(parameter.minimum(),parameter.value(),parameter.maximum());
+    if(choiceIsConfirmed()){
+      parameter.setValue(svariable);
+      display(returnid);
+    }
+}
+
 void checkIIC(){
   lcd.noBlink();
   lcd.setCursor(0,0);
-  lcd.print("----I2C DEVICES-----");
+  lcd.print(F("----I2C DEVICES-----"));
 
   byte error, address;
   int nDevices = 0;
@@ -1928,119 +1639,697 @@ boolean programSelected(const char* id){
   }
   else{
     return false;
-<<<<<<< HEAD
-=======
   }
 }
 
 void zeroEqualInfinity(){
   if(usvariable == 0){
-    lcd.setCursor(7,3);
-    lcd.print(F("INF"));
-  }
-}
-void menuSetParameter(){
-  if(firstPrint == true){
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(F("-Parameter Selected-"));
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+    lcd.setCursor(3,3);
+    lcd.print(F("INDEFINITELY"));
   }
 }
 
-<<<<<<< HEAD
-void zeroEqualInfinity(){
-  if(usvariable == 0){
-    lcd.setCursor(7,3);
-    lcd.print(F("INF"));
+void updateFlashCounter(){
+  if(flashingCounter == 0){
+    flashingCounter = 1;
+  }
+  else if(flashingCounter == 1){
+    flashingCounter = 0;
+  }
+}
+
+void refreshScreen(byte seconds){
+  if(unpressedTimer > (unsigned long) seconds*1000){
+    menu = MODE_DISPLAY;
+    key = '1';
+    clearMenu();
+    clearData();
+  }
+}
+
+void resetTimerBeforeRefresh(){
+ if(keyPressed != NO_KEY && keyPressed != 'D' && keyPressed != 'C'){
+   unpressedTimer = 0;
+ }
+}
+
+
+unsigned int genericId(unsigned int parameter){
+  unsigned int fullId = GENERIC_MENU_CONSTANT+parameter;
+  return fullId;
+}
+
+
+void disabled(int nb){
+  lcd.clear(),  lcd.setCursor(0,0);lcd.print("DISABLED");Serial.println("disabled menu");
+}
+void disabled(){
+  lcd.clear(),  lcd.setCursor(0,0);lcd.print("DISABLED");Serial.println("disabled menu");
+}
+
+String header(String text, int nb){
+  int index = nb+1;
+  return text + index;
+}
+
+const String unlockList[]  = {"unlock"};
+const int sizeOfUnlockList = sizeof(unlockList)/sizeof(unlockList[0]);
+const String activateList[]  = {"activate"};
+const int sizeOfActivateList = sizeof(activateList)/sizeof(activateList[0]);
+const String confirmList[]  = {"cancel", "confirm"};
+const int sizeOfConfirmList = sizeof(confirmList)/sizeof(confirmList[0]);
+const String deviceList[]  = {"fan","heater", "valv"};
+const int sizeOfDeviceList = sizeof(deviceList)/sizeof(deviceList[0]);
+const String enableList[]  = {"disabled","enabled"};
+const int sizeOfEnableList = sizeof(enableList)/sizeof(enableList[0]);
+const String timeRefList[]  = {"manual","sun"};
+const int sizeOfTimeRefList = sizeof(timeRefList)/sizeof(enableList[0]);
+
+//********************ROLLUP SPECIFIC MENUS********************
+
+const String	mainRollupList[] = {"disable", "parameters", "override"};
+const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
+byte lastSelectedElementInRollupList = 3;
+
+const String	rollupParametersList[] = {"rotation time", "steps"};
+const int sizeOfRollupParametersList = sizeof(rollupParametersList)/sizeof(rollupParametersList[0]);
+
+const String	overrideRollupList[] = {"rain", "wind","timer 3","timer 2","timer 1","lock at %","lock close","lock open"};
+//const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
+const int sizeOfOverrideRollupList = sizeof(overrideRollupList)/sizeof(overrideRollupList[0]);
+
+const String	overrideRollupLockList[] = {"rain","wind","timer 3","timer 2","timer 1","unlock"};
+const int sizeOfOverrideRollupLockList = sizeof(overrideRollupLockList)/sizeof(overrideRollupLockList[0]);
+
+void mainRollup(int nb){
+  if(greenhouse.rollup[nb].isActivated()){
+
+    printHeader(header(("R"),nb),F(" - MAIN MENU      "));
+
+    confirmVariable(lastSelectedElementInRollupList, mainRollupList, sizeOfMainRollupList);
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 2: lastSelectedElementInRollupList = 2;display(rollupId(nb,OVERRIDE));break;
+        case 1: lastSelectedElementInRollupList = 1;display(rollupId(nb,PROGRAM));break;
+        case 0: lastSelectedElementInRollupList = 2;display(rollupId(nb,ENABLE));break;
+      }
+    }
+  }
+  else{
+    resetMenuCount();
+    display(rollupId(nb,ENABLE));
+  }
+}
+
+void programRollup(int nb){
+  printHeader(header(("R"),nb),F("- SET PARAMETERS  "));
+
+  confirmVariable(1, rollupParametersList, sizeOfRollupParametersList);
+  if(choiceIsConfirmed()){
+    switch(selectedElement){
+      case 1: display(rollupId(nb, SETSTAGES));break;
+      case 0: display(rollupId(nb, ROTUP));break;
+    }
+  }
+}
+
+void enableRollup(int nb){
+  if(greenhouse.rollup[nb].isActivated()){
+    printHeader(header(("R"),nb),F("- DISABLE(CONFIRM)"));
+    printConfirmInstructions();
+
+    if(nextIsConfirmed()){
+      greenhouse.rollup[nb].desactivateDevice();display(genericId(HOME));
+    }
+    if(backIsConfirmed()){
+      display(genericId(HOME));
+    }
+  }
+  else{
+    printHeader(header(("R"),nb),F("- ACTIVATE"));
+    printConfirmInstructions();
+
+    if(nextIsConfirmed()){
+      greenhouse.rollup[nb].activateDevice();
+      resetMenuCount();
+      display(rollupId(nb,ROTUP));
+    }
+    if(backIsConfirmed()){
+      display(genericId(HOME));
+    }
+  }
+}
+byte clockOvIndex;
+byte clockOv(byte index){
+  switch(index){
+    case 0 : return CLOCKOV1; break;
+    case 1 : return CLOCKOV2; break;
+    case 2 : return CLOCKOV3; break;
+  }
+}
+void overridesRollup(int nb){
+  printHeader(header(("R"),nb),F(" - OVERRIDE       "));
+  if(!greenhouse.rollup[nb].isLock()){
+    confirmVariable(7, overrideRollupList, sizeOfOverrideRollupList);
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 7: display(rollupId(nb,FOPEN));break;
+        case 6: display(rollupId(nb,FCLOSE));break;
+        case 5: display(rollupId(nb,FINC1));break;
+        case 4: clockOvIndex = 0; display(rollupId(nb,FIXOV1));break;
+        case 3: clockOvIndex = 1; display(rollupId(nb,FIXOV1));break;
+        case 2: clockOvIndex = 2; display(rollupId(nb,FIXOV1));break;
+        case 0: display(rollupId(nb,RAIN1));break;
+      }
+    }
+  }
+  else{
+    confirmVariable(5, overrideRollupLockList, sizeOfOverrideRollupLockList);
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 5: display(rollupId(nb,AUTO));break;
+        case 4: clockOvIndex = 0; display(rollupId(nb,FIXOV1));break;
+        case 3: clockOvIndex = 1; display(rollupId(nb,FIXOV1));break;
+        case 2: clockOvIndex = 2; display(rollupId(nb,FIXOV1));break;
+        case 0: display(rollupId(nb,RAIN1));break;
+      }
+    }
+  }
+}
+
+void clockOverrideRollup(int nb){
+  printHeader(header(("R"),nb),F(" - CLOCK OVERRIDE"));
+  confirmVariable(greenhouse.rollup[nb].isEnabled(clockOv(clockOvIndex)), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.rollup[nb].disable(clockOv(clockOvIndex));display(genericId(HOME));break;
+      case 1: display(rollupId(nb, FIXOV2));break;
+    }
+  }
+}
+void clockOverrideStartRollup(int nb){
+  printHeader(header(("R"),nb),F(" - START TIME"));
+  printAdjustInstructions();
+  confirmVariable((short)0,greenhouse.rollup[nb].hourStart(clockOv(clockOvIndex)),(short)23, (short)0,greenhouse.rollup[nb].minStart(clockOv(clockOvIndex)),(short)59);
+  if(choiceIsConfirmed()){
+    svariable3 = svariable1;
+    svariable4 = svariable2;
+    display(rollupId(nb,FIXOV3));
+  }
+}
+void clockOverrideStopRollup(int nb){
+  printHeader(header(("R"),nb),F(" - STOP TIME"));
+  printAdjustInstructions();
+  confirmVariable((short)0, greenhouse.rollup[nb].hourStop(clockOv(clockOvIndex)),(short)23, (short)0, greenhouse.rollup[nb].minStop(clockOv(clockOvIndex)), (short)59);
+  if(choiceIsConfirmed()){
+    display(rollupId(nb,FIXOV4));
+  }
+}
+
+void clockOverrideTargetRollup(int nb){
+  printHeader(header(("R"),nb),F(" - TARGET(%)"));
+  confirmVariable((byte)0,greenhouse.rollup[nb].overrideTarget(clockOv(clockOvIndex)),(byte)100);
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].initOverride(clockOv(clockOvIndex), FIX_R1_PRIORITY+clockOvIndex, svariable3, svariable4, svariable1, svariable2, usvariable);
+    display(genericId(HOME));
+
+  }
+}
+void rainRollup(int nb){
+  printHeader(header(("R"),nb),F(" - RAIN OVERRIDE"));
+  confirmVariable(greenhouse.rollup[nb].isEnabled(RAINOV), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.device[nb].disable(RAINOV);display(genericId(HOME));
+break;
+      case 1: display(rollupId(nb, RAIN2));break;
+    }
+  }
+}
+void rainTargetRollup(int nb){
+  printHeader(header(("R"),nb),F(" - RAIN CLOSE(%)"));
+  confirmVariable((byte)0,greenhouse.rollup[nb].overrideTarget(RAINOV),(byte)100);
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].initOverride(RAINOV, 2, usvariable);
+    display(genericId(HOME));
+
+  }
+}
+void autoModeRollup(int nb){
+  greenhouse.rollup[nb].unlock();
+  display(genericId(HOME));
+
+}
+void forceOpenRollup(int nb){
+  printHeader(header(("R"),nb),F(" - LOCK OPEN(min)"));
+  printAdjustInstructions();
+  confirmVariable((unsigned short)0, (unsigned short)0, (unsigned short)1440);
+  zeroEqualInfinity();
+  if(nextIsConfirmed()){
+    greenhouse.rollup[nb].lockOpenAndWait((unsigned long)usvariable*60);
+    display(genericId(HOME));
+  }
+  if(backIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+void forceCloseRollup(int nb){
+  printHeader(header(("R"),nb),F(" - LOCK CLOSE(min)"));
+  printAdjustInstructions();
+  confirmVariable((unsigned short)0, (unsigned short)0, (unsigned short)1440);
+  zeroEqualInfinity();
+  if(nextIsConfirmed()){
+    greenhouse.rollup[nb].lockCloseAndWait((unsigned long)usvariable*60);
+    display(genericId(HOME));
+  }
+  if(backIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+void forceIncRollup1(int nb){
+  printHeader(header(("R"),nb),F(" - LOCK TO %     "));
+  printAdjustInstructions();
+  confirmVariable( (unsigned short)0, greenhouse.rollup[nb].incrementCounter(), (unsigned short)100);
+  if(choiceIsConfirmed()){
+    usvariable1 = usvariable;
+    display(rollupId(nb,FINC2));
+  }
+}
+void forceIncRollup2(int nb){
+  printHeader(header(("R"),nb),F(" - DELAY (min)    "));
+  printAdjustInstructions();
+  confirmVariable((unsigned short)0, (unsigned short)0, (unsigned short)1440);
+  zeroEqualInfinity();
+  if(nextIsConfirmed()){
+    greenhouse.rollup[nb].lockAtIncrement(usvariable1, (unsigned long)usvariable*60);
+    display(genericId(HOME));
+  }
+  if(backIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+
+void rotationUpRollup(int nb){
+  lcd.setCursor(19,0);
+  lcd.write((byte)UPS);
+  setParameter(header(("R"),nb),F("-ROTATION TIME(s)"),greenhouse.rollup[nb].rotationUp,rollupId(nb,ROTDOWN));
+}
+void rotationDownRollup(int nb){
+  lcd.setCursor(19,0);
+  lcd.write((byte)DOWNS);
+  if(nextIsConfirmed()){
+    resetMenuCount();
+  }
+  setParameter(header(("R"),nb),F("-ROTATION TIME(s)"),greenhouse.rollup[nb].rotationDown,genericId(HOME));
+}
+
+void setStagesRollup(int nb){
+  printHeader(header(("R"),nb),F("- OPENING STEPS   "));
+  printAdjustInstructions();
+  confirmVariable(greenhouse.rollup[nb].stages.minimum()+1,greenhouse.rollup[nb].stages.value(),greenhouse.rollup[nb].stages.maximum()-1);
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].stages.setValue(usvariable);
+    if(greenhouse.rollup[nb].stages.value() > 1){
+      display(rollupId(nb,S1TARGET));
+    }
+    else{
+      display(rollupId(nb,S2TARGET));
+    }
+  }
+}
+
+void setStage1TargetRollup(int nb){
+  printHeader(header(("R"),nb),F("- MIN OPENING(%)  "));
+  printAdjustInstructions();
+  confirmVariable(greenhouse.rollup[nb].stage[1].target.minimum(),greenhouse.rollup[nb].stage[1].target.value(),greenhouse.rollup[nb].stage[1].target.maximum());
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].stage[1].target.setValue(usvariable);
+    display(rollupId(nb,S2TARGET));
+  }
+}
+void setStage2TargetRollup(int nb){
+  printHeader(header(("R"),nb),F("- MAX OPENING(%)  "));
+  printAdjustInstructions();
+  if(greenhouse.rollup[nb].stages.value() > 1){
+    int x = greenhouse.rollup[nb].stages.value();
+    confirmVariable(greenhouse.rollup[nb].stage[1].target.value(),greenhouse.rollup[nb].stage[x].target.value(),greenhouse.rollup[nb].stage[x].target.maximum());
+    if(choiceIsConfirmed()){
+      unsigned short incr = (greenhouse.rollup[nb].stage[x].target.value()-greenhouse.rollup[nb].stage[1].target.value())/(x-1);
+      for(int y = 2; y <= greenhouse.rollup[nb].stages.value();y++){
+        int incrementMultiplier = x-y;
+        greenhouse.rollup[nb].stage[y].target.setValue(usvariable- (incr*incrementMultiplier));
+      }
+      display(rollupId(nb,S1TEMP));
+    }
+  }
+  else{
+    confirmVariable(greenhouse.rollup[nb].stage[0].target.value(),greenhouse.rollup[nb].stage[1].target.value(),greenhouse.rollup[nb].stage[1].target.maximum());
+    if(choiceIsConfirmed()){
+      greenhouse.rollup[nb].stage[1].target.setValue(usvariable);
+      display(rollupId(nb,S2TEMP));
+    }
+  }
+}
+
+void setStage1TempRollup(int nb){
+  unsigned int returnid;
+  if(greenhouse.rollup[nb].stages.value() > 1){
+    returnid = rollupId(nb,S2TEMP);
+  }
+  else{
+    returnid = rollupId(nb,PAUSE);
+  }
+    printHeader(header(("R"),nb),F("- START OPENING(C)"));
+  confirmVariable(F("coolT:       "), F("start open:  "),greenhouse.rollup[nb].stage[1].mod.minimum(),greenhouse.rollup[nb].stage[1].mod.value(),greenhouse.rollup[nb].stage[1].mod.maximum(), greenhouse.coolingTemp());
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].stage[1].mod.setValue(fvariable);
+    display(returnid);
+  }
+}
+void setStage2TempRollup(int nb){
+  printHeader(header(("R"),nb),F("- FULL OPENING(C) "));
+  if(greenhouse.rollup[nb].stages.value() > 1){
+    for(int x = 2; x <= greenhouse.rollup[nb].stages.value();x++){
+      if(greenhouse.rollup[nb].stages.value() == x){
+        confirmVariable(F("coolT:       "), F("full open:   "),greenhouse.rollup[nb].stage[1].mod.value(),greenhouse.rollup[nb].stage[x].mod.value(),greenhouse.rollup[nb].stage[x].mod.maximum(), greenhouse.coolingTemp());
+        if(choiceIsConfirmed()){
+          float incr = (greenhouse.rollup[nb].stage[x].mod.value()-greenhouse.rollup[nb].stage[1].mod.value())/(x-1);
+          for(int y = 2; y <= greenhouse.rollup[nb].stages.value();y++){
+            int incrementMultiplier = x-y;
+            greenhouse.rollup[nb].stage[y].mod.setValue(fvariable- (incr*incrementMultiplier));
+          }
+          display(rollupId(nb,PAUSE));
+        }
+      }
+    }
+  }
+  else{
+    confirmVariable(F("coolT "), F("full open:   "),greenhouse.rollup[nb].stage[1].mod.minimum(),greenhouse.rollup[nb].stage[1].mod.value(),greenhouse.rollup[nb].stage[1].mod.maximum(), greenhouse.coolingTemp());
+    if(choiceIsConfirmed()){
+      greenhouse.rollup[nb].stage[1].mod.setValue(fvariable);
+      display(rollupId(nb,PAUSE));
+    }
+  }
+}
+void pauseTimeRollup(int nb){
+  setParameter(header(("R"),nb),F("- PAUSE TIME(s)   "),greenhouse.rollup[nb].pause,rollupId(nb,HYST));
+}
+void hystRollup(int nb){
+  printHeader(header(("R"),nb),F("- HYSTERESIS(C)   "));
+  printAdjustInstructions();
+  confirmVariable(greenhouse.rollup[nb].hyst.minimum(),greenhouse.rollup[nb].hyst.value(),greenhouse.rollup[nb].hyst.maximum());
+    if(choiceIsConfirmed()){
+      greenhouse.rollup[nb].hyst.setValue(fvariable);
+      if(nextIsConfirmed()){
+        resetMenuCount();
+      }
+      display(rollupId(nb,MAIN));
+    }
+
+}
+//********************DEVICE SPECIFIC MENUS********************
+String deviceHeader(int nb){
+  String header;
+  String prefix;
+  int index = nb+1;
+  if(!greenhouse.device[nb].isActivated()){
+    prefix = "D";
+    header = prefix+index;
+    return header;
+  }
+  else if(greenhouse.device[nb].type.value() == FANTYPE){
+    prefix = "F";
+    header = prefix+index;
+    return header;
+  }
+  else if(greenhouse.device[nb].type.value() == HEATERTYPE){
+    prefix = "H";
+    header = prefix+index;
+    return header;
+  }
+  else if(greenhouse.device[nb].type.value() == VALVTYPE){
+    prefix = "V";
+    header = prefix+index;
+    return header;
+  }
+  else{
+    prefix = "??";
+    return prefix;
+  }
+}
+
+const String	mainDeviceList[] = {"disable","parameters","overrides"};
+const int sizeOfMainDeviceList = sizeof(mainDeviceList)/sizeof(mainDeviceList[0]);
+byte lastSelectedElementInDeviceList = 3;
+
+const String	overrideDeviceList[] = {"humidity","timer 3","timer 2","timer 1","lock OFF","lock ON"};
+//const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
+const int sizeOfOverrideDeviceList = sizeof(overrideDeviceList)/sizeof(overrideDeviceList[0]);
+byte lastSelectedElementInOverrideDeviceList = 6;
+
+const String	overrideDeviceLockList[] = {"humidity","timer 3","timer 2","timer 1","unlock"};
+//const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
+const int sizeOfOverrideDeviceLockList = sizeof(overrideDeviceLockList)/sizeof(overrideDeviceLockList[0]);
+byte lastSelectedElementInOverrideDeviceLockList = 5;
+
+void mainDevice(int nb){
+  if(greenhouse.device[nb].isActivated()){
+    printHeader(deviceHeader(nb),F(" - MAIN MENU"));
+
+    confirmVariable(lastSelectedElementInDeviceList, mainDeviceList, sizeOfMainDeviceList);
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 2: display(deviceId(nb,OVERRIDE));lastSelectedElementInDeviceList = 2; break;
+        case 1:
+          if(greenhouse.device[nb].type.value() != VALVTYPE){
+            if(greenhouse.device[nb].type.value() == HEATERTYPE && heatingDevices() < 2){
+              display(deviceId(nb,STOPTEMP));
+            }
+            else if(greenhouse.device[nb].type.value() == FANTYPE && coolingDevices() < 2){
+              display(deviceId(nb,STOPTEMP));
+            }
+            else{
+              display(deviceId(nb,STARTTEMP));
+            }
+            lastSelectedElementInDeviceList = 1;
+          }
+        break;
+        case 0: display(deviceId(nb,ENABLE));lastSelectedElementInDeviceList = 2; break;
+      }
+
+    }
+  }
+  if(!greenhouse.device[nb].isActivated()){
+    resetMenuCount();
+    display(deviceId(nb,ENABLE));
+  }
+}
+
+void disableDevice(int nb){
+  if(greenhouse.device[nb].isActivated()){
+    printHeader(deviceHeader(nb),F("- DISABLE(CONFIRM)"));
+    printConfirmInstructions();
+
+    if(nextIsConfirmed()){
+      greenhouse.device[nb].desactivateDevice();greenhouse.device[nb].disableOverrides();display(genericId(HOME));
+      display(genericId(HOME));
+    }
+    if(backIsConfirmed()){
+      display(genericId(HOME));
+    }
+  }
+  else if(!greenhouse.device[nb].isActivated()){
+    printHeader(deviceHeader(nb),F("- ENABLE(CONFIRM)"));
+    printConfirmInstructions();
+    if(nextIsConfirmed()){
+      resetMenuCount();
+      display(deviceId(nb,TYPE));
+    }
+    if(backIsConfirmed()){
+      display(genericId(HOME));
+    }
+  }
+}
+
+void overridesDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - OVERRIDES      "));
+  if(greenhouse.device[nb].isLock()){
+    confirmVariable(lastSelectedElementInOverrideDeviceLockList, overrideDeviceLockList, sizeOfOverrideDeviceLockList);
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 4: display(deviceId(nb,AUTO));break;
+        case 3: clockOvIndex = 0; display(deviceId(nb,FIXOV1));break;
+        case 2: clockOvIndex = 1; display(deviceId(nb,FIXOV1));break;
+        case 1: clockOvIndex = 2; display(deviceId(nb,FIXOV1));break;
+        case 0: display(deviceId(nb,HUMIDITY1));break;
+      }
+    }
+  }
+  else{
+    confirmVariable(lastSelectedElementInOverrideDeviceList, overrideDeviceList, sizeOfOverrideDeviceList);
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 5: display(deviceId(nb,FOPEN));break;
+        case 4: display(deviceId(nb,FCLOSE));break;
+        case 3: clockOvIndex = 0; display(deviceId(nb,FIXOV1));break;
+        case 2: clockOvIndex = 1; display(deviceId(nb,FIXOV1));break;
+        case 1: clockOvIndex = 2; display(deviceId(nb,FIXOV1));break;
+        case 0: display(deviceId(nb,HUMIDITY1));break;
+      }
+    }
+  }
+}
+void clockOverrideDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - CLOCK OVERRIDE"));
+  confirmVariable(greenhouse.device[nb].isEnabled(clockOv(clockOvIndex)), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.device[nb].disable(clockOv(clockOvIndex));display(genericId(HOME));break;
+      case 1: display(deviceId(nb, FIXOV2));break;
+    }
+  }
+}
+void clockOverrideStartDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - START TIME"));
+  printAdjustInstructions();
+  confirmVariable((short)0,greenhouse.device[nb].hourStart(clockOv(clockOvIndex)),(short)23, (short)0,greenhouse.device[nb].minStart(clockOv(clockOvIndex)),(short)59);
+  if(choiceIsConfirmed()){
+    svariable3 = svariable1;
+    svariable4 = svariable2;
+    display(deviceId(nb,FIXOV3));
+  }
+}
+void clockOverrideStopDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - STOP TIME"));
+  printAdjustInstructions();
+  confirmVariable((short)0, greenhouse.device[nb].hourStop(clockOv(clockOvIndex)),(short)23, (short)0, greenhouse.device[nb].minStop(clockOv(clockOvIndex)), (short)59);
+  if(choiceIsConfirmed()){
+    greenhouse.device[nb].initOverride(clockOv(clockOvIndex), FIX_D1_PRIORITY+clockOvIndex, svariable3, svariable4, svariable1, svariable2, true);
+    display(genericId(HOME));
+
+  }
+}
+void humidityDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - HR(%) OVERRIDE"));
+  confirmVariable(greenhouse.device[nb].isEnabled(DESHUM), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.device[nb].disable(DESHUM);display(genericId(HOME));
+break;
+      case 1: display(deviceId(nb, HUMIDITY2));break;
+    }
   }
 }
 
 
-void rollupMenu(const __FlashStringHelper* header, Rollup &rollup){
-  if(greenhouse.rollups.value() >= rollup.nb()+1){
-    char index = (rollup.nb()+1) +'0';
+void humidityTargetDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - MAX HUMIDITY(%) "));
+  printAdjustInstructions();
+  confirmVariable((float)0,greenhouse.device[nb].floatVar(DESHUM),(float)100);
+  if(choiceIsConfirmed()){
+    greenhouse.device[nb].initOverride(DESHUM, 2, ABOVE, fvariable, 3, true);
+    display(genericId(HOME));
 
-    char RHYST[Code_lenght]    = {'1',index,'0','0'};
-    char RROTUP[Code_lenght]   = {'1',index,'0','1'};
-    char RROTDOWN[Code_lenght] = {'1',index,'0','2'};
-    char RPAUSE[Code_lenght]   = {'1',index,'0','3'};
-    char RS1MOD[Code_lenght]   = {'1',index,'1','1'};
-    char RS1TARG[Code_lenght]  = {'1',index,'1','2'};
-    char RS2MOD[Code_lenght]   = {'1',index,'2','1'};
-    char RS2TARG[Code_lenght]  = {'1',index,'2','2'};
-    char RS3MOD[Code_lenght]   = {'1',index,'3','1'};
-    char RS3TARG[Code_lenght]  = {'1',index,'3','2'};
-    char RS4MOD[Code_lenght]   = {'1',index,'4','1'};
-    char RS4TARG[Code_lenght]  = {'1',index,'4','2'};
+  }
+}
+void autoModeDevice(int nb){
+  greenhouse.device[nb].unlock();
+  display(genericId(HOME));
 
-    if(programSelected(RHYST)){
-      setParameter(header,F("HYSTERESIS"),rollup.hyst,RROTUP);
+}
+
+void forceOpenDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - LOCK ON (min)  "));
+  printAdjustInstructions();
+  confirmVariable((unsigned short)0, (unsigned short)0, (unsigned short)1440);
+  zeroEqualInfinity();
+  if(nextIsConfirmed()){
+    greenhouse.device[nb].lockOnAndWait((unsigned long)usvariable*60);
+    display(genericId(HOME));
+  }
+  if(backIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+
+void forceCloseDevice(int nb){
+  printHeader(deviceHeader(nb),F(" - LOCK OFF (min)"));
+  printAdjustInstructions();
+  confirmVariable((unsigned short)0, (unsigned short)0, (unsigned short)1440);
+  zeroEqualInfinity();
+  if(nextIsConfirmed()){
+    greenhouse.device[nb].lockOffAndWait((unsigned long)usvariable*60);
+    display(genericId(HOME));
+  }
+  if(backIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+
+void typeDevice(int nb){
+  printHeader(deviceHeader(nb),F("- TYPE"));
+
+  confirmVariable(greenhouse.device[nb].type.value(), deviceList, sizeOfDeviceList);
+  if(choiceIsConfirmed()){
+    if(nextIsConfirmed()){
+      greenhouse.device[nb].type.setValue(selectedElement);
+      greenhouse.device[nb].activateDevice();
     }
-    if(programSelected(RROTUP)){
-      setParameter(header,F("ROTATION (UP)  "),rollup.rotationUp,RROTDOWN);
+    display(genericId(HOME));
+  }
+}
+
+void startTempDevice(int nb){
+  printHeader(deviceHeader(nb),F("- START TEMP(C)"));
+  if(greenhouse.device[nb].type.value() == FANTYPE){
+    confirmVariable(F("coolT:       "), F("start above: "),greenhouse.device[nb].mod.minimum(),greenhouse.device[nb].mod.value(),greenhouse.device[nb].mod.maximum(), greenhouse.coolingTemp());
+    if(choiceIsConfirmed()){
+      greenhouse.device[nb].mod.setValue(fvariable);
+      display(deviceId(nb,STOPTEMP));
     }
-    if(programSelected(RROTDOWN)){
-      setParameter(header,F("ROTATION (DOWN)"),rollup.rotationDown,RPAUSE);
-    }
-    if(programSelected(RPAUSE)){
-      setParameter(header,F("PAUSE TIME     "), rollup.pause,RS1MOD);
-    }
-    if(greenhouse.stages.value() >= 1){
-      if(programSelected(RS1MOD)){
-        setParameter(header,F("STAGE 1 MOD   "),rollup.stage[1].mod,RS1TARG);
-      }
-      if(greenhouse.stages.value() == 1){
-        if(programSelected(RS1TARG)){
-          setParameter(header,F("STAGE 1 TARGET"),rollup.stage[1].target,MENU1);
-        }
-      }
-      else{
-        if(programSelected(RS1TARG)){
-          setParameter(header,F("STAGE 1 TARGET"),rollup.stage[1].target,RS2MOD);
-        }
-      }
-    }
-    if(greenhouse.stages.value() >= 2){
-      if(programSelected(RS2MOD)){
-        setParameter(header,F("STAGE 2 MOD   "),rollup.stage[2].mod,RS2TARG);
-      }
-      if(greenhouse.stages.value() == 2){
-        if(programSelected(RS2TARG)){
-          setParameter(header,F("STAGE 2 TARGET"),rollup.stage[2].target,MENU1);
-        }
-      }
-      else{
-        if(programSelected(RS2TARG)){
-          setParameter(header,F("STAGE 2 TARGET"),rollup.stage[2].target,RS3MOD);
-        }
+  }
+  else if(greenhouse.device[nb].type.value() == HEATERTYPE){
+    if((greenhouse.daynight.value() == false)&&(otherHeatingDevices(nb) == 0)){
+      printAdjustInstructions();
+      confirmVariable((float)0, greenhouse.heatingTemp()+greenhouse.device[nb].mod.value(), (float)50);
+      if(choiceIsConfirmed()){
+        greenhouse.timepoint[2].heatingTemp.setValue(fvariable);
+        greenhouse.device[nb].mod.setValue(0);
+        display(deviceId(nb,STOPTEMP));
       }
     }
-    if(greenhouse.stages.value() >= 3){
-      if(programSelected(RS3MOD)){
-        setParameter(header,F("STAGE 3 MOD   "),rollup.stage[3].mod,RS3TARG);
-      }
-      if(greenhouse.stages.value() == 3){
-        if(programSelected(RS3TARG)){
-          setParameter(header,F("STAGE 3 TARGET"),rollup.stage[3].target,MENU1);
-        }
-      }
-      else{
-        if(programSelected(RS3TARG)){
-          setParameter(header,F("STAGE 3 TARGET"),rollup.stage[3].target,RS4MOD);
-        }
-      }
-    }
-    if(greenhouse.stages.value() >= 4){
-      if(programSelected(RS4MOD)){
-        setParameter(header,F("STAGE 4 MOD   "),rollup.stage[4].mod,RS4TARG);
-      }
-      if(programSelected(RS4TARG)){
-        setParameter(header,F("STAGE 4 TARGET"),rollup.stage[4].target,MENU1);
+    else{
+      confirmVariable(F("heatT:       "), F("start under: "),greenhouse.device[nb].mod.minimum(),greenhouse.device[nb].mod.value(),greenhouse.device[nb].mod.maximum(), greenhouse.heatingTemp());
+      if(choiceIsConfirmed()){
+        greenhouse.device[nb].mod.setValue(fvariable);
+        display(deviceId(nb,STOPTEMP));
       }
     }
   }
 }
+void stopTempDevice(int nb){
+  printHeader(deviceHeader(nb),F("- HYSTERESIS(C)   "));
+  printAdjustInstructions();
+  confirmVariable(greenhouse.device[nb].hyst.minimum(),greenhouse.device[nb].hyst.value(),greenhouse.device[nb].hyst.maximum());
+  if(choiceIsConfirmed()){
+    greenhouse.device[nb].hyst.setValue(fvariable);
+    if(nextIsConfirmed()){
+      resetMenuCount();
+    }
+    display(deviceId(nb,MAIN));
+  }
+}
+//********************TIMEPOINTS SPECIFIC MENUS********************
+
+const String	mainTimepointList[] = {"adjustments","periods","temperatures"};
+const int sizeOfMainTimepointList = sizeof(mainTimepointList)/sizeof(mainTimepointList[0]);
+byte lastSelectedElementInTimepointList = 3;
+
+const String	adjustTemperaturesList[] = {"weather adjust","day/night settings","adjust T24h"};
+const int sizeOfAdjustTemperaturesList = sizeof(adjustTemperaturesList)/sizeof(adjustTemperaturesList[0]);
+
+const String	adjustTemperaturesBasicList[] = {"adjust T24h"};
+const int sizeOfAdjustTemperaturesBasicList = sizeof(adjustTemperaturesBasicList)/sizeof(adjustTemperaturesBasicList[0]);
 
 void adjustAndSetTimepoint(Timepoint &timepoint){
 
@@ -2049,7 +2338,7 @@ void adjustAndSetTimepoint(Timepoint &timepoint){
 
     if(timepoint.type.value() == SR){
       hour = svariable1 - (short)Timepoint::sunRise[HOUR];
-      minut = svariable2 - (short)Timepoint::sunRise[MINUT];
+      minut =  svariable2 - (short)Timepoint::sunRise[MINUT];
     }
     else if(timepoint.type.value() == SS){
       hour = svariable1 - (short)Timepoint::sunSet[HOUR];
@@ -2061,1772 +2350,1359 @@ void adjustAndSetTimepoint(Timepoint &timepoint){
     }
 
     timepoint.setTimepoint(hour, minut);
-
 }
 
-void timepointMenu(const __FlashStringHelper* header, Timepoint &timepoint){
+void adjustTimepointAfterTypeChange(Timepoint &timep){
 
-  if(greenhouse.timepoints.value() >= timepoint.nb()+1){
-    char index = (timepoint.nb()+1) +'0';
+    short hour;
+    short minut;
 
-    char TTIME[Code_lenght] = {'4',index,'0','0'};
-    char TTYPE[Code_lenght]    = {'4',index,'0','1'};
-    char THEATTS[Code_lenght]   = {'4',index,'0','3'};
-    char THEATTC[Code_lenght]   = {'4',index,'0','4'};
-    char TCOOLTS[Code_lenght]   = {'4',index,'0','5'};
-    char TCOOLTC[Code_lenght]   = {'4',index,'0','6'};
-    char TRAMP[Code_lenght]   = {'4',index,'0','7'};
+    if(timep.type.value() == SR){
+      hour = timep.hr() - (short)Timepoint::sunRise[HOUR];
+      minut =  timep.mn() - (short)Timepoint::sunRise[MINUT];
+    }
+    else if(timep.type.value() == SS){
+      hour = timep.hr() - (short)Timepoint::sunSet[HOUR];
+      minut = timep.mn() - (short)Timepoint::sunSet[MINUT];
+    }
+    else{
+      hour = timep.hr();
+      minut = timep.mn();
+    }
 
-    if(programSelected(TTIME)){
-      confirmVariable(header,F("SET TIME"), 0,timepoint.hr(),23, 0,timepoint.mn(),59);
-      if(choiceIsConfirmed()){
-        adjustAndSetTimepoint(timepoint);
-        displayNextProgram(TTYPE);
+    timep.setTimepoint(hour, minut);
+    if((timep.nb() == 1)&&(greenhouse.dif.value() == false)){
+      greenhouse.timepoint[0].type.setValue(timep.type.value());
+      greenhouse.timepoint[0].setTimepoint(hour, minut);
+    }
+    if((timep.nb() == 3)&&(greenhouse.prenight.value() == false)){
+      greenhouse.timepoint[2].type.setValue(timep.type.value());
+      greenhouse.timepoint[2].setTimepoint(hour, minut);
+    }
+}
 
+
+
+boolean reference(byte ref){
+  if(ref == CLOCK){
+    return 0;
+  }
+  else{
+    return 1;
+  }
+}
+
+const byte BOTH = 0;
+const byte FANONLY = 1;
+const byte HEATERONLY = 2;
+
+boolean setHeaterTempOnly(){
+  if(!coolingDeviceIsActive() && heatingDeviceIsActive()){
+    return true;
+  }
+  return false;
+}
+
+boolean setFanTempOnly(){
+  if(!heatingDeviceIsActive() && coolingDeviceIsActive()){
+    return true;
+  }
+  return false;
+}
+
+boolean setBothTemp(){
+  if(!setHeaterTempOnly() && !setFanTempOnly()){
+    return true;
+  }
+  return false;
+}
+
+/*Consider :
+- which devices are enable
+- weatheradjust
+- daynight mode
+*/
+byte nextTimepoint(int nb){
+  if(nb == 0){
+    return 1;
+  }
+  else if(nb == 1){
+    if(greenhouse.prenight.value() == true){
+      return 2;
+    }
+    else{
+      return 3;
+    }
+  }
+  else if(nb == 2){
+    return 3;
+  }
+  else{
+    return 1;
+  }
+}
+byte firstTimepoint(){
+  if(greenhouse.dif.value() == true){
+    return 0;
+  }
+  else{
+    return 1;
+  }
+}
+void adjustTemperature(int nb, byte menu){
+  if (menu == HEATINGSUN){
+    if(setBothTemp()){
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable);
+    }
+    else if(greenhouse.weatheradjust.value() == true){
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable);
+      greenhouse.timepoint[nb].coolingTemp.setValue(fvariable+3);
+    }
+    else if (greenhouse.daynight.value() == true && nb < 3){
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable);
+      greenhouse.timepoint[nb].coolingTemp.setValue(fvariable+3);
+    }
+    else{
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable);
+    }
+  }
+
+  if (menu == COOLINGSUN){
+    greenhouse.timepoint[nb].coolingTemp.setValue(fvariable);
+    if(greenhouse.weatheradjust.value() == true && setFanTempOnly()){
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable-3);
+    }
+    else if (greenhouse.daynight.value() == true && setFanTempOnly() && nb < 3){
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable-3);
+    }
+  }
+
+  if (menu == HEATINGCLOUD){
+    if(setBothTemp()){
+      greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable);
+    }
+    else if(greenhouse.daynight.value() == true && setHeaterTempOnly() && nb < 3){
+      greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable);
+      greenhouse.timepoint[nb].coolingTempCloud.setValue(fvariable+3);
+    }
+    else{
+      greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable);
+      greenhouse.timepoint[nb].coolingTempCloud.setValue(fvariable+3);
+    }
+  }
+  if (menu == COOLINGCLOUD){
+    greenhouse.timepoint[nb].coolingTempCloud.setValue(fvariable);
+    if(greenhouse.daynight.value() == true && setFanTempOnly() && nb < 3){
+      greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable-3);
+    }
+    else if (setFanTempOnly()){
+      greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable-3);
+    }
+  }
+}
+void nextTemperatureMenu(int nb, byte menu){
+  //premier menu
+  if (menu == MAIN){
+    if(greenhouse.daynight.value() == false){
+      resetMenuCount();
+    }
+    if(setFanTempOnly()){
+      display(timepointId(nb, COOLINGSUN));
+    }
+    else{
+      display(timepointId(nb, HEATINGSUN));
+    }
+  }
+  if (menu == HEATINGSUN){
+    greenhouse.timepoint[nb].heatingTemp.setValue(fvariable);
+    if(setBothTemp()){
+      display(timepointId(nb, COOLINGSUN));
+    }
+    else if(greenhouse.weatheradjust.value() == true){
+      greenhouse.timepoint[nb].coolingTemp.setValue(fvariable+3);
+      display(timepointId(nb, HEATINGCLOUD));
+    }
+    else if (greenhouse.daynight.value() == true && nb < 3){
+      greenhouse.timepoint[nb].coolingTemp.setValue(fvariable+3);
+      display(timepointId(nextTimepoint(nb), HEATINGSUN));
+    }
+    else{
+      if(nextIsConfirmed()){
+        resetMenuCount();
       }
+      display(genericId(TEMPERATURES));
     }
-    if(programSelected(TTYPE)){
-      confirmVariable(header,F("TIME REF     "),timepoint.type.value(), "SUNRISE", "CLOCK", "SUNSET");
-      if(choiceIsConfirmed()){
+  }
 
-        timepoint.type.setValue(typeSet);
-        adjustAndSetTimepoint(timepoint);
-
-        displayNextProgram(THEATTS);
+  if (menu == COOLINGSUN){
+    greenhouse.timepoint[nb].coolingTemp.setValue(fvariable);
+    if(greenhouse.weatheradjust.value() == true && setFanTempOnly()){
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable-3);
+      display(timepointId(nb, COOLINGCLOUD));
+    }
+    else if (greenhouse.weatheradjust.value() == true && setBothTemp()){
+      display(timepointId(nb, HEATINGCLOUD));
+    }
+    else if (greenhouse.daynight.value() == true && setFanTempOnly() && nb < 3){
+      greenhouse.timepoint[nb].heatingTemp.setValue(fvariable-3);
+      display(timepointId(nextTimepoint(nb), COOLINGSUN));
+    }
+    else if (greenhouse.daynight.value() == true && setBothTemp() && nb < 3){
+      display(timepointId(nextTimepoint(nb), HEATINGSUN));
+    }
+    else{
+      if(nextIsConfirmed()){
+        resetMenuCount();
       }
-    }
-    if(programSelected(THEATTS)){
-      setParameter(header,F("HEAT T*(SUN)   "),timepoint.heatingTemp,THEATTC);
-    }
-    if(programSelected(THEATTC)){
-      setParameter(header,F("HEAT T*(CLOUD) "),timepoint.heatingTempCloud,TCOOLTS);
-    }
-    if(programSelected(TCOOLTS)){
-      setParameter(header,F("COOL T*(SUN)   "),timepoint.coolingTemp,TCOOLTC);
-    }
-    if(programSelected(TCOOLTC)){
-      setParameter(header,F("COOL T*(CLOUD) "),timepoint.coolingTemp,TRAMP);
-    }
-    if(programSelected(TRAMP)){
-      setParameter(header,F("RAMPING       "),timepoint.ramping,MENU1);
+      display(genericId(TEMPERATURES));
     }
   }
-}
-void fanMenu(const __FlashStringHelper* header, Fan &fan){
 
-  if(greenhouse.fans.value() >= fan.nb()+1){
-    char index = (fan.nb()+1) +'0';
+  if (menu == HEATINGCLOUD){
+    greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable);
 
-    char FHYST[Code_lenght]    = {'2',index,'0','0'};
-    char FMOD[Code_lenght]   = {'2',index,'0','1'};
-
-    if(programSelected(FHYST)){
-      setParameter(header,F("HYSTERESIS"),fan.hyst,FMOD);
+    if(setBothTemp()){
+      display(timepointId(nb, COOLINGCLOUD));
     }
-    if(programSelected(FMOD)){
-      setParameter(header,F("MODIFICATOR"),fan.mod,MENU1);
+    else if(greenhouse.daynight.value() == true && setHeaterTempOnly() && nb < 3){
+      greenhouse.timepoint[nb].coolingTempCloud.setValue(fvariable+3);
+      display(timepointId(nextTimepoint(nb), HEATINGSUN));
+    }
+    else{
+      greenhouse.timepoint[nb].coolingTempCloud.setValue(fvariable+3);
+      if(nextIsConfirmed()){
+        resetMenuCount();
+      }
+        display(genericId(TEMPERATURES));
     }
   }
-}
-void heaterMenu(const __FlashStringHelper* header, Heater &heater){
-
-  if(greenhouse.heaters.value() >= heater.nb()+1){
-    char index = (heater.nb()+1) +'0';
-
-    char HHYST[Code_lenght]    = {'3',index,'0','0'};
-    char HMOD[Code_lenght]   = {'3',index,'0','1'};
-
-    if(programSelected(HHYST)){
-      setParameter(header,F("HYSTERESIS"),heater.hyst,HMOD);
+  if (menu == COOLINGCLOUD){
+    greenhouse.timepoint[nb].coolingTempCloud.setValue(fvariable);
+    if(greenhouse.daynight.value() == true && setFanTempOnly() && nb < 3){
+      greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable-3);
+      display(timepointId(nextTimepoint(nb), COOLINGSUN));
     }
-    if(programSelected(HMOD)){
-      setParameter(header,F("MODIFICATOR"),heater.mod,MENU1);
+    else if(greenhouse.daynight.value() == true && nb < 3){
+      display(timepointId(nextTimepoint(nb), HEATINGSUN));
+    }
+    else if (setFanTempOnly()){
+      greenhouse.timepoint[nb].heatingTempCloud.setValue(fvariable-3);
+        if(nextIsConfirmed()){
+          resetMenuCount();
+        }
+        display(genericId(TEMPERATURES));
+    }
+    else{
+      if(nextIsConfirmed()){
+        resetMenuCount();
+      }
+      display(genericId(TEMPERATURES));
     }
   }
 }
 
+void mainTimepoint(){
+  printHeader(F(" TEMPERATURES MENU  "));
+  confirmVariable(lastSelectedElementInTimepointList, mainTimepointList, sizeOfMainTimepointList);
+  if(choiceIsConfirmed()){
+    switch(selectedElement){
+      case 2: lastSelectedElementInTimepointList = 2; nextTemperatureMenu(firstTimepoint(), MAIN);break;
 
-void menuSetParameter(){
-  if(firstPrint == true){
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(F("-Parameter Selected-"));
+      case 1:
+        if(greenhouse.daynight.value() == false){
+          display(genericId(ENABLEDAYNIGHT));
+        }
+        else{
+          display(genericId(PERIODS));}
+        lastSelectedElementInTimepointList = 1;break;
+      case 0: lastSelectedElementInTimepointList = 0; display(genericId(ADJUST));break;
+    }
+  }
+}
+
+const String	periodsListNMP[] = {"(prenight)", "(morning)","NIGHT","DAY"};
+const String	periodsListNM[] = {"prenight", "(morning)","NIGHT","DAY"};
+const String	periodsListNP[] = {"(prenight)", "morning","NIGHT","DAY"};
+const String	periodsList[] = {"prenight", "morning","NIGHT","DAY"};
+const int sizeOfPeriodsList = sizeof(periodsList)/sizeof(periodsList[0]);
+byte lastSelectedElementInPeriodsList = 3;
+
+void periods(){
+  printHeader(F(" PERIODS MENU  "));
+  if(greenhouse.prenight.value() && greenhouse.dif.value()){
+    confirmVariable(lastSelectedElementInPeriodsList, periodsList, sizeOfPeriodsList);
+  }
+  else if(!greenhouse.prenight.value() && greenhouse.dif.value()){
+    confirmVariable(lastSelectedElementInPeriodsList, periodsListNP, sizeOfPeriodsList);
+  }
+  else if(greenhouse.prenight.value() && !greenhouse.dif.value()){
+    confirmVariable(lastSelectedElementInPeriodsList, periodsListNM, sizeOfPeriodsList);
+  }
+  else{
+    confirmVariable(lastSelectedElementInPeriodsList, periodsListNMP, sizeOfPeriodsList);
+  }
+  if(choiceIsConfirmed()){
+    switch(selectedElement){
+      case 0: lastSelectedElementInPeriodsList = 0; display(genericId(SETPRENIGHT)); break;
+      case 1: lastSelectedElementInPeriodsList = 1; display(genericId(SETDIF)); break;
+      case 2: lastSelectedElementInPeriodsList = 2; display(timepointId(3, STARTTIME));break;
+      case 3: lastSelectedElementInPeriodsList = 3; display(timepointId(1, STARTTIME)); break;
+    }
+  }
+}
+
+void startTimepoint(int nb){
+  printHeader(printTimepoint(nb),F(" - START TIME"));
+  printAdjustInstructions();
+  confirmVariable(0, greenhouse.timepoint[nb].hr(),23, 0,greenhouse.timepoint[nb].mn(),59);
+  if(choiceIsConfirmed()){
+    if((nb == 1 && greenhouse.dif.value() == false)||(nb == 3 && greenhouse.prenight.value() == false)){
+      adjustAndSetTimepoint(greenhouse.timepoint[nb-1]);
+    }
+    adjustAndSetTimepoint(greenhouse.timepoint[nb]);
+    display(timepointId(nb,RAMPING));
+  }
+}
+void referenceTimepoint(int nb){
+  printHeader(printTimepoint(nb),F(" - SUN TRACKING"));
+  confirmVariable(reference(greenhouse.timepoint[nb].type.value()), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0:
+        greenhouse.timepoint[nb].type.setValue(CLOCK);
+        break;
+      case 1:
+        if(nb < 2){
+          greenhouse.timepoint[nb].type.setValue(SR);
+        }
+        else{
+          greenhouse.timepoint[nb].type.setValue(SS);
+        }
+        break;
+    }
+    adjustTimepointAfterTypeChange(greenhouse.timepoint[nb]);
+    if(nextIsConfirmed()){
+      resetMenuCount();
+    }
+    display(genericId(TEMPERATURES));
+  }
+}
+
+void ramping(int nb){
+  printHeader(printTimepoint(nb),F(" - RAMPING"));
+  printAdjustInstructions();
+  confirmVariable(greenhouse.timepoint[nb].ramping.minimum(),greenhouse.timepoint[nb].ramping.value(),greenhouse.timepoint[nb].ramping.maximum());
+
+  if(choiceIsConfirmed()){
+    greenhouse.timepoint[nb].ramping.setValue(usvariable);
+    display(timepointId(nb,REF));
+  }
+}
+
+void setDif(){
+  printHeader(F("DIF (MORNING)     "));
+
+  confirmVariable(greenhouse.dif.value(), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0:
+        greenhouse.dif.setValue(false);
+        greenhouse.timepoint[0].hrMod.setValue(greenhouse.timepoint[1].hrMod.value());
+        greenhouse.timepoint[0].mnMod.setValue(greenhouse.timepoint[1].mnMod.value());
+        greenhouse.timepoint[0].updateTimepoint();
+        if(nextIsConfirmed()){
+          resetMenuCount();
+        }
+        display(genericId(TEMPERATURES));break;
+      case 1: greenhouse.dif.setValue(true); display(timepointId(0,STARTTIME));break;
+    }
+  }
+}
+
+void setPrenight(){
+  printHeader(F("PRENIGHT           "));
+
+  confirmVariable(greenhouse.prenight.value(), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0:
+        greenhouse.prenight.setValue(false);
+        greenhouse.timepoint[2].hrMod.setValue(greenhouse.timepoint[3].hrMod.value());
+        greenhouse.timepoint[2].mnMod.setValue(greenhouse.timepoint[3].mnMod.value());
+        greenhouse.timepoint[2].updateTimepoint();
+        if(nextIsConfirmed()){
+          resetMenuCount();
+        }
+        display(genericId(TEMPERATURES));break;
+      case 1: greenhouse.prenight.setValue(true); display(timepointId(2,STARTTIME));break;
+    }
+  }
+}
+
+void sunHeatTemperature(int nb){
+  printHeader(F("  TEMPERATURES(*C)  "),F("TEMPERATURES"), SUN, nb);
+  //printAdjustInstructionsShort();
+  if((heatingDeviceIsActive()&&coolingDeviceIsActive())||!someDeviceIsActive()){
+    confirmVariable(greenhouse.timepoint[nb].heatingTemp.minimum(),greenhouse.timepoint[nb].heatingTemp.value(),greenhouse.timepoint[nb].heatingTemp.maximum(), greenhouse.timepoint[nb].coolingTemp.value(), greenhouse.timepoint[nb].heatingTempCloud.value(),greenhouse.timepoint[nb].coolingTempCloud.value(), 1);
+  }
+  else{
+    confirmVariable(F("Heating"),greenhouse.timepoint[nb].heatingTemp.minimum(),greenhouse.timepoint[nb].heatingTemp.value(),greenhouse.timepoint[nb].heatingTemp.maximum(), greenhouse.timepoint[nb].heatingTempCloud.value(), 1);
+  }
+  if(choiceIsConfirmed()){
+    nextTemperatureMenu(nb, HEATINGSUN);
+  }
+}
+
+void sunCoolTemperature(int nb ){
+  printHeader(F("  TEMPERATURES(*C)  "),F("TEMPERATURES"), SUN, nb);
+  //printAdjustInstructionsShort();
+  if((heatingDeviceIsActive()&&coolingDeviceIsActive())||!someDeviceIsActive()){
+    confirmVariable(greenhouse.timepoint[nb].coolingTemp.minimum(),greenhouse.timepoint[nb].coolingTemp.value(),greenhouse.timepoint[nb].coolingTemp.maximum(), greenhouse.timepoint[nb].heatingTemp.value(), greenhouse.timepoint[nb].heatingTempCloud.value(),greenhouse.timepoint[nb].coolingTempCloud.value(), 2);
+  }
+  else{
+    confirmVariable(F("Cooling"),greenhouse.timepoint[nb].coolingTemp.minimum(),greenhouse.timepoint[nb].coolingTemp.value(),greenhouse.timepoint[nb].coolingTemp.maximum(), greenhouse.timepoint[nb].coolingTempCloud.value(), 1);
   }
 
+  if(choiceIsConfirmed()){
+    nextTemperatureMenu(nb, COOLINGSUN);
+  }
+}
 
-//Général
-  if(programSelected(SETDAY)){
-    unsigned short daySet = (unsigned short)greenhouse.rightNow(3);
-    confirmVariable(F(""),F("SET DAY"),0,daySet,31);
+
+
+void cloudHeatTemperature(int nb){
+  printHeader(F("  TEMPERATURES(*C)  "),F("TEMPERATURES"), CLOUD, nb);
+  //printAdjustInstructionsShort();
+
+  if((heatingDeviceIsActive()&&coolingDeviceIsActive())||!someDeviceIsActive()){
+  confirmVariable(greenhouse.timepoint[nb].heatingTempCloud.minimum(),greenhouse.timepoint[nb].heatingTempCloud.value(),greenhouse.timepoint[nb].heatingTempCloud.maximum(), greenhouse.timepoint[nb].heatingTemp.value(), greenhouse.timepoint[nb].coolingTemp.value(),greenhouse.timepoint[nb].coolingTempCloud.value(), 3);
+  }
+  else{
+    confirmVariable(F("Heating"),greenhouse.timepoint[nb].heatingTempCloud.minimum(),greenhouse.timepoint[nb].heatingTempCloud.value(),greenhouse.timepoint[nb].heatingTempCloud.maximum(), greenhouse.timepoint[nb].heatingTemp.value(), 2);
+  }
+  if(choiceIsConfirmed()){
+    nextTemperatureMenu(nb, HEATINGCLOUD);
+  }
+}
+
+void cloudCoolTemperature(int nb){
+  printHeader(F("  TEMPERATURES(*C)  "),F("TEMPERATURES"), CLOUD, nb);
+  //printAdjustInstructionsShort();
+
+  if((heatingDeviceIsActive()&&coolingDeviceIsActive())||!someDeviceIsActive()){
+  confirmVariable(greenhouse.timepoint[nb].coolingTempCloud.minimum(),greenhouse.timepoint[nb].coolingTempCloud.value(),greenhouse.timepoint[nb].coolingTempCloud.maximum(), greenhouse.timepoint[nb].heatingTemp.value(), greenhouse.timepoint[nb].coolingTemp.value(),greenhouse.timepoint[nb].heatingTempCloud.value(), 4);
+  }
+  else{
+    confirmVariable(F("Cooling"),greenhouse.timepoint[nb].coolingTempCloud.minimum(),greenhouse.timepoint[nb].coolingTempCloud.value(),greenhouse.timepoint[nb].coolingTempCloud.maximum(), greenhouse.timepoint[nb].coolingTemp.value(), 2);
+  }
+  if(choiceIsConfirmed()){
+    nextTemperatureMenu(nb, COOLINGCLOUD);
+  }
+}
+
+void adjustTimepoint(){
+  printHeader(F("  TEMP ADJUSTMENTS  "));
+  confirmVariable(2, adjustTemperaturesList, sizeOfAdjustTemperaturesList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 2: display(genericId(ADJUST24H));break;
+      case 1: display(genericId(ENABLEDAYNIGHT));break;
+      case 0: display(genericId(WEATHERADJUST));break;
+    }
+  }
+
+}
+
+void adjustTemperatures(){
+  printHeader(F("  ADJUST TEMP 24H  "));
+  lcd.setCursor(0,1);
+  lcd.print(F("Increase/decr. all"));
+  lcd.setCursor(0,2);
+  lcd.print(F("temp parameters"));
+  confirmVariable((float)-5, (float)0, (float)5);
+  if(choiceIsConfirmed()){
+    T1.coolingTemp.setValue(T1.coolingTemp.value()+ fvariable);
+    T1.coolingTempCloud.setValue(T1.coolingTempCloud.value()+ fvariable);
+    T1.heatingTemp.setValue(T1.heatingTemp.value()+ fvariable);
+    T1.heatingTempCloud.setValue(T1.heatingTempCloud.value()+ fvariable);
+
+    T2.coolingTemp.setValue(T2.coolingTemp.value()+ fvariable);
+    T2.coolingTempCloud.setValue(T2.coolingTempCloud.value()+ fvariable);
+    T2.heatingTemp.setValue(T2.heatingTemp.value()+ fvariable);
+    T2.heatingTempCloud.setValue(T2.heatingTempCloud.value()+ fvariable);
+
+    T3.coolingTemp.setValue(T3.coolingTemp.value()+ fvariable);
+    T3.coolingTempCloud.setValue(T3.coolingTempCloud.value()+ fvariable);
+    T3.heatingTemp.setValue(T3.heatingTemp.value()+ fvariable);
+    T3.heatingTempCloud.setValue(T3.heatingTempCloud.value()+ fvariable);
+
+    T4.coolingTemp.setValue(T4.coolingTemp.value()+ fvariable);
+    T4.coolingTempCloud.setValue(T4.coolingTempCloud.value()+ fvariable);
+    T4.heatingTemp.setValue(T4.heatingTemp.value()+ fvariable);
+    T4.heatingTempCloud.setValue(T4.heatingTempCloud.value()+ fvariable);
+    if(nextIsConfirmed()){
+      resetMenuCount();
+    }
+    display(genericId(TEMPERATURES));
+  }
+}
+//********************GENERIC MENUS********************
+const String	configList[] = {"factory reset","sensors","tests","time/date/coord"};
+//const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
+const int sizeOfConfigList = sizeof(configList)/sizeof(configList[0]);
+byte lastSelectedElementInConfigList = 2;
+
+void config(){
+  printHeader(F("    CONFIG MENU     "));
+  confirmVariable(lastSelectedElementInConfigList, configList, sizeOfConfigList);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 3: display(genericId(HOURSET));lastSelectedElementInConfigList = 3;break;
+      case 2: display(genericId(TESTS));lastSelectedElementInConfigList = 2;break;
+      case 1: display(genericId(SELECTSENSORS));lastSelectedElementInConfigList = 1;break;
+      case 0: display(genericId(FACTORYSETTINGS));lastSelectedElementInConfigList = 0;break;
+    }
+  }
+}
+
+const char string_0[] PROGMEM = "motors";
+const char string_1[] PROGMEM = "radiation";
+const char string_2[] PROGMEM = "weather";
+const char string_3[] PROGMEM = "outside";
+const char string_4[] PROGMEM = "inside";
+const char* const sensorList[] PROGMEM = {string_0, string_1, string_2, string_3, string_4};
+const int sizeOfSensorList = sizeof(sensorList)/sizeof(sensorList[0]);
+
+void selectSensor(){
+  printHeader(F(" SELECT SENSOR "));
+  confirmVariable(4, sensorList, sizeOfSensorList);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: display(genericId(CURRENTSENSOR));break;
+      case 1: display(genericId(LUXMETER));break;
+      case 2: display(genericId(RAINSENSOR));break;
+      case 3: display(genericId(OUTSIDETEMP));break;
+      case 4: display(genericId(INSIDETEMP));break;
+    }
+  }
+}
+
+const char string_5[] PROGMEM = "DS18B20";
+const char string_6[] PROGMEM = "SHT1X";
+const char string_7[] PROGMEM = "disabled";
+const char* const tempSensorList[] PROGMEM = {string_5, string_6, string_7};
+const int sizeOfTempSensorList = sizeof(tempSensorList)/sizeof(tempSensorList[0]);
+
+void insideTemp(){
+  printHeader(F(" INSIDE TEMP SENSOR "));
+    confirmVariable(greenhouse.insideTemp.value(), tempSensorList, sizeOfTempSensorList-1);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      //0 = DS18B20
+      //1 = SHT1X
+      case 0: greenhouse.insideTemp.setValue(0);break;
+      case 1: greenhouse.insideTemp.setValue(1);break;
+    }
+    display(genericId(INSIDETEMPDATA));
+  }
+
+}
+
+void outsideTemp(){
+  printHeader(F("OUTSIDE TEMP SENSOR"));
+  confirmVariable(greenhouse.outsideTemp.value(), tempSensorList, sizeOfTempSensorList);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      //0 = DS18B20
+      //1 = SHT1X
+      //2 = off
+      case 0: greenhouse.outsideTemp.setValue(0); display(genericId(OUTSIDETEMPDATA));break;
+      case 1: greenhouse.outsideTemp.setValue(1); display(genericId(OUTSIDETEMPDATA));break;
+      case 2: greenhouse.outsideTemp.setValue(2); display(genericId(HOME));break;
+    }
+  }
+}
+const char string_8[] PROGMEM = "NC contact";
+const char string_9[] PROGMEM = "NO contact";
+const char string_10[] PROGMEM = "bucket mode";
+const char string_11[] PROGMEM = "disabled";
+const char* const rainSensorList[] PROGMEM = {string_8, string_9, string_10, string_11};
+const int sizeOfRainSensorList = sizeof(rainSensorList)/sizeof(rainSensorList[0]);
+
+void rainsensor(){
+  printHeader(F("   RAIN SENSOR   "));
+  confirmVariable(greenhouse.rainSensor.value(), rainSensorList, sizeOfRainSensorList);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      //0 = bucket mode
+      //1 = no contact
+      //2 = nc contact
+      //3 = off
+      case 0: greenhouse.rainSensor.setValue(0);break;
+      case 1: greenhouse.rainSensor.setValue(1); break;
+      case 2: greenhouse.rainSensor.setValue(2); break;
+      case 3: greenhouse.rainSensor.setValue(3);break;
+    }
+    display(genericId(WINDSENSOR));
+  }
+}
+
+void windsensor(){
+  printHeader(F("   ANEMOMETER   "));
+  confirmVariable(greenhouse.anemometer.value(), enableList, sizeOfEnableList);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.anemometer.setValue(false); display(genericId(WEATHERDATA));break;
+      case 1: greenhouse.anemometer.setValue(true); display(genericId(WEATHERDATA));break;
+    }
+  }
+}
+void luxmeter(){
+  printHeader(F("     LUX METER    "));
+  confirmVariable(greenhouse.luxMeter.value(), enableList, sizeOfEnableList);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.luxMeter.setValue(false); display(genericId(RADIATIONDATA));break;
+      case 1: greenhouse.luxMeter.setValue(true); display(genericId(RADIATIONDATA));break;
+    }
+  }
+}
+
+void insidetempdata(){
+  printHeader(F("   INSIDE TEMP/HUM  "));
+  lcd.setCursor(0,1);
+  lcd.print(F("T:"));
+  lcd.print(greenhouseTemperature);
+  lcd.print(F("C"));
+  if(greenhouse.insideTemp.value() == STH1X_TEMP){
+    lcd.setCursor(8,1);
+    lcd.print(F("|HR:"));
+    lcd.print(greenhouseHumidity);
+    lcd.print(F("%"));
+    lcd.setCursor(8,2);
+    lcd.print(F("|HA:"));
+    lcd.print(greenhouseAbsoluteHumidity);
+    lcd.print(F("g/m3"));
+    lcd.setCursor(8,3);
+    lcd.print(F("|HD:"));
+    lcd.print(greenhouseHumidityDeficit);
+    lcd.print(F("g/m3"));
+  }
+  if(choiceIsConfirmed()){
+    display(genericId(HOME));
+  }
+
+}
+void outsidetempdata(){
+  if(greenhouse.outsideTemp.value() != OFF_TEMP){
+    printHeader(F("  OUTSIDE TEMP/HUM  "));
+    lcd.setCursor(0,1);
+    lcd.print(F("T:"));
+    lcd.print(outsideTemperature);
+    lcd.print(F("C"));
+  }
+  if(greenhouse.outsideTemp.value() == STH1X_TEMP){
+    lcd.setCursor(8,1);
+    lcd.print(F("|HR:"));
+    lcd.print(outsideHumidity);
+    lcd.print(F("%"));
+    lcd.setCursor(8,2);
+    lcd.print(F("|HA:"));
+    lcd.print(outsideAbsoluteHumidity);
+    lcd.print(F("g/m3"));
+    lcd.setCursor(8,3);
+    lcd.print(F("|HD:"));
+    lcd.print(outsideHumidityDeficit);
+    lcd.print(F("g/m3"));
+  }
+  if(choiceIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+void weatherdata(){
+  printHeader(F("   WEATHER STATION  "));
+  lcd.setCursor(0,1);
+  if(greenhouse.rainSensor.value() != OFF_RAIN){
+    lcd.print(F("Rain: "));
+    if(rain == true){
+      lcd.print(F("yes"));
+    }
+    else{
+      lcd.print(F("no "));
+    }
+  }
+  if(greenhouse.rainSensor.value() == RG11_BUCKET){
+    lcd.setCursor(0,2);
+    lcd.print(F("Rain 24h: "));
+    lcd.print(totalRainfall);
+    lcd.print(F("mm"));
+  }
+  if(greenhouse.anemometer.value() != false){
+    lcd.setCursor(0,3);
+    lcd.print(F("Wind spd: "));
+    lcd.print(windSpeed);
+    lcd.print(F("km/h"));
+  }
+  if(choiceIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+void radiationdata(){
+  printHeader(F("   RADIATION DATA   "));
+
+  if(greenhouse.luxMeter.value() != false){
+    lcd.setCursor(0,1);
+    lcd.print(luxReading[0]);
+    lcd.print(F(" lux"));
+    lcd.setCursor(0,2);
+    lcd.print((float)luxReading[0]*0.0079);
+    lcd.print(F(" W/m2"));
+  }
+  if(choiceIsConfirmed()){
+    display(genericId(HOME));
+  }
+}
+
+void currentsensor(){
+    printHeader(F("   MOTORS CURRENT   "));
+
+    if(R1.isActivated()){
+      lcd.setCursor(0,1);
+      lcd.print(F("R1 : "));
+      lcd.print(r1current);
+      lcd.print(F("A  "));
+    }
+    if(R2.isActivated()){
+      lcd.setCursor(0,2);
+      lcd.print(F("R2 : "));
+      lcd.print(r2current);
+      lcd.print(F("A  "));
+    }
     if(choiceIsConfirmed()){
-      #if  RTC == RTC_DS3231
+      display(genericId(HOME));
+    }
+}
+
+const String	testsList[] = { "test temp" ,"test relays",  "FFW","FFFW"};
+//const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
+const int sizeOfTestsList = sizeof(testsList)/sizeof(testsList[0]);
+
+void tests(){
+  printHeader(F(" TEST PROGRAMS "));
+    confirmVariable(0, testsList, sizeOfTestsList);
+
+  if(nextIsConfirmed()){
+    switch (selectedElement) {
+      case 0: display(genericId(TESTTEMP));break;
+      case 1: checkRelays(); display(genericId(HOME));break;
+      case 2: clockTest = TEST_CLOCKF; display(genericId(HOME));break;
+      case 3: clockTest = TEST_CLOCKFF; display(genericId(HOME));break;
+    }
+  }
+  if(backIsConfirmed()){
+    display(genericId(CONFIG));
+  }
+}
+
+void mockTemp(){;
+  adjustfvariable(-10,20,50);
+  greenhouseTemperature = fvariable;
+  homeDisplay();
+  menu = MODE_PROGRAM;
+  greenhouse.testRollups(true);
+  if(backIsConfirmed()){
+    greenhouse.testRollups(false);
+    display(genericId(HOME));
+  }
+}
+
+void factorySettings(){
+  printHeader(F("  FACTORY SETTINGS  "));
+  confirmVariable(0, confirmList, sizeOfConfirmList);
+
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: display(genericId(HOME));break;
+      case 1: EEPROMReset = DEFAULT_SETTINGS; loadParameters();display(genericId(HOME));break;
+    }
+  }
+
+}
+
+
+void daynight(){
+  printHeader(F(" DAY/NIGHT SETTINGS "));
+
+  confirmVariable(greenhouse.daynight.value(), enableList, sizeOfEnableList);
+  if(nextIsConfirmed()){
+    resetMenuCount();
+  }
+  if(greenhouse.daynight.value() == false){
+
+    if(choiceIsConfirmed()){
+
+      switch (selectedElement) {
+        case 0: greenhouse.daynight.setValue(false);greenhouse.dif.setValue(false);greenhouse.prenight.setValue(false); display(genericId(TEMPERATURES));break;
+        case 1: greenhouse.daynight.setValue(true); display(genericId(PERIODS));break;
+      }
+    }
+  }
+  else{
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 0: greenhouse.daynight.setValue(false);greenhouse.dif.setValue(false);greenhouse.prenight.setValue(false);break;
+        case 1: greenhouse.daynight.setValue(true); break;
+      }
+      display(genericId(TEMPERATURES));
+    }
+  }
+}
+
+
+void weatheradjust(){
+  printHeader(F("  WEATHER-SETTINGS  "));
+
+  confirmVariable(greenhouse.weatheradjust.value(), enableList, sizeOfEnableList);
+  if(greenhouse.weatheradjust.value() == false){
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 0: greenhouse.weatheradjust.setValue(false);
+        if(nextIsConfirmed()){
+          resetMenuCount();
+        }
+        display(genericId(TEMPERATURES));break;
+        case 1:
+          greenhouse.weatheradjust.setValue(true);
+          greenhouse.timepoint[0].coolingTempCloud.setValue(greenhouse.timepoint[0].coolingTemp.value());
+          greenhouse.timepoint[1].coolingTempCloud.setValue(greenhouse.timepoint[1].coolingTemp.value());
+          greenhouse.timepoint[2].coolingTempCloud.setValue(greenhouse.timepoint[2].coolingTemp.value());
+          greenhouse.timepoint[3].coolingTempCloud.setValue(greenhouse.timepoint[3].coolingTemp.value());
+          greenhouse.timepoint[0].heatingTempCloud.setValue(greenhouse.timepoint[0].heatingTemp.value());
+          greenhouse.timepoint[1].heatingTempCloud.setValue(greenhouse.timepoint[1].heatingTemp.value());
+          greenhouse.timepoint[2].heatingTempCloud.setValue(greenhouse.timepoint[2].heatingTemp.value());
+          greenhouse.timepoint[3].heatingTempCloud.setValue(greenhouse.timepoint[3].heatingTemp.value());
+          if(nextIsConfirmed()){
+            resetMenuCount();
+          }
+          nextTemperatureMenu(firstTimepoint(), MAIN);
+          break;
+      }
+    }
+  }
+  else{
+    if(nextIsConfirmed()){
+      resetMenuCount();
+    }
+    if(choiceIsConfirmed()){
+      switch (selectedElement) {
+        case 0: greenhouse.weatheradjust.setValue(false);display(genericId(TEMPERATURES));break;
+        case 1: greenhouse.weatheradjust.setValue(true);display(genericId(TEMPERATURES));break;
+      }
+    }
+  }
+}
+
+const String weatherList[]  = { "auto", "ratio","cloud","sun"};
+const int sizeOfWeatherList = sizeof(weatherList)/sizeof(weatherList[0]);
+
+byte weatherElementInList(){
+  if(greenhouse.luxMeter.value() == true){
+    return 0;
+  }
+  else if(greenhouse.weatherP.value() == 0){
+    return 3;
+  }
+  else if(greenhouse.weatherP.value() == 100){
+    return 3;
+  }
+  else if(greenhouse.weatherP.value() == 1){
+    return 2;
+  }
+  else{
+    return 1;
+  }
+}
+
+void setWeather(){
+  if(greenhouse.weatheradjust.value() == true){
+    printHeader(F("    SET WEATHER     "));
+
+    confirmVariable(weatherElementInList(), weatherList, sizeOfWeatherList);
+    if(nextIsConfirmed()){
+      switch (selectedElement) {
+        case 3: greenhouse.luxMeter.setValue(false); greenhouse.setWeather(SUN);display(genericId(HOME));break;
+        case 2: greenhouse.luxMeter.setValue(false); greenhouse.setWeather(CLOUD);display(genericId(HOME));break;
+        case 1: greenhouse.luxMeter.setValue(false); display(genericId(WEATHERRATIO));break;
+        case 0: greenhouse.luxMeter.setValue(true); display(genericId(HOME));break;
+      }
+    }
+    if(backIsConfirmed()){
+      display(genericId(HOME));
+    }
+  }
+  else{
+    if(nextIsConfirmed()){
+      resetMenuCount();
+    }
+    display(genericId(WEATHERADJUST));
+  }
+
+}
+
+void printWeatherAdjustExtremes(){
+  lcd.setCursor(7,3);
+  if(usvariable == 0){
+    lcd.print("[CLD]");
+  }
+  if(usvariable == 99){
+    lcd.print("[SUN]");
+  }
+}
+void weatherRatio(){
+
+    printHeader(F("  WEATHER-ADJUST(%) "));
+    printAdjustInstructions();
+
+    unsigned short weather;
+    if(greenhouse.weather() == 0){
+      weather = 99;
+    }
+    else{
+      weather = greenhouse.weather()-1;
+    }
+
+    confirmVariable(0,weather,99);
+    printWeatherAdjustExtremes();
+
+    if(nextIsConfirmed()){
+      greenhouse.setWeather(usvariable+1);
+    }
+    if(choiceIsConfirmed()){
+      display(genericId(HOME));
+    }
+}
+
+void hourset(){
+  printHeader(F("     SET HOUR      "));
+  printAdjustInstructions();
+  confirmVariable(0,(unsigned short)greenhouse.rightNow(2),23);
+  if(choiceIsConfirmed()){
+      hourSet = usvariable;
+      if((rightNow[2] != greenhouse.rightNow(2))){
+        if(hourSet > 0){
+          hourSet -= 1;
+        }
+        else{
+          hourSet = 23;
+        }
+      }
+      rtc.setTime(hourSet, rightNow[1], 0);
+    display(genericId(MINSET));
+  }
+}
+
+void minset(){
+  printHeader(F("    SET MINUTS     "));
+  printAdjustInstructions();
+  confirmVariable(0,(unsigned short)greenhouse.rightNow(1),59);
+  if(choiceIsConfirmed()){
+      minSet = usvariable;
+      rtc.setTime(rightNow[2], minSet, 0);
+    display(genericId(DAY));
+  }
+}
+void dayset(){
+    printHeader(F("      SET DAY      "));
+    printAdjustInstructions();
+    unsigned short daySet = (unsigned short)greenhouse.rightNow(3);
+    confirmVariable(0,daySet,31);
+    if(choiceIsConfirmed()){
         unsigned short year = 2000+(unsigned short)greenhouse.rightNow(5);
         rtc.setDate((byte)usvariable, (byte)greenhouse.rightNow(4), year);
         getDateAndTime();
         greenhouse.setNow(rightNow);
         greenhouse.solarCalculations();
-      #endif
-      displayMenu('1');
+      display(genericId(MONTH));
     }
   }
-  if(programSelected(SETMONTH)){
+
+  void monthset(){
+      printHeader(F("     SET MONTH     "));
+      printAdjustInstructions();
     unsigned short monthSet = (unsigned short)greenhouse.rightNow(4);
-    confirmVariable(F(""),F("SET MONTH"),1,monthSet,12);
+    confirmVariable(1,monthSet,12);
     if(choiceIsConfirmed()){
-        #if  RTC == RTC_DS3231
         unsigned short year = 2000+(unsigned short)greenhouse.rightNow(5);
         rtc.setDate( (byte)greenhouse.rightNow(3),(byte)usvariable, year);
         getDateAndTime();
         greenhouse.setNow(rightNow);
         greenhouse.solarCalculations();
-      #endif
-      displayMenu('1');
+      display(genericId(YEAR));
     }
   }
-  if(programSelected(SETYEAR)){
+  void yearset(){
+    printHeader(F("     SET YEAR      "));
+    printAdjustInstructions();
     unsigned short yearSet = (unsigned short)greenhouse.rightNow(5);
-    confirmVariable(F(""),F("SET YEAR"),0,yearSet,99);
+    confirmVariable(0,yearSet,99);
     if(choiceIsConfirmed()){
-        #if  RTC == RTC_DS3231
         unsigned short year = 2000 + usvariable;
         rtc.setDate( (byte)greenhouse.rightNow(3), (byte)greenhouse.rightNow(4), year);
         getDateAndTime();
         greenhouse.setNow(rightNow);
         greenhouse.solarCalculations();
-      #endif
-      displayMenu('1');
-    }
-  }
-  if(programSelected(SETHOUR)){
-    confirmVariable(F(""),F("SET HOUR"),0,(unsigned short)greenhouse.rightNow(2),23);
-    if(choiceIsConfirmed()){
-      #if  RTC == RTC_DS3231
-        hourSet = usvariable;
-        if(!(rightNow[2] == greenhouse.rightNow(2))){
-          if(hourSet > 0){
-            hourSet -= 1;
-          }
-          else{
-            hourSet = 23;
-          }
-        }
-        rtc.setTime(hourSet, rightNow[1], 0);
-        displayNextProgram(SETMIN);
-      #endif
+      display(genericId(SETLATITUDE));
     }
   }
 
-
-
-  if(programSelected(SETMIN)){
-    confirmVariable(F(""),F("SET MINUTS"),0,(unsigned short)greenhouse.rightNow(1),59);
-    if(choiceIsConfirmed()){
-      #if  RTC == RTC_DS3231
-        minSet = usvariable;
-        rtc.setTime(rightNow[2], minSet, 0);
-        displayMenu('1');
-      #endif
-    }
+  void latitudeset(){
+    lcd.setCursor(19,0);
+    setParameter("",F("   SET LATITUDE    "),greenhouse.latitude,genericId(SETLONGITUDE));
   }
-  if(programSelected(MAIN)){
-    String item[15];
-    byte counter = 0;
-    item[counter] = "Adjust";
-    counter++;
-    item[counter] = "T day";
-    counter++;
-    item[counter] = "T night";
-    counter++;
-
-    for(int x = 1; x <= greenhouse.rollups.value();x++){
-      String device = "Rollup";
-      String title = device + x;
-      item[counter] = title;
-      counter++;
+  void longitudeset(){
+    lcd.setCursor(19,0);
+    setParameter("",F("   SET LONGITUDE   "),greenhouse.longitude,genericId(SETTIMEZONE));
+  }
+  void timezoneset(){
+    lcd.setCursor(19,0);
+    if(nextIsConfirmed()){
+      resetMenuCount();
     }
-    for(int x = 1; x <= greenhouse.fans.value();x++){
-      String device = "Fan";
-      String title = device + x;
-      item[counter] = title;
-      counter++;
-    }
-    for(int x = 1; x <= greenhouse.heaters.value();x++){
-      String device = "Heater";
-      String title = device + x;
-      item[counter] = title;
-      counter++;
-    }
-    item[counter] = "Sensors";
-    counter++;
-    item[counter] = "Config";
-    counter++;
-
-    confirmVariable(F(""),F("     MAIN MENU     "), 1, item, counter);
-    if(choiceIsConfirmed()){
-      switch(typeSet) {
-        case 0 :break;
-        case 1 :displayNextProgram("1100");break;
-        case 2 :break;
-        case 3 :break;
-        case 4 :break;
-      }
-    }
+    setParameter("",F("   SET TIMEZONE    "),greenhouse.timezone,genericId(CONFIG));
   }
 
-  //Rollup 1
-rollupMenu(F("R1 - "), R1);
-rollupMenu(F("R2 - "), R2);
-fanMenu(F("F1 - "), F1);
-fanMenu(F("F2 - "), F2);
-heaterMenu(F("H1 - "), H1);
-heaterMenu(F("H2 - "), H2);
+struct indexedMenu {
+  const byte name;
+  void	(*Menu)(int nb);
+  };
 
-timepointMenu(F("DIF: "), T1);
-timepointMenu(F("DAY: "), T2);
-timepointMenu(F("PREN.: "), T3);
-timepointMenu(F("NIGHT: "), T4);
+struct Menu {
+  const byte name;
+  void	(*Menu)();
+};
+const indexedMenu	rollupMenus[] = {
+//  - name ----    - menu ----------
+    {MAIN, mainRollup},
+		{ROTUP , rotationUpRollup},
+		{ROTDOWN , rotationDownRollup},
+		{PAUSE, pauseTimeRollup},
+    {HYST, hystRollup},
+    {SETSTAGES, setStagesRollup},
+		{S1TEMP, setStage1TempRollup},
+		{S2TEMP, setStage2TempRollup},
+		{S1TARGET, setStage1TargetRollup},
+		{S2TARGET, setStage2TargetRollup},
 
-  if(programSelected(TESTRELAYS)){
-    checkRelays();
-  }
+    {AUTO, autoModeRollup},
+    {FOPEN, forceOpenRollup},
+    {FCLOSE, forceCloseRollup},
+    {FINC1, forceIncRollup1},
+    {FINC2, forceIncRollup2},
+    {OVERRIDE, overridesRollup},
+    {FIXOV1, clockOverrideRollup},
+    {FIXOV2, clockOverrideStartRollup},
+    {FIXOV3, clockOverrideStopRollup},
+    {FIXOV4, clockOverrideTargetRollup},
+    {RAIN1, rainRollup},
+    {RAIN2, rainTargetRollup},
+    {WIND, disabled},
+    {BREAKER, disabled},
+    {OUTSIDE, disabled},
+    {PROGRAM, programRollup},
+    {ENABLE, enableRollup},
+    {INSTRUCT, disabled},
+};
 
-  if(programSelected(TESTIIC)){
-    checkIIC();
-    if(choiceIsConfirmed()){
-      displayMenu('1');
-    }
-  }
+const indexedMenu	deviceMenus[] = {
+//  - name ----    - menu ----------
+		{MAIN, mainDevice},
+		{TYPE, typeDevice},
+		{STARTTEMP, startTempDevice},
+		{STOPTEMP, stopTempDevice},
 
-  if(programSelected(R1OV)){
-    confirmVariable(F(""),F("   R1 - OVERRIDE"), 0, "AUTO", "FOPEN", "FCLOSE", "FINCR");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: R1.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(R1FOPEN);break;
-        case 2: displayNextProgram(R1FCLOSE);break;
-        case 3: displayNextProgram(R1FINC1);break;
-      }
-    }
-  }
+		{AUTO, autoModeDevice},
+    {FOPEN, forceOpenDevice},
+    {FCLOSE, forceCloseDevice},
 
-  if(programSelected(R1FOPEN)){
-    confirmVariable(F(""),F("  R1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R1.lockAtIncrement(100, usvariable);
-      }
-      else{
-        R1.lockOpen();
-      }
-      displayMenu('1');
-    }
-  }
+    {OVERRIDE, overridesDevice},
+    {FIXOV1, clockOverrideDevice},
+    {FIXOV2, clockOverrideStartDevice},
+    {FIXOV3, clockOverrideStopDevice},
+    {HUMIDITY1, humidityDevice},
+    {HUMIDITY2, humidityTargetDevice},
+    {ENABLE, disableDevice},
+};
+const indexedMenu	timepointMenus[] = {
+//  - name ----    - menu ----------
+    {MAIN, disabled},
+		{STARTTIME, startTimepoint},
+    {REF, referenceTimepoint},
+    {HEATINGSUN, sunHeatTemperature},
+    {COOLINGSUN, sunCoolTemperature},
+    {HEATINGCLOUD, cloudHeatTemperature},
+    {COOLINGCLOUD, cloudCoolTemperature},
+    {RAMPING, ramping},
+    {ENABLE, disabled},
+};
 
-  if(programSelected(R1FCLOSE)){
-    confirmVariable(F(""),F("  R1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R1.lockAtIncrement(0, usvariable);
-      }
-      else{
-        R1.lockClose();
-      }
-      displayMenu('1');
-    }
-  }
-  if(programSelected(R1FINC1)){
-    confirmVariable(F(""),F("R1 - INCREMENT"), (unsigned short)0, R1.incrementCounter(), (unsigned short)100);
-    if(choiceIsConfirmed()){
-      usvariable1 = usvariable;
-      displayNextProgram(R1FINC2);
-    }
-  }
-  if(programSelected(R1FINC2)){
-  confirmVariable(F(""),F("  R1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-  zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      usvariable2 = usvariable;
-      if(usvariable2 == 0){
-        R1.lockAtIncrement(usvariable1);
-      }
-      else{
-        R1.lockAtIncrement(usvariable1, usvariable2);
-      }
-      displayMenu('1');
-    }
-  }
+const Menu	genericMenus[] = {
+//  - name ----    - menu ----------
+    {HOME, homeDisplay},
+    {CONFIG, config},
+    {HOURSET, hourset},
+    {MINSET, minset},
+    {DAY, dayset},
+    {MONTH, monthset},
+    {YEAR, yearset},
+    {SETLATITUDE, latitudeset},
+    {SETLONGITUDE, longitudeset},
+    {SETTIMEZONE, timezoneset},
+    {WEATHERADJUST, weatheradjust},
+    {WEATHER, setWeather},
+    {WEATHERRATIO, weatherRatio},
+    {ENABLEDAYNIGHT, daynight},
+    {PERIODS, periods},
+    {TESTS, tests},
+    {TESTTEMP, mockTemp},
 
-  if(programSelected(R2OV)){
-    confirmVariable(F(""),F("   R2 - OVERRIDE"), 0, "AUTO", "FOPEN", "FCLOSE", "FINCR");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: R2.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(R2FOPEN);break;
-        case 2: displayNextProgram(R2FCLOSE);break;
-        case 3: displayNextProgram(R2FINC1);break;
-      }
-    }
-  }
+    {TEMPERATURES, mainTimepoint},
+    {SELECTSENSORS, selectSensor},
+    {INSIDETEMPSENSOR, disabled},
+    {FACTORYSETTINGS, factorySettings},
+    {ADJUST, adjustTimepoint},
+    {ADJUST24H, adjustTemperatures},
+    {ADJUSTVR, disabled},
+    {ENTERCODE, disabled},
+    {SETDIF, setDif},
+    {SETPRENIGHT, setPrenight},
+    {INSIDETEMP,insideTemp},
+    {OUTSIDETEMP,outsideTemp},
+    {RAINSENSOR,rainsensor},
+    {WINDSENSOR,windsensor},
+    {LUXMETER,luxmeter},
+    {INSIDETEMPDATA,insidetempdata},
+    {OUTSIDETEMPDATA,outsidetempdata},
+    {WEATHERDATA,weatherdata},
+    {RADIATIONDATA,radiationdata},
+    {CURRENTSENSOR,currentsensor}
 
-  if(programSelected(R2FOPEN)){
-    confirmVariable(F(""),F("  R2 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R2.lockAtIncrement(100, usvariable);
-      }
-      else{
-        R2.lockOpen();
-      }
-      displayMenu('1');
-    }
-  }
+};
 
-  if(programSelected(R2FCLOSE)){
-    confirmVariable(F(""),F("  R2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R2.lockAtIncrement(0, usvariable);
-      }
-      else{
-        R2.lockClose();
-      }
-      displayMenu('1');
-    }
-  }
-  if(programSelected(R2FINC1)){
-    confirmVariable(F(""),F("R2 - FORCE TO INC"), (unsigned short)0, R2.incrementCounter(), (unsigned short)100);
-    if(choiceIsConfirmed()){
-      usvariable1 = usvariable;
-      displayNextProgram(R2FINC2);
-    }
-  }
-  if(programSelected(R2FINC2)){
-  confirmVariable(F(""),F("  R2 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-  zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      usvariable2 = usvariable;
-      if(usvariable2 == 0){
-        R2.lockAtIncrement(usvariable1);
-      }
-      else{
-        R2.lockAtIncrement(usvariable1, usvariable2);
-      }
-      displayMenu('1');
-    }
-  }
+//EXECUTE ACTIVE MENU PROGRAM
+void printRollup( int nb, byte menuName){
+  menu = MODE_PROGRAM;
+  int	numMenus = sizeof(rollupMenus) / sizeof(indexedMenu);
 
-  if(programSelected(F1OV)){
-    confirmVariable(F(""),F("   F1 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: F1.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(F1FOPEN);break;
-        case 2: displayNextProgram(F1FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(F1FOPEN)){
-    confirmVariable(F(""),F("  F1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F1.lockOnAndWait(usvariable);
-      }
-      else{
-        F1.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(F1FCLOSE)){
-    confirmVariable(F(""),F("  F1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F1.lockOffAndWait(usvariable);
-      }
-      else{
-        F1.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(F2OV)){
-    confirmVariable(F(""),F("   F2 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: F2.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(F2FOPEN);break;
-        case 2: displayNextProgram(F2FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(F2FOPEN)){
-    confirmVariable(F(""),F("  F2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F2.lockOnAndWait(usvariable);
-      }
-      else{
-        F2.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(F2FCLOSE)){
-    confirmVariable(F(""),F("  F2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F2.lockOffAndWait(usvariable);
-      }
-      else{
-        F2.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H1OV)){
-    confirmVariable(F(""),F("   H1 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: H1.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(H1FOPEN);break;
-        case 2: displayNextProgram(H1FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(H1FOPEN)){
-    confirmVariable(F(""),F("  H1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H1.lockOnAndWait(usvariable);
-      }
-      else{
-        H1.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H1FCLOSE)){
-    confirmVariable(F(""),F("  H1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H1.lockOffAndWait(usvariable);
-      }
-      else{
-        H1.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H2OV)){
-    confirmVariable(F(""),F("   H2 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: H2.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(H2FOPEN);break;
-        case 2: displayNextProgram(H2FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(H2FOPEN)){
-    confirmVariable(F(""),F("  H2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H2.lockOnAndWait(usvariable);
-      }
-      else{
-        H2.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H2FCLOSE)){
-    confirmVariable(F(""),F("  H2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H2.lockOffAndWait(usvariable);
-      }
-      else{
-        H2.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(ADJT24H)){
-    confirmVariable(F(""),F("    ADJUST T-24H"), (float)-10, (float)0, (float)10);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.timepoints.value(); x++){
-        greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
-        greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
-        greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
-        greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
-      }
-      displayMenu('9');
-    }
-  }
-
-  if(programSelected(ADJTNIGHT)){
-    confirmVariable(F(""),F("   ADJUST T-NIGHT"), (float)-10, (float)0, (float)10);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.timepoints.value(); x++){
-        if(!isBetween(Timepoint::sunRise[2],Timepoint::sunRise[1],greenhouse.timepoint[x].hr(),greenhouse.timepoint[x].mn(),Timepoint::sunSet[2],Timepoint::sunSet[1])){
-          greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
-          greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
-          greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
-          greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
-        }
-      }
-      displayMenu('9');
-    }
-  }
-  if(programSelected(ADJTDAY)){
-    confirmVariable(F(""),F("    ADJUST T-DAY"), (float)-10, (float)0, (float)10);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.timepoints.value(); x++){
-        if(isBetween(Timepoint::sunRise[2],Timepoint::sunRise[1],greenhouse.timepoint[x].hr(),greenhouse.timepoint[x].mn(),Timepoint::sunSet[2],Timepoint::sunSet[1])){
-          greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
-          greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
-          greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
-          greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
-        }
-      }
-      displayMenu('9');
-    }
-  }
-  if(programSelected(DIF)){
-    confirmVariable(F(""),F("   DIF-TIME"), 0, "ENABLE", "DISABLE");
-    if(choiceIsConfirmed()){
-      if(typeSet == 0){
-        displayNextProgram(DIFTEMP);
-      }
-      if(typeSet == 1){
-        T1.heatingTemp.setValue(T4.heatingTemp.value());
-        T1.heatingTempCloud.setValue(T4.heatingTempCloud.value());
-        T1.coolingTemp.setValue(T4.coolingTemp.value());
-        T1.coolingTempCloud.setValue(T4.coolingTempCloud.value());
-        displayMenu('9');
-      }
-    }
-  }
-  if(programSelected(DIFTEMP)){
-    confirmVariable(F(""),F("DIF TEMPERATURE RISE"), (float)0, (float)0, (float) 10);
-    if(choiceIsConfirmed()){
-      T1.heatingTemp.setValue(T4.heatingTemp.value()+fvariable);
-      T1.heatingTempCloud.setValue(T4.heatingTempCloud.value()+fvariable);
-      T1.coolingTemp.setValue(T4.coolingTemp.value()+fvariable);
-      T1.coolingTempCloud.setValue(T4.coolingTempCloud.value()+fvariable);
-      displayMenu('9');
-    }
-  }
-  if(programSelected(PRENIGHT)){
-    confirmVariable(F(""),F("   PRENIGHT DROP"), 0, "ENABLE", "DISABLE");
-    if(choiceIsConfirmed()){
-      if(typeSet == 0){
-        displayNextProgram(PRENTEMP);
-      }
-      if(typeSet == 1){
-        T3.heatingTemp.setValue(T2.heatingTemp.value());
-        T3.heatingTempCloud.setValue(T2.heatingTempCloud.value());
-        T3.coolingTemp.setValue(T2.coolingTemp.value());
-        T3.coolingTempCloud.setValue(T2.coolingTempCloud.value());
-        T3.ramping.setValue(T2.ramping.value());
-        displayMenu('9');
-      }
-    }
-  }
-  if(programSelected(PRENTEMP)){
-    confirmVariable(F(""),F(" PRENIGHT TEMP DROP"), (float)-10, (float)0, (float) 0);
-    if(choiceIsConfirmed()){
-      T3.heatingTemp.setValue(T2.heatingTemp.value()+fvariable);
-      T3.heatingTempCloud.setValue(T2.heatingTempCloud.value()+fvariable);
-      T3.coolingTemp.setValue(T2.coolingTemp.value()+fvariable);
-      T3.coolingTempCloud.setValue(T2.coolingTempCloud.value()+fvariable);
-      displayNextProgram(PRENSPEED);
-    }
-  }
-  if(programSelected(PRENSPEED)){
-    confirmVariable(F(""),F("PREN SPEED(-1C/Xmin)"), (unsigned short)0, (unsigned short)0, (unsigned short) 15);
-    if(choiceIsConfirmed()){
-      T3.ramping.setValue(usvariable);
-      displayMenu('9');
-    }
-  }
-  if(programSelected(R1STAGES)){
-    confirmVariable(F(""),F(" ADJ R1 STAGES MODS"), (float)-5, (float)0, (float) 5);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.stages.value();x++ ){
-        R1.stage[x].mod.setValue(R1.stage[x].mod.value() + fvariable);
-      }
-      displayMenu('5');
-    }
-  }
-  if(programSelected(R2STAGES)){
-    confirmVariable(F(""),F(" ADJ R2 STAGES MODS"), (float)-5, (float)0, (float) 5);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.stages.value();x++ ){
-        R2.stage[x].mod.setValue(R2.stage[x].mod.value() + fvariable);
-      }
-      displayMenu('6');
-    }
-  }
-  if(programSelected(ADJTWEA)){
-    confirmVariable(F(""),F("  ADJUST WEATHER"), greenhouse.weather(), "SUN", "CLOUD");
-    if(choiceIsConfirmed()){
-      greenhouse.setWeather(typeSet);
-      displayMenu('9');
-    }
-  }
-  if(programSelected(MENU1)){
-    displayMenu('1');
-  }
-  if(programSelected(MENU2)){
-    displayMenu('2');
-  }
-  if(programSelected(MENU3)){
-    displayMenu('3');
-  }
-  if(programSelected(MENU4)){
-    displayMenu('4');
-  }
-  if(programSelected(MENU5)){
-    displayMenu('5');
-  }
-  if(programSelected(MENU6)){
-    displayMenu('6');
-  }
-  if(programSelected(MENU7)){
-    displayMenu('7');
-  }
-  if(programSelected(MENU8)){
-    displayMenu('8');
-  }
-  if(programSelected(MENU9)){
-    displayMenu('9');
-  }
-
-  if(codeWithNoDisplay && menu == SET_PARAMETER){
-    menu = MODE_PROGRAM;clearMenu();clearData();
-=======
-
-//Général
-  if(programSelected(SETDAY)){
-    unsigned short daySet = (unsigned short)greenhouse.rightNow(3);
-    confirmVariable(F("SET DAY"),0,daySet,31);
-    if(choiceIsConfirmed()){
-      #if  RTC == RTC_DS3231
-        unsigned short year = 2000+(unsigned short)greenhouse.rightNow(5);
-        rtc.setDate((byte)usvariable, (byte)greenhouse.rightNow(4), year);
-        getDateAndTime();
-        greenhouse.setNow(rightNow);
-        greenhouse.solarCalculations();
-      #endif
-      displayMenu('1');
-    }
-  }
-  if(programSelected(SETMONTH)){
-    unsigned short monthSet = (unsigned short)greenhouse.rightNow(4);
-    confirmVariable(F("SET MONTH"),1,monthSet,12);
-    if(choiceIsConfirmed()){
-        #if  RTC == RTC_DS3231
-        unsigned short year = 2000+(unsigned short)greenhouse.rightNow(5);
-        rtc.setDate( (byte)greenhouse.rightNow(3),(byte)usvariable, year);
-        getDateAndTime();
-        greenhouse.setNow(rightNow);
-        greenhouse.solarCalculations();
-      #endif
-      displayMenu('1');
-    }
-  }
-  if(programSelected(SETYEAR)){
-    unsigned short yearSet = (unsigned short)greenhouse.rightNow(5);
-    confirmVariable(F("SET YEAR"),0,yearSet,99);
-    if(choiceIsConfirmed()){
-        #if  RTC == RTC_DS3231
-        unsigned short year = 2000 + usvariable;
-        rtc.setDate( (byte)greenhouse.rightNow(3), (byte)greenhouse.rightNow(4), year);
-        getDateAndTime();
-        greenhouse.setNow(rightNow);
-        greenhouse.solarCalculations();
-      #endif
-      displayMenu('1');
-    }
-  }
-  if(programSelected(SETHOUR)){
-    confirmVariable(F("SET HOUR"),0,(unsigned short)greenhouse.rightNow(2),23);
-    if(choiceIsConfirmed()){
-      #if  RTC == RTC_DS3231
-        hourSet = usvariable;
-        if(!(rightNow[2] == greenhouse.rightNow(2))){
-          if(hourSet > 0){
-            hourSet -= 1;
-          }
-          else{
-            hourSet = 23;
-          }
-        }
-        rtc.setTime(hourSet, rightNow[1], 0);
-        displayNextProgram(SETMIN);
-      #endif
-    }
-  }
-
-
-
-  if(programSelected(SETMIN)){
-    confirmVariable(F("SET MINUTS"),0,(unsigned short)greenhouse.rightNow(1),59);
-    if(choiceIsConfirmed()){
-      #if  RTC == RTC_DS3231
-        minSet = usvariable;
-        rtc.setTime(rightNow[2], minSet, 0);
-        displayMenu('1');
-      #endif
-    }
-  }
-
-
-  if(programSelected(R1STEPS)){
-    confirmVariable(F("ROLLUP1 : # STEPS"),(unsigned short)1, (unsigned short)greenhouse.stages.value(),(unsigned short)4);
-      if(choiceIsConfirmed()){
-        greenhouse.stages.setValue(usvariable);
-        displayMenu('5');
-      }
-  }
-  //Rollup 1
-if(greenhouse.rollups.value() >= 1){
-  if(programSelected(R1HYST)){
-    setParameter(F("R1 - HYSTERESIS"),R1.hyst,MENU2);
-  }
-  if(programSelected(R1ROTUP)){
-    setParameter(F("R1 - ROTATION (UP)"),R1.rotationUp,MENU2);
-  }
-  if(programSelected(R1ROTDOWN)){
-    setParameter(F("R1 - ROTATION (DOWN)"),R1.rotationDown,MENU2);
-  }
-  if(programSelected(R1PAUSE)){
-    setParameter(F("R1 - PAUSE TIME"), R1.pause,MENU2);
-  }
-  if(greenhouse.stages.value() >= 1){
-    if(programSelected(R1S1MOD)){
-      setParameter(F("  R1 - STAGE 1 MOD"),R1.stage[1].mod,MENU5);
-    }
-    if(programSelected(R1S1TARG)){
-      setParameter(F("  R1 - STAGE 1 MOD"),R1.stage[1].target,MENU5);
-    }
-  }
-  if(greenhouse.stages.value() >= 2){
-    if(programSelected(R1S2MOD)){
-      setParameter(F("  R1 - STAGE 2 MOD"),R1.stage[2].mod,MENU5);
-    }
-    if(programSelected(R1S2TARG)){
-      setParameter(F("  R1 - STAGE 2 MOD"),R1.stage[2].target,MENU5);
-    }
-  }
-  if(greenhouse.stages.value() >= 3){
-    if(programSelected(R1S3MOD)){
-      setParameter(F("  R1 - STAGE 3 MOD"),R1.stage[3].mod,MENU5);
-    }
-    if(programSelected(R1S3TARG)){
-      setParameter(F("  R1 - STAGE 3 MOD"),R1.stage[3].target,MENU5);
-    }
-  }
-  if(greenhouse.stages.value() >= 4){
-    if(programSelected(R1S4MOD)){
-      setParameter(F("  R1 - STAGE 4 MOD"),R1.stage[4].mod,MENU5);
-    }
-    if(programSelected(R1S4TARG)){
-      setParameter(F("  R1 - STAGE 4 MOD"),R1.stage[4].target,MENU5);
-    }
-  }
-  if(greenhouse.stages.value() >= 5){
-    if(programSelected(R1S5MOD)){
-      setParameter(F("  R1 - STAGE 5 MOD"),R1.stage[5].mod,MENU5);
-    }
-    if(programSelected(R1S5TARG)){
-      setParameter(F("  R1 - STAGE 5 MOD"),R1.stage[5].target,MENU5);
+  for (int i = 0; i < numMenus; i++) {
+    if ( menuName == rollupMenus[i].name) {
+      rollupMenus[i].Menu(nb);
     }
   }
 }
-if(greenhouse.rollups.value() >= 2){
-  if(programSelected(R2HYST)){
-    setParameter(F("R2 - HYSTERESIS"),R2.hyst,MENU3);
-  }
-  if(programSelected(R2ROTUP)){
-    setParameter(F("R2 - ROTATION (UP)"),R2.rotationUp,MENU3);
-  }
-  if(programSelected(R2ROTDOWN)){
-    setParameter(F("R2 - ROTATION (DOWN)"),R2.rotationDown,MENU3);
-  }
-  if(programSelected(R2PAUSE)){
-    setParameter(F("R2 - PAUSE TIME"), R2.pause,MENU3);
-  }
-  if(greenhouse.stages.value() >= 1){
-    if(programSelected(R2S1MOD)){
-      setParameter(F("  R2 - STAGE 1 MOD"),R2.stage[1].mod,MENU6);
-    }
-    if(programSelected(R2S1TARG)){
-      setParameter(F("  R2 - STAGE 1 MOD"),R2.stage[1].target,MENU6);
-    }
-  }
-  if(greenhouse.stages.value() >= 2){
-    if(programSelected(R2S2MOD)){
-      setParameter(F("  R2 - STAGE 2 MOD"),R2.stage[2].mod,MENU6);
-    }
-    if(programSelected(R2S2TARG)){
-      setParameter(F("  R2 - STAGE 2 MOD"),R2.stage[2].target,MENU6);
-    }
-  }
-  if(greenhouse.stages.value() >= 3){
-    if(programSelected(R2S3MOD)){
-      setParameter(F("  R2 - STAGE 3 MOD"),R2.stage[3].mod,MENU6);
-    }
-    if(programSelected(R2S3TARG)){
-      setParameter(F("  R2 - STAGE 3 MOD"),R2.stage[3].target,MENU6);
-    }
-  }
-  if(greenhouse.stages.value() >= 4){
-    if(programSelected(R2S4MOD)){
-      setParameter(F("  R2 - STAGE 4 MOD"),R2.stage[4].mod,MENU6);
-    }
-    if(programSelected(R2S4TARG)){
-      setParameter(F("  R2 - STAGE 4 MOD"),R2.stage[4].target,MENU6);
-    }
-  }
-  if(greenhouse.stages.value() >= 5){
-    if(programSelected(R2S5MOD)){
-      setParameter(F("  R2 - STAGE 5 MOD"),R2.stage[5].mod,MENU6);
-    }
-    if(programSelected(R2S5TARG)){
-      setParameter(F("  R2 - STAGE 5 MOD"),R2.stage[5].target,MENU6);
+void printDevice( int nb, byte menuName){
+  menu = MODE_PROGRAM;
+
+  int	numMenus = sizeof(deviceMenus) / sizeof(indexedMenu);
+
+  for (int i = 0; i < numMenus; i++) {
+    if ( menuName == deviceMenus[i].name) {
+      deviceMenus[i].Menu(nb);
     }
   }
 }
-if(greenhouse.fans.value() >= 1){
-  if(programSelected(F1HYST)){
-    setParameter(F("  F1 - HYSTERESIS"),F1.hyst,MENU4);
-  }
-  if(programSelected(F1MOD)){
-    setParameter(F("  F1 - MODIFICATOR"),F1.mod,MENU4);
-  }
-}
-if(greenhouse.fans.value() >= 2){
-  if(programSelected(F2HYST)){
-    setParameter(F("  F2 - HYSTERESIS"),F2.hyst,MENU7);
-  }
-  if(programSelected(F2MOD)){
-    setParameter(F("  F2 - MODIFICATOR"),F2.mod,MENU7);
-  }
-}
-if(greenhouse.heaters.value() >= 1 && greenhouse.fans.value() == 0){
-  if(programSelected(H1HYST)){
-    setParameter(F("  H1 - HYSTERESIS"),H1.hyst,MENU4);
-  }
-  if(programSelected(H1MOD)){
-    setParameter(F("  H1 - MODIFICATOR"),H1.mod,MENU4);
-  }
-}
-if(greenhouse.heaters.value() >= 1 && greenhouse.fans.value() >= 1){
-  if(programSelected(H1HYST)&&greenhouse.fans.value() != 0){
-    setParameter(F("  H1 - HYSTERESIS"),H1.hyst,MENU7);
-  }
-  if(programSelected(H1MOD)&&greenhouse.fans.value() != 0){
-    setParameter(F("  H1 - MODIFICATOR"),H1.mod,MENU7);
-  }
-}
-if(greenhouse.heaters.value() >= 2){
-  if(programSelected(H2HYST)){
-    setParameter(F("  H2 - HYSTERESIS"),H2.hyst,MENU7);
-  }
-  if(programSelected(H2MOD)){
-    setParameter(F("  H2 - MODIFICATOR"),H2.mod,MENU7);
-  }
-}
-if(greenhouse.timepoints.value() >= 1){
-  if(programSelected(T1HOUR)){
-    setParameter(F("  H2 - TYPE"),H2.mod,MENU7);
-  }
-  if(programSelected(T1TYPE)){
-    confirmVariable(F("     T1 - TYPE"),T1.type.value(), "SR", "CLOCK", "SS");
-    if(choiceIsConfirmed()){
-      displayNextProgram(T1HOUR);
-    }
-  }
-  if(programSelected(T1HOUR)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("     T1 - HOUR"), 0,T1.hrMod.value(),23);
-    }
-    else{
-      confirmVariable(F("     T1 - HOUR"), -23,T1.hrMod.value(),23);
-    }
-    if(choiceIsConfirmed()){
-      hourSet = svariable;
-      displayNextProgram(T1MIN);
-    }
-  }
-  if(programSelected(T1MIN)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("    T1 - MINUTS"), 0,T2.mnMod.value(),59);
-    }
-    else{
-      confirmVariable(F("    T1 - MINUTS"), -59,T1.mnMod.value(),59);
-    }
-    if(choiceIsConfirmed()){
-      minSet = svariable;
-      T1.type.setValue(typeSet);
-      T1.setTimepoint(hourSet, minSet);
-      displayMenu('8');
-    }
-  }
-  if(programSelected(T1HEATT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T1 - HEAT TEMP-SUN"),T1.heatingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T1 - HEAT TEMP-CLOUD"),T1.heatingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T1COOLT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T1 - COOL TEMP-SUN"),T1.coolingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T1 - COOL TEMP-CLOUD"),T1.coolingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T1RAMP)){
-    setParameter(F("   T1 - RAMPING"),T1.ramping,MENU9);
-  }
-  if(programSelected(T2TYPE)){
-    confirmVariable(F("     T2 - TYPE"),T2.type.value(),"SR", "CLOCK", "SS");
-    if(choiceIsConfirmed()){
-      displayNextProgram(T2HOUR);
+
+void printTimepoint( int nb, byte menuName){
+  menu = MODE_PROGRAM;
+
+  int	numMenus = sizeof(timepointMenus) / sizeof(indexedMenu);
+
+  for (int i = 0; i < numMenus; i++) {
+    if ( menuName == timepointMenus[i].name) {
+      timepointMenus[i].Menu(nb);
     }
   }
 }
-if(greenhouse.timepoints.value() >= 2){
-  if(programSelected(T2HOUR)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("     T2 - HOUR"), 0,T2.hrMod.value(),23);
-    }
-    else{
-      confirmVariable(F("     T2 - HOUR"), -23,T2.hrMod.value(),23);
-    }
-    if(choiceIsConfirmed()){
-      hourSet = svariable;
-      displayNextProgram(T2MIN);
-    }
-  }
-  if(programSelected(T2MIN)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("    T2 - MINUTS"), 0,T2.mnMod.value(),59);
-    }
-    else{
-      confirmVariable(F("    T2 - MINUTS"), -59,T2.mnMod.value(),59);
-    }
-    if(choiceIsConfirmed()){
-      minSet = svariable;
-      T2.type.setValue(typeSet);
-      T2.setTimepoint(hourSet, minSet);
-      displayMenu('8');
-    }
-  }
-  if(programSelected(T2HEATT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T2 - HEAT TEMP-SUN"),T2.heatingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T2 - HEAT TEMP-CLOUD"),T2.heatingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T2COOLT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T2 - COOL TEMP-SUN"),T2.coolingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T2 - COOL TEMP-CLOUD"),T2.coolingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T2RAMP)){
-    setParameter(F("   T2 - RAMPING"),T2.ramping,MENU9);
-  }
-}
-if(greenhouse.timepoints.value() >= 3){
-  if(programSelected(T3TYPE)){
-    confirmVariable(F("     T3 - TYPE"),T3.type.value(),"SR", "CLOCK", "SS");
-    if(choiceIsConfirmed()){
-      displayNextProgram(T3HOUR);
-    }
-  }
-  if(programSelected(T3HOUR)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("     T3 - HOUR"), 0,T3.hrMod.value(),23);
-    }
-    else{
-      confirmVariable(F("     T3 - HOUR"), -23,T3.hrMod.value(),23);
-    }
-    if(choiceIsConfirmed()){
-      displayNextProgram(T3MIN);
-    }
-  }
-  if(programSelected(T3MIN)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("    T3 - MINUTS"), 0,T3.mnMod.value(),59);
-    }
-    else{
-      confirmVariable(F("    T3 - MINUTS"), -59,T3.mnMod.value(),59);
-    }
-    if(choiceIsConfirmed()){
-      minSet = svariable;
-      T3.type.setValue(typeSet);
-      T3.setTimepoint(hourSet, minSet);
-      displayMenu('8');
-    }
-  }
-  if(programSelected(T3HEATT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T3 - HEAT TEMP-SUN"),T3.heatingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T3 - HEAT TEMP-CLOUD"),T3.heatingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T3COOLT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T3 - COOL TEMP-SUN"),T3.coolingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T3 - COOL TEMP-CLOUD"),T3.coolingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T3RAMP)){
-    setParameter(F("   T3 - RAMPING"),T3.ramping,MENU9);
-  }
-  if(programSelected(T4TYPE)){
-    confirmVariable(F("     T4 - TYPE"),T4.type.value(),"SR", "CLOCK", "SS");
-    if(choiceIsConfirmed()){
-      displayNextProgram(T4HOUR);
+
+void printGeneric(byte menuName){
+  menu = MODE_PROGRAM;
+
+  int	numMenus = sizeof(genericMenus) / sizeof(Menu);
+
+  for (int i = 0; i < numMenus; i++) {
+    if (menuName == genericMenus[i].name) {
+      genericMenus[i].Menu();
     }
   }
 }
-if(greenhouse.timepoints.value() >= 4){
-  if(programSelected(T4HOUR)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("     T4 - HOUR"), 0,T4.hrMod.value(),23);
-    }
-    else{
-      confirmVariable(F("     T4 - HOUR"), -23,T4.hrMod.value(),23);
-    }
-    if(choiceIsConfirmed()){
-      displayNextProgram(T4MIN);
-    }
-  }
-  if(programSelected(T4MIN)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("    T4 - MINUTS"), 0,T4.mnMod.value(),59);
-    }
-    else{
-      confirmVariable(F("    T4 - MINUTS"), -59,T4.mnMod.value(),59);
-    }
-    if(choiceIsConfirmed()){
-      minSet = svariable;
-      T4.type.setValue(typeSet);
-      T4.setTimepoint(hourSet, minSet);
-      displayMenu('8');
-    }
-  }
-  if(programSelected(T4HEATT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T4 - HEAT TEMP-SUN"),T4.heatingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T4 - HEAT TEMP-CLOUD"),T4.heatingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T4COOLT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T4 - COOL TEMP-SUN"),T4.coolingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T4 - COOL TEMP-CLOUD"),T4.coolingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T4RAMP)){
-    setParameter(F("   T4 - RAMPING"),T4.ramping,MENU9);
-  }
-  if(programSelected(T5TYPE)){
-    confirmVariable(F("     T5 - TYPE"),T5.type.value(),"SR", "CLOCK", "SS");
-    if(choiceIsConfirmed()){
-      displayNextProgram(T5HOUR);
-    }
-  }
-}
-if(greenhouse.timepoints.value() >= 5){
-  if(programSelected(T5HOUR)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("     T5 - HOUR"), 0,T5.hrMod.value(),23);
-    }
-    else{
-      confirmVariable(F("     T5 - HOUR"), -23,T5.hrMod.value(),23);
-    }
-    if(choiceIsConfirmed()){
-      displayNextProgram(T5MIN);
-    }
-  }
-  if(programSelected(T5MIN)){
-    if(typeSet == CLOCK){
-      confirmVariable(F("    T5 - MINUTS"), 0,T5.mnMod.value(),59);
-    }
-    else{
-      confirmVariable(F("    T5 - MINUTS"), -59,T5.mnMod.value(),59);
-    }
-    if(choiceIsConfirmed()){
-      minSet = svariable;
-      T5.type.setValue(typeSet);
-      T5.setTimepoint(hourSet, minSet);
-      displayMenu('8');
-    }
-  }
-  if(programSelected(T5HEATT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T5 - HEAT TEMP-SUN"),T5.heatingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T5 - HEAT TEMP-CLOUD"),T5.heatingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T5COOLT)){
-    if(greenhouse.weather() == SUN){
-      setParameter(F("T5 - COOL TEMP-SUN"),T5.coolingTemp,MENU9);
-    }
-    else if(greenhouse.weather() == CLOUD){
-      setParameter(F("T5 - COOL TEMP-CLOUD"),T5.coolingTempCloud,MENU9);
-    }
-  }
-  if(programSelected(T5RAMP)){
-    setParameter(F("   T5 - RAMPING"),T5.ramping,MENU9);
-  }
-}
-  if(programSelected(TESTRELAYS)){
-    checkRelays();
+
+
+void printMenu(){
+  for(int x = 0;x < greenhouse.rollups.value();x++){
+    if(menuID == rollupId(x,MAIN)){  printRollup(x, MAIN);}
+    if(menuID == rollupId(x,AUTO)){  printRollup(x, AUTO);}
+    if(menuID == rollupId(x,FOPEN)){  printRollup(x, FOPEN);}
+    if(menuID == rollupId(x,FCLOSE)){  printRollup(x, FCLOSE);}
+    if(menuID == rollupId(x,OVERRIDE)){  printRollup(x, OVERRIDE);}
+    if(menuID == rollupId(x,FINC1)){  printRollup(x, FINC1);}
+    if(menuID == rollupId(x,FINC2)){  printRollup(x, FINC2);}
+    if(menuID == rollupId(x,FIXOV1)){  printRollup(x, FIXOV1);}
+    if(menuID == rollupId(x,FIXOV2)){  printRollup(x, FIXOV2);}
+    if(menuID == rollupId(x,FIXOV3)){  printRollup(x, FIXOV3);}
+    if(menuID == rollupId(x,FIXOV4)){  printRollup(x, FIXOV4);}
+    if(menuID == rollupId(x,HUMIDITY1)){  printRollup(x, HUMIDITY1);}
+    if(menuID == rollupId(x,HUMIDITY2)){  printRollup(x, HUMIDITY2);}
+    if(menuID == rollupId(x,RAIN1)){  printRollup(x, RAIN1);}
+    if(menuID == rollupId(x,RAIN2)){  printRollup(x, RAIN2);}
+    if(menuID == rollupId(x,WIND)){  printRollup(x, WIND);}
+    if(menuID == rollupId(x,BREAKER)){  printRollup(x, BREAKER);}
+    if(menuID == rollupId(x,OUTSIDE)){  printRollup(x, OUTSIDE);}
+    if(menuID == rollupId(x,PROGRAM)){  printRollup(x, PROGRAM);}
+    if(menuID == rollupId(x,ENABLE)){  printRollup(x, ENABLE);}
+    if(menuID == rollupId(x,INSTRUCT)){  printRollup(x, INSTRUCT);}
+    if(menuID == rollupId(x,HYST)){  printRollup(x, HYST);}
+  	if(menuID == rollupId(x,ROTUP )){  printRollup(x, ROTUP );}
+  	if(menuID == rollupId(x,ROTDOWN )){  printRollup(x, ROTDOWN );}
+  	if(menuID == rollupId(x,PAUSE)){  printRollup(x, PAUSE);}
+    if(menuID == rollupId(x,SETSTAGES)){  printRollup(x, SETSTAGES);}
+  	if(menuID == rollupId(x,S1TEMP)){  printRollup(x, S1TEMP);}
+  	if(menuID == rollupId(x,S2TEMP)){  printRollup(x, S2TEMP);}
+  	if(menuID == rollupId(x,S3TEMP)){  printRollup(x, S3TEMP);}
+  	if(menuID == rollupId(x,S4TEMP)){  printRollup(x, S4TEMP);}
+  	if(menuID == rollupId(x,S1TARGET)){  printRollup(x, S1TARGET);}
+  	if(menuID == rollupId(x,S2TARGET)){  printRollup(x, S2TARGET);}
+  	if(menuID == rollupId(x,S3TARGET)){  printRollup(x, S3TARGET);}
+  	if(menuID == rollupId(x,S4TARGET)){  printRollup(x, S4TARGET);}
   }
 
-  if(programSelected(TESTIIC)){
-    checkIIC();
-    if(choiceIsConfirmed()){
-      displayMenu('1');
-    }
+  for(int x = 0;x < greenhouse.devices.value();x++){
+    if(menuID == deviceId(x,MAIN)){  printDevice(x, MAIN);}
+    if(menuID == deviceId(x,TYPE)){  printDevice(x, TYPE);}
+    if(menuID == deviceId(x,STARTTEMP)){  printDevice(x, STARTTEMP);}
+    if(menuID == deviceId(x,STOPTEMP)){  printDevice(x, STOPTEMP);}
+    if(menuID == deviceId(x,OVERRIDE)){  printDevice(x, OVERRIDE);}
+    if(menuID == deviceId(x,AUTO)){  printDevice(x, AUTO);}
+    if(menuID == deviceId(x,FOPEN)){  printDevice(x, FOPEN);}
+    if(menuID == deviceId(x,FCLOSE)){  printDevice(x, FCLOSE);}
+    if(menuID == deviceId(x,FIXOV1)){  printDevice(x, FIXOV1);}
+    if(menuID == deviceId(x,FIXOV2)){  printDevice(x, FIXOV2);}
+    if(menuID == deviceId(x,FIXOV3)){  printDevice(x, FIXOV3);}
+    if(menuID == deviceId(x,HUMIDITY1)){  printDevice(x, HUMIDITY1);}
+    if(menuID == deviceId(x,HUMIDITY2)){  printDevice(x, HUMIDITY2);}
+    if(menuID == deviceId(x,ENABLE)){  printDevice(x, ENABLE);}
   }
 
-  if(programSelected(R1OV)){
-    confirmVariable(F("   R1 - OVERRIDE"), 0, "AUTO", "FOPEN", "FCLOSE", "FINCR");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: R1.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(R1FOPEN);break;
-        case 2: displayNextProgram(R1FCLOSE);break;
-        case 3: displayNextProgram(R1FINC1);break;
-      }
-    }
-  }
+  for(int x = 0;x < greenhouse.timepoints.value();x++){
 
-  if(programSelected(R1FOPEN)){
-    confirmVariable(F("  R1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R1.lockAtIncrement(100, usvariable);
-      }
-      else{
-        R1.lockOpen();
-      }
-      displayMenu('1');
-    }
+    if(menuID == timepointId(x,MAIN)){  printTimepoint(x, MAIN);}
+    if(menuID == timepointId(x,STARTTIME)){  printTimepoint(x, STARTTIME);}
+    if(menuID == timepointId(x,HEATINGSUN)){  printTimepoint(x, HEATINGSUN);}
+    if(menuID == timepointId(x,COOLINGSUN)){  printTimepoint(x, COOLINGSUN);}
+    if(menuID == timepointId(x,HEATINGCLOUD)){  printTimepoint(x, HEATINGCLOUD);}
+    if(menuID == timepointId(x,COOLINGCLOUD)){  printTimepoint(x, COOLINGCLOUD);}
+    if(menuID == timepointId(x,RAMPING)){  printTimepoint(x, RAMPING);}
+    if(menuID == timepointId(x,REF)){  printTimepoint(x, REF);}
+  	if(menuID == timepointId(x,ENABLE)){  printTimepoint(x, ENABLE);}
   }
+  if(menuID == genericId(HOME)){  printGeneric(HOME);}
+  if(menuID == genericId(CONFIG)){  printGeneric(CONFIG);}
+  if(menuID == genericId(HOURSET)){  printGeneric(HOURSET);}
+  if(menuID == genericId(MINSET)){  printGeneric(MINSET);}
+  if(menuID == genericId(DAY)){  printGeneric(DAY);}
+  if(menuID == genericId(MONTH)){  printGeneric(MONTH);}
+  if(menuID == genericId(YEAR)){  printGeneric(YEAR);}
+  if(menuID == genericId(SETLATITUDE)){  printGeneric(SETLATITUDE);}
+  if(menuID == genericId(SETLONGITUDE)){  printGeneric(SETLONGITUDE);}
+  if(menuID == genericId(SETTIMEZONE)){  printGeneric(SETTIMEZONE);}
+  if(menuID == genericId(WEATHERRATIO)){  printGeneric(WEATHERRATIO);}
+  if(menuID == genericId(WEATHERADJUST)){  printGeneric(WEATHERADJUST);}
+  if(menuID == genericId(WEATHER)){  printGeneric(WEATHER);}
+  if(menuID == genericId(ENABLEDAYNIGHT)){  printGeneric(ENABLEDAYNIGHT);}
+  if(menuID == genericId(TEMPERATURES)){  printGeneric(TEMPERATURES);}
+	if(menuID == genericId(SELECTSENSORS)){  printGeneric(SELECTSENSORS);}
+	if(menuID == genericId(INSIDETEMPSENSOR)){  printGeneric(INSIDETEMPSENSOR);}
+	if(menuID == genericId(FACTORYSETTINGS)){  printGeneric(FACTORYSETTINGS);}
+	if(menuID == genericId(ADJUST24H)){  printGeneric(ADJUST24H);}
+	if(menuID == genericId(ADJUSTVR)){  printGeneric(ADJUSTVR);}
+	if(menuID == genericId(ADJUST)){  printGeneric(ADJUST);}
+  if(menuID == genericId(SETDIF)){  printGeneric(SETDIF);}
+  if(menuID == genericId(SETPRENIGHT)){  printGeneric(SETPRENIGHT);}
+	if(menuID == genericId(ENTERCODE)){  printGeneric(ENTERCODE);}
+  if(menuID == genericId(PERIODS)){  printGeneric(PERIODS);}
+  if(menuID == genericId(TESTS)){  printGeneric(TESTS);}
+  if(menuID == genericId(TESTTEMP)){  printGeneric(TESTTEMP);}
+  if(menuID == genericId(INSIDETEMP)){  printGeneric(INSIDETEMP);}
+  if(menuID == genericId(OUTSIDETEMP)){  printGeneric(OUTSIDETEMP);}
+  if(menuID == genericId(RAINSENSOR)){  printGeneric(RAINSENSOR);}
+  if(menuID == genericId(WINDSENSOR)){  printGeneric(WINDSENSOR);}
+  if(menuID == genericId(LUXMETER)){  printGeneric(LUXMETER);}
 
-  if(programSelected(R1FCLOSE)){
-    confirmVariable(F("  R1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R1.lockAtIncrement(0, usvariable);
-      }
-      else{
-        R1.lockClose();
-      }
-      displayMenu('1');
-    }
-  }
-  if(programSelected(R1FINC1)){
-    confirmVariable(F("R1 - INCREMENT"), (unsigned short)0, R1.incrementCounter(), (unsigned short)100);
-    if(choiceIsConfirmed()){
-      usvariable1 = usvariable;
-      displayNextProgram(R1FINC2);
-    }
-  }
-  if(programSelected(R1FINC2)){
-  confirmVariable(F("  R1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-  zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      usvariable2 = usvariable;
-      if(usvariable2 == 0){
-        R1.lockAtIncrement(usvariable1);
-      }
-      else{
-        R1.lockAtIncrement(usvariable1, usvariable2);
-      }
-      displayMenu('1');
-    }
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-  }
+  if(menuID == genericId(INSIDETEMPDATA)){  printGeneric(INSIDETEMPDATA);}
+  if(menuID == genericId(OUTSIDETEMPDATA)){  printGeneric(OUTSIDETEMPDATA);}
+  if(menuID == genericId(WEATHERDATA)){  printGeneric(WEATHERDATA);}
+  if(menuID == genericId(RADIATIONDATA)){  printGeneric(RADIATIONDATA);}
+  if(menuID == genericId(CURRENTSENSOR)){  printGeneric(CURRENTSENSOR);}
 }
 
-<<<<<<< HEAD
-void updateFlashCounter(){
-  if(flashingCounter == 0){
-    flashingCounter = 1;
-  }
-  else if(flashingCounter == 1){
-    flashingCounter = 0;
-  }
-}
 
-=======
-  if(programSelected(R2OV)){
-    confirmVariable(F("   R2 - OVERRIDE"), 0, "AUTO", "FOPEN", "FCLOSE", "FINCR");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: R2.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(R2FOPEN);break;
-        case 2: displayNextProgram(R2FCLOSE);break;
-        case 3: displayNextProgram(R2FINC1);break;
-      }
-    }
-  }
 
-  if(programSelected(R2FOPEN)){
-    confirmVariable(F("  R2 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R2.lockAtIncrement(100, usvariable);
-      }
-      else{
-        R2.lockOpen();
-      }
-      displayMenu('1');
-    }
-  }
+boolean pressSelected(){
+ char keyPressed = keypad.getKey();
 
-  if(programSelected(R2FCLOSE)){
-    confirmVariable(F("  R2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        R2.lockAtIncrement(0, usvariable);
-      }
-      else{
-        R2.lockClose();
-      }
-      displayMenu('1');
-    }
-  }
-  if(programSelected(R2FINC1)){
-    confirmVariable(F("R2 - FORCE TO INC"), (unsigned short)0, R2.incrementCounter(), (unsigned short)100);
-    if(choiceIsConfirmed()){
-      usvariable1 = usvariable;
-      displayNextProgram(R2FINC2);
-    }
-  }
-  if(programSelected(R2FINC2)){
-  confirmVariable(F("  R2 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-  zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      usvariable2 = usvariable;
-      if(usvariable2 == 0){
-        R2.lockAtIncrement(usvariable1);
-      }
-      else{
-        R2.lockAtIncrement(usvariable1, usvariable2);
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(F1OV)){
-    confirmVariable(F("   F1 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: F1.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(F1FOPEN);break;
-        case 2: displayNextProgram(F1FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(F1FOPEN)){
-    confirmVariable(F("  F1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F1.lockOnAndWait(usvariable);
-      }
-      else{
-        F1.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(F1FCLOSE)){
-    confirmVariable(F("  F1 - DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F1.lockOffAndWait(usvariable);
-      }
-      else{
-        F1.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(F2OV)){
-    confirmVariable(F("   F2 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: F2.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(F2FOPEN);break;
-        case 2: displayNextProgram(F2FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(F2FOPEN)){
-    confirmVariable(F("  F2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F2.lockOnAndWait(usvariable);
-      }
-      else{
-        F2.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(F2FCLOSE)){
-    confirmVariable(F("  F2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        F2.lockOffAndWait(usvariable);
-      }
-      else{
-        F2.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H1OV)){
-    confirmVariable(F("   H1 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: H1.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(H1FOPEN);break;
-        case 2: displayNextProgram(H1FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(H1FOPEN)){
-    confirmVariable(F("  H1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H1.lockOnAndWait(usvariable);
-      }
-      else{
-        H1.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H1FCLOSE)){
-    confirmVariable(F("  H1 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H1.lockOffAndWait(usvariable);
-      }
-      else{
-        H1.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H2OV)){
-    confirmVariable(F("   H2 - OVERRIDE"), 0, "AUTO", "FORCE ON", "FORCE OFF");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0: H2.unlock();displayMenu('1');break;
-        case 1: displayNextProgram(H2FOPEN);break;
-        case 2: displayNextProgram(H2FCLOSE);break;
-      }
-    }
-  }
-
-  if(programSelected(H2FOPEN)){
-    confirmVariable(F("  H2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H2.lockOnAndWait(usvariable);
-      }
-      else{
-        H2.lockOn();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(H2FCLOSE)){
-    confirmVariable(F("  H2 -  DELAY (MIN)"), (unsigned short)0, (unsigned short)0, (unsigned short)1440);
-    zeroEqualInfinity();
-    if(choiceIsConfirmed()){
-      if(usvariable != 0){
-        H2.lockOffAndWait(usvariable);
-      }
-      else{
-        H2.lockOff();
-      }
-      displayMenu('1');
-    }
-  }
-
-  if(programSelected(ADJT24H)){
-    confirmVariable(F("    ADJUST T-24H"), (float)-10, (float)0, (float)10);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.timepoints.value(); x++){
-        greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
-        greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
-        greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
-        greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
-      }
-      displayMenu('9');
-    }
-  }
-
-  if(programSelected(ADJTNIGHT)){
-    confirmVariable(F("   ADJUST T-NIGHT"), (float)-10, (float)0, (float)10);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.timepoints.value(); x++){
-        if(!isBetween(Timepoint::sunRise[2],Timepoint::sunRise[1],greenhouse.timepoint[x].hr(),greenhouse.timepoint[x].mn(),Timepoint::sunSet[2],Timepoint::sunSet[1])){
-          greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
-          greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
-          greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
-          greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
-        }
-      }
-      displayMenu('9');
-    }
-  }
-  if(programSelected(ADJTDAY)){
-    confirmVariable(F("    ADJUST T-DAY"), (float)-10, (float)0, (float)10);
-    if(choiceIsConfirmed()){
-      for(int x = 0; x < greenhouse.timepoints.value(); x++){
-        if(isBetween(Timepoint::sunRise[2],Timepoint::sunRise[1],greenhouse.timepoint[x].hr(),greenhouse.timepoint[x].mn(),Timepoint::sunSet[2],Timepoint::sunSet[1])){
-          greenhouse.timepoint[x].heatingTemp.setValue(greenhouse.timepoint[x].heatingTemp.value()+fvariable);
-          greenhouse.timepoint[x].heatingTempCloud.setValue(greenhouse.timepoint[x].heatingTempCloud.value()+fvariable);
-          greenhouse.timepoint[x].coolingTemp.setValue(greenhouse.timepoint[x].coolingTemp.value()+fvariable);
-          greenhouse.timepoint[x].coolingTempCloud.setValue(greenhouse.timepoint[x].coolingTempCloud.value()+fvariable);
-        }
-      }
-      displayMenu('9');
-    }
-  }
-  if(programSelected(DIF)){
-    confirmVariable(F("   DIF-TIME"), 0, "ENABLE", "DISABLE");
-    if(choiceIsConfirmed()){
-      if(typeSet == 0){
-        displayNextProgram(DIFTEMP);
-      }
-      if(typeSet == 1){
-        T1.heatingTemp.setValue(T4.heatingTemp.value());
-        T1.heatingTempCloud.setValue(T4.heatingTempCloud.value());
-        T1.coolingTemp.setValue(T4.coolingTemp.value());
-        T1.coolingTempCloud.setValue(T4.coolingTempCloud.value());
-        displayMenu('9');
-      }
-    }
-  }
-  if(programSelected(DIFTEMP)){
-    confirmVariable(F("DIF TEMPERATURE RISE"), (float)0, (float)0, (float) 10);
-    if(choiceIsConfirmed()){
-      T1.heatingTemp.setValue(T4.heatingTemp.value()+fvariable);
-      T1.heatingTempCloud.setValue(T4.heatingTempCloud.value()+fvariable);
-      T1.coolingTemp.setValue(T4.coolingTemp.value()+fvariable);
-      T1.coolingTempCloud.setValue(T4.coolingTempCloud.value()+fvariable);
-      displayMenu('9');
-    }
-  }
-  if(programSelected(PRENIGHT)){
-    confirmVariable(F("   PRENIGHT DROP"), 0, "ENABLE", "DISABLE");
-    if(choiceIsConfirmed()){
-      if(typeSet == 0){
-        displayNextProgram(PRENTEMP);
-      }
-      if(typeSet == 1){
-        T3.heatingTemp.setValue(T2.heatingTemp.value());
-        T3.heatingTempCloud.setValue(T2.heatingTempCloud.value());
-        T3.coolingTemp.setValue(T2.coolingTemp.value());
-        T3.coolingTempCloud.setValue(T2.coolingTempCloud.value());
-        T3.ramping.setValue(T2.ramping.value());
-        displayMenu('9');
-      }
-    }
-  }
-  if(programSelected(PRENTEMP)){
-    confirmVariable(F(" PRENIGHT TEMP DROP"), (float)-10, (float)0, (float) 0);
-    if(choiceIsConfirmed()){
-      T3.heatingTemp.setValue(T2.heatingTemp.value()+fvariable);
-      T3.heatingTempCloud.setValue(T2.heatingTempCloud.value()+fvariable);
-      T3.coolingTemp.setValue(T2.coolingTemp.value()+fvariable);
-      T3.coolingTempCloud.setValue(T2.coolingTempCloud.value()+fvariable);
-      displayNextProgram(PRENSPEED);
-    }
-  }
-  if(programSelected(PRENSPEED)){
-    confirmVariable(F("PREN SPEED(-1C/Xmin)"), (unsigned short)0, (unsigned short)0, (unsigned short) 15);
-    if(choiceIsConfirmed()){
-      T3.ramping.setValue(usvariable);
-      displayMenu('9');
-    }
-  }
-  if(programSelected(R1STAGES)){
-    confirmVariable(F(" ADJ R1 STAGES MODS"), (float)-5, (float)0, (float) 5);
-    if(choiceIsConfirmed()){
-      for(int x = 1; x < greenhouse.stages.value();x++ ){
-        R1.stage[x].mod.setValue(R1.stage[x].mod.value() + fvariable);
-      }
-      displayMenu('5');
-    }
-  }
-  if(programSelected(R2STAGES)){
-    confirmVariable(F(" ADJ R2 STAGES MODS"), (float)-5, (float)0, (float) 5);
-    if(choiceIsConfirmed()){
-      for(int x = 1; x < greenhouse.stages.value();x++ ){
-        R2.stage[x].mod.setValue(R2.stage[x].mod.value() + fvariable);
-      }
-      displayMenu('6');
-    }
-  }
-  if(programSelected(MENU1)){
-    displayMenu('1');
-  }
-  if(programSelected(MENU2)){
-    displayMenu('2');
-  }
-  if(programSelected(MENU3)){
-    displayMenu('3');
-  }
-  if(programSelected(MENU4)){
-    displayMenu('4');
-  }
-  if(programSelected(MENU5)){
-    displayMenu('5');
-  }
-  if(programSelected(MENU6)){
-    displayMenu('6');
-  }
-  if(programSelected(MENU7)){
-    displayMenu('7');
-  }
-  if(programSelected(MENU8)){
-    displayMenu('8');
-  }
-  if(programSelected(MENU9)){
-    displayMenu('9');
-  }
-
-  if(programSelected(R1WIZ)){
-    confirmVariable(F("-----MAIN MENU-----"), 0, "TIME", "ROLLUP", "FAN", "CONFIG");
-    if(choiceIsConfirmed()){
-      switch (typeSet) {
-        case 0:break;
-        case 1: displayNextProgram(R1WIZ1);break;
-        case 2:break;
-        case 3:break;
-      }
-    }
-  }
-
-  if(greenhouse.rollups.value() >= 1){
-    if(programSelected(R1WIZ1)){
-      setParameter(F("ROTATION TIME (UP)"),R1.rotationUp,R1WIZ2);
-    }
-    if(programSelected(R1WIZ2)){
-      setParameter(F("ROTATION TIME (DOWN)"),R1.rotationDown,R1WIZ3);
-    }
-    if(programSelected(R1WIZ3)){
-      confirmVariable(F(" ROLLUP1 : # STEPS"),(unsigned short)1, (unsigned short)greenhouse.stages.value(),(unsigned short)4);
-        if(choiceIsConfirmed()){
-          greenhouse.stages.setValue(usvariable);
-          displayNextProgram(R1WIZ4);
-        }
-    }
-    if(programSelected(R1WIZ4)){
-      confirmVariable(F("STEP 1 : OFFSET(C)"),R1.stage[1].mod.minimum(), R1.stage[1].mod.value(),R1.stage[1].mod.maximum());
-        if(choiceIsConfirmed()){
-          R1.stage[1].mod.setValue(fvariable);
-          if(greenhouse.stages.value() > 1){
-            displayNextProgram(R1WIZ5);
-          }
-          else{
-            displayNextProgram(R1WIZ8);
-          }
-        }
-    }
-    if(programSelected(R1WIZ5)){
-      confirmVariable(F("STEP 2 : OFFSET(C)"),R1.stage[1].mod.value(), R1.stage[2].mod.value(), (float) 5);
-        if(choiceIsConfirmed()){
-          R1.stage[2].mod.setValue(fvariable);
-          if(greenhouse.stages.value() > 2){
-            displayNextProgram(R1WIZ6);
-          }
-          else{
-            displayNextProgram(R1WIZ8);
-          }
-        }
-    }
-    if(programSelected(R1WIZ6)){
-      confirmVariable(F("STEP 3 : OFFSET(C)"),R1.stage[2].mod.value(),R1.stage[3].mod.value(), (float) 5);
-        if(choiceIsConfirmed()){
-          R1.stage[3].mod.setValue(fvariable);
-          if(greenhouse.stages.value() > 3){
-            displayNextProgram(R1WIZ7);
-          }
-          else{
-            displayNextProgram(R1WIZ8);
-          }
-        }
-    }
-    if(programSelected(R1WIZ7)){
-      confirmVariable(F("STEP 4 : OFFSET(C)"),R1.stage[3].mod.value(),R1.stage[4].mod.value(), (float) 5);
-        if(choiceIsConfirmed()){
-          R1.stage[4].mod.setValue(fvariable);
-            displayNextProgram(R1WIZ8);
-        }
-    }
-    if(programSelected(R1WIZ8)){
-      if(greenhouse.stages.value() > 1){
-        setParameter(F("STEP 1 : TARGET(%)"),R1.stage[1].target,R1WIZ9);
-      }
-      else{
-        setParameter(F("STEP 1 : TARGET(%)"),R1.stage[1].target,R1WIZ12);
-      }
-    }
-    if(programSelected(R1WIZ9)){
-      if(greenhouse.stages.value() > 2){
-        setParameter(F("STEP 2 : TARGET(%)"),R1.stage[2].target,R1WIZ10);
-      }
-      else{
-        setParameter(F("STEP 2 : TARGET(%)"),R1.stage[2].target,R1WIZ12);
-      }
-    }
-    if(programSelected(R1WIZ10)){
-      if(greenhouse.stages.value() > 3){
-        setParameter(F("STEP 3 : TARGET(%)"),R1.stage[3].target,R1WIZ11);
-      }
-      else{
-        setParameter(F("STEP 3 : TARGET(%)"),R1.stage[3].target,R1WIZ12);
-      }
-    }
-    if(programSelected(R1WIZ11)){
-        setParameter(F("STEP 4 : TARGET(%)"),R1.stage[4].target,R1WIZ12);
-    }
-    if(programSelected(R1WIZ12)){
-        setParameter(F("PAUSE BETW. STEPS(S)"),R1.pause,MENU5);
-    }
-  }
-  if(codeWithNoDisplay && menu == SET_PARAMETER){
-    menu = MODE_PROGRAM;clearMenu();clearData();
-  }
-}
-
-void updateFlashCounter(){
-  if(flashingCounter == 0){
-    flashingCounter = 1;
-  }
-  else if(flashingCounter == 1){
-    flashingCounter = 0;
-  }
-}
-
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-void refreshScreen(byte seconds){
-  if(unpressedTimer > (unsigned long) seconds*1000){
-    menu = MODE_DISPLAY;
-    key = '1';
-    clearMenu();
-    clearData();
-  }
-}
-
-void resetTimerBeforeRefresh(){
- if(keyPressed != NO_KEY && keyPressed != 'D'){
-   unpressedTimer = 0;
+ if(keyPressed != '*'){
+   return true;
+ }
+ else{
+   return false;
  }
 }
 
+boolean pressIncrease(){
+ char keyPressed = keypad.getKey();
+
+ if(keyPressed != '#'){
+   return true;
+ }
+ else{
+   return false;
+ }
+}
+boolean pressDecrease(){
+ char keyPressed = keypad.getKey();
+
+ if(keyPressed != '*'){
+   return true;
+ }
+ else{
+   return false;
+ }
+}
 
 void selectActiveKey(){
  #ifdef KEYPAD_DISPLAY
  keyPressed = keypad.getKey();
 
  switch(keyPressed){
-   case '1' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '2' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '3' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '4' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '5' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '6' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '7' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '8' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
-   case '9' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}break;
+   case '1' : key = keyPressed;if(greenhouse.rollups.value() >= 1){resetMenuCount();display(rollupId(0,MAIN));menu = MODE_PROGRAM;}break;
+   case '2' : key = keyPressed;if(greenhouse.rollups.value() >= 2){resetMenuCount();display(rollupId(1,MAIN));menu = MODE_PROGRAM;}break;
+   case '3' : key = keyPressed;if(greenhouse.devices.value() >= 1){resetMenuCount();display(deviceId(0,MAIN));menu = MODE_PROGRAM;}break;
+   case '4' : key = keyPressed;if(greenhouse.devices.value() >= 2){resetMenuCount();display(deviceId(1,MAIN));menu = MODE_PROGRAM;}break;
+   case '5' : key = keyPressed;break;
+   case '6' : key = keyPressed;break;
+   case '7' : key = keyPressed;break;
+   case '8' : key = keyPressed;break;
+   case '9' : key = keyPressed;resetMenuCount();display(genericId(WEATHER));menu = MODE_PROGRAM;break;
    case '*' : line--;break;
-   case '0' : key = keyPressed;if(menu == MODE_DISPLAY){firstPrint = true;}if(menu == SET_PARAMETER){jumpIncrements();}break;
+   case '0' : key = keyPressed;jumpIncrements();break;
    case '#' : line++;break;
-   case 'A' : menu = MODE_DISPLAY;key = '1';clearMenu();clearData();break;
-   case 'B' : menu = MODE_PROGRAM;clearMenu();clearData();break;
-   case 'C' : menu = MODE_ACTION;clearMenu();clearData();break;
-   case 'D' : break;
+   case 'A' : key = keyPressed;resetMenuCount();display(genericId(TEMPERATURES));menu = MODE_PROGRAM;break;
+   case 'B' : key = keyPressed;resetMenuCount();display(genericId(CONFIG));menu = MODE_PROGRAM;break;
  }
  resetTimerBeforeRefresh();
  #endif
@@ -3838,36 +3714,20 @@ void lcdDisplay(){
    #ifdef KEYPAD_DISPLAY
     selectActiveKey();
     if(menu == MODE_DISPLAY){
-      menuDisplay();
-      refreshScreen(15);
-    }
-    if(menu == MODE_PROGRAM){
-      menuProgram();
-<<<<<<< HEAD
-      refreshScreen(30);
-    }
-    if(menu == SET_PARAMETER){
-      menuSetParameter();
-      refreshScreen(30);
-    }
-    if(menu == MODE_ACTION){
-      menuAction();
-      refreshScreen(30);
-=======
-      refreshScreen(15);
-    }
-    if(menu == SET_PARAMETER){
-      menuSetParameter();
+
+      resetMenuCount();
+      homeDisplay();
       refreshScreen(60);
     }
-    if(menu == MODE_ACTION){
-      menuAction();
-      refreshScreen(15);
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+    if(menu == MODE_PROGRAM){
+      printMenu();
+      refreshScreen(60);
     }
   #endif
 
   #ifndef KEYPAD_DISPLAY
+
+    resetMenuCount();
     homeDisplay();
   #endif
 }

@@ -67,7 +67,7 @@ Timepoint::Timepoint(){
   heatingTempCloud.setAddress(_localIndex);
   _localIndex += sizeof(float);
 
-  ramping.setLimits(0,60);
+  ramping.setLimits(0,180);
   ramping.setAddress(_localIndex);
   _localIndex += sizeof(unsigned short);
 
@@ -136,7 +136,6 @@ void Timepoint::setTimepoint(short hourMod, short minutMod){
 }
 void Timepoint::updateTimepoint(){
 
-<<<<<<< HEAD
   if (type.value() == SR){
 		_time.setTime(sunRise[HOUR], sunRise[MINUT]);
     _time.addTime(hrMod.value(), mnMod.value());
@@ -156,8 +155,6 @@ void Timepoint::updateTimepoint(){
 	}
 }
 
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 short Timepoint::hr(){
   return _hr;
 }
@@ -175,16 +172,6 @@ unsigned short Timepoint::EEPROMIndexBegin(){
 
 unsigned short Timepoint::EEPROMIndexEnd(){
   return _localIndex;
-}
-void Timepoint::EEPROMPut(){
-  type.loadInEEPROM();
-  mnMod.loadInEEPROM();
-  hrMod.loadInEEPROM();
-  heatingTemp.loadInEEPROM();
-  coolingTemp.loadInEEPROM();
-  coolingTempCloud.loadInEEPROM();
-  heatingTempCloud.loadInEEPROM();
-  ramping.loadInEEPROM();
 }
 
 void Timepoint::EEPROMGet(){

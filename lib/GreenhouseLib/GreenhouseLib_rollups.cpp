@@ -88,51 +88,23 @@ Rollup::Rollup(){
   pause.setAddress(_localIndex);
   _localIndex += sizeof(unsigned short);
   _increments = 100;
-  _stages = MAX_STAGES;
-/*
-  for(int x = 0; x < MAX_OVERRIDES;x++){
-    overRide[x].active = false;
-    overRide[x].type.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].ID.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].enabled.setAddress(_localIndex);
-    _localIndex += sizeof(boolean);
-    overRide[x].hrStart.setLimits(0,23);
-    overRide[x].hrStart.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].mnStart.setLimits(0,59);
-    overRide[x].mnStart.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].hrStop.setLimits(0,23);
-    overRide[x].hrStop.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].mnStop.setLimits(0,59);
-    overRide[x].mnStop.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].target.setLimits(0,100);
-    overRide[x].target.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].comparator.setLimits(0,5);
-    overRide[x].comparator.setAddress(_localIndex);
-    _localIndex += sizeof(byte);
-    overRide[x].floatVar.setLimits(-100,100);
-    overRide[x].floatVar.setAddress(_localIndex);
-    _localIndex += sizeof(float);
-    overRide[x].hyst.setLimits(0,5);
-    overRide[x].hyst.setAddress(_localIndex);
-    _localIndex += sizeof(float);
-    overRide[x].boolVar.setAddress(_localIndex);
-    _localIndex += sizeof(boolean);
-  }*/
+  _test = false;
+
   for(int x = 0; x < MAX_STAGES; x++){
-    stage[x].mod.setLimits(0,5);
+    stage[x].mod.setLimits(0,10);
     stage[x].mod.setAddress(_localIndex);
     _localIndex += sizeof(float);
     stage[x].target.setLimits(0,100);
     stage[x].target.setAddress(_localIndex);
     _localIndex += sizeof(unsigned short);
   }
+
+  stages.setLimits(0, MAX_STAGES);
+  stages.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  enabled.setAddress(_localIndex);
+  _localIndex += sizeof(boolean);
+
   #ifdef TEST_MODE
   _incrementCounter = 0;
   _stage = 0;
@@ -142,7 +114,7 @@ Rollup::Rollup(){
   _stage = OFF_VAL;
   _reset = true;
   #endif
-
+  initOverride(LOCK, 0,0);
   debugTimer = 0;
   rollupTimer = 0;
 }
@@ -166,59 +138,69 @@ void Rollup::initOutputs(byte outputType, boolean relayType, byte rOpen, byte rC
   _closingPin.init(outputType, relayType, rClose);
 }
 
+void Rollup::lockOpenAndWait(unsigned long seconds){
+  if(seconds != 0){
+    resetLockTimer(seconds);
+  }
+  lockOpen();
+}
+
+void Rollup::lockCloseAndWait(unsigned long seconds){
+  if(seconds != 0){
+    resetLockTimer(seconds);
+  }
+  lockClose();
+}
 void Rollup::lockOpen(){
-  unlock();
-  overRide[0].target = _increments;
-  overRide[0].active = true;
+  initOverride(LOCK, 0, 100);
+  checkOverride(LOCK, true);
 }
 void Rollup::lockClose(){
-  overRide[0].target = 0;
-  overRide[0].active = true;
+  initOverride(LOCK, 0, 0);
+  checkOverride(LOCK, true);
 }
 void Rollup::lockAtIncrement(byte increment){
-  if(increment < _increments){
-    overRide[0].target = increment;
-    overRide[0].active = true;
+  if(increment <= _increments){
+    initOverride(LOCK, 0, increment);
+    checkOverride(LOCK, true);
   }
 }
 
-void Rollup::resetLockTimer(){
-  overrideTimer = 0;
-}
-void Rollup::lockAtIncrement(byte increment, int minuts){
-  overRide[0].target = increment;
-  overRide[0].active = true;
-  lockedAndWaiting = true;
-  overrideWaitingTime = minuts;
-  resetLockTimer();
+
+void Rollup::lockAtIncrement(byte increment, unsigned long seconds){
+  if(seconds != 0){
+    resetLockTimer(seconds);
+  }
+  lockAtIncrement(increment);
 }
 
-void Rollup::unlock(){
-  overRide[0].active = false;
-  lockedAndWaiting = false;
-}
-
-boolean Rollup::isLock(){
-  if(overRide[0].active == true){
-    return true;
-  }
-  else{
-    return false;
-  }
-}
 /*
 Open or close the rollups to specific increment, using a multiple cooling stages logic
 */
-void Rollup::routine(float targetTemp, float temp){
-  if(_reset == true){
-    setIncrementCounter(increments());
-    lockAtIncrement(0, 1);
-    _reset = false;
-  }
-  else{
-    checkOverrideTimer();
-    byte checkOverride = activeOverride();
+void Rollup::forceStop(){
+  stopMove();
+  clearOverrides();
+  _incrementCounter = OFF_VAL;
+  _stage = OFF_VAL;
+  _reset = true;
+}
 
+void Rollup::routine(float targetTemp, float temp){
+  if(!isActivated()){
+    forceStop();
+  }
+  if (isActivated() || isMoving()){
+    if(isActivated() && _reset == true){
+      setIncrementCounter(increments());
+      lockCloseAndWait(rotationDown.value());
+      _reset = false;
+    }
+    Serial.println(activeOverride());
+
+    autoAdjustStages();
+    checkOverrideTimer();
+    Serial.println(activeOverride());
+    byte checkOverride = activeOverride();
     if((_activeOverride == OFF_VAL)&&(checkOverride != OFF_VAL)&&(!isMoving())){
         updatePosition(checkOverride);
         startMove();
@@ -346,9 +328,9 @@ void Rollup::stopMove(){
     if(_closingPin.isActive()){
       _closingPin.stop();
     }
-    calibrateStages();
     _incrementCounter = _incrementCounter + _incrementMove;
     _incrementMove = 0;
+    calibrateStages();
 
 }
 /*RESUME CYCLE
@@ -385,8 +367,8 @@ void Rollup::resumeCycle(String type){
 */
 void Rollup::calibrateStages(){
         //If youre at top increment, consider youre at top stage
-        if(_incrementCounter >= stage[_stages].target.value()){
-          _stage = _stages;
+        if(_incrementCounter >= stage[stages.value()].target.value()){
+          _stage = stages.value();
         }
         //If youre at bottom increment, consider youre at lowest stage
         else if(_incrementCounter == stage[0].target.value()){
@@ -400,7 +382,7 @@ void Rollup::calibrateStages(){
         //Between third stage and fourth, considier youre at third stage;
         //etc.
         else{
-          for(byte x = 1; x < _stages;x++){
+          for(byte x = 1; x < stages.value();x++){
             if((_incrementCounter >= stage[x].target.value())&& (_incrementCounter < stage[x+1].target.value())){
               _stage = x;
             }
@@ -409,16 +391,44 @@ void Rollup::calibrateStages(){
         checkStageSuccession();
   }
 
+  void Rollup::setTest(boolean state){
+    _test = state;
+  }
+
   void Rollup::updateTimings(){
     float upStep = (float)rotationUp.value()*1000/(float)_increments;
     float downStep = (float)rotationDown.value()*1000/(float)_increments;
     _upStep = upStep;
     _downStep = downStep;
     _pauseTime = pause.value()*1000;
+
+      if(_test == true){
+        _upStep = 0;
+        _downStep = 0;
+        _pauseTime = 0;
+      }
   }
 
+void Rollup::autoAdjustStages(){
+  for(byte x = 1; x <= stages.value();x++){
+    if(stage[x].mod.value() < stage[x-1].mod.value()){
+      stage[x].mod.setValue(stage[x-1].mod.value());
+    }
+    if(stage[x].target.value() < stage[x-1].target.value()){
+      stage[x].target.setValue(stage[x-1].target.value());
+    }
+
+    if(stage[x].mod.value() > stage[x-1].mod.maximum()){
+      stage[x].mod.setValue(stage[x-1].mod.maximum());
+    }
+    if(stage[x].target.value() > stage[x-1].target.maximum()){
+      stage[x].target.setValue(stage[x-1].target.maximum());
+    }
+  }
+}
+
   void Rollup::checkStageSuccession(){
-    if(_stage != _stages){
+    if(_stage != stages.value()){
       if(stage[_stage].target.value() != stage[_stage+1].target.value()){
         _upperStage = _stage+1;
       }
@@ -428,12 +438,15 @@ void Rollup::calibrateStages(){
       else if(stage[_stage].target.value() != stage[_stage+3].target.value()){
         _upperStage = _stage+3;
       }
+      else if(stage[_stage].target.value() != stage[_stage+4].target.value()){
+        _upperStage = _stage+4;
+      }
       else{
-        _upperStage = _stages;
+        _upperStage = stages.value();
       }
     }
     else{
-      _upperStage = _stages;
+      _upperStage = stages.value();
     }
     if(_stage != 0){
       if(stage[_stage].target.value() != stage[_stage-1].target.value()){
@@ -444,6 +457,9 @@ void Rollup::calibrateStages(){
       }
       else if(stage[_stage].target.value() != stage[_stage-3].target.value()){
         _lowerStage = _stage-3;
+      }
+      else if(stage[_stage].target.value() != stage[_stage-4].target.value()){
+        _lowerStage = _stage-4;
       }
       else{
         _lowerStage = 0;
@@ -487,21 +503,15 @@ void Rollup::printEndPause(){
 /*
 Program all parameters all at once...
 */
-void Rollup::setParameters(float rHyst, unsigned short rotUp, unsigned short rotDown, unsigned short paus){
+void Rollup::setParameters(byte st, float rHyst, unsigned short rotUp, unsigned short rotDown, unsigned short paus, bool enab){
+  stages.setValue(st);
   hyst.setValue(rHyst);
   rotationUp.setValue(rotUp);
   rotationDown.setValue(rotDown);
   pause.setValue(paus);
+  enabled.setValue(enab);
 }
-/*
-Or one by one...
-*/
-void Rollup::setStages(byte stages){
-  _stages = stages;
-  if(_stages > MAX_STAGES){
-    _stages = MAX_STAGES;
-  }
-}
+
 
 void Rollup::setIncrementCounter(unsigned short increment){
   _incrementCounter = increment;
@@ -519,6 +529,11 @@ void Rollup::EEPROMGet(){
     Serial.print(F("-------ROLLUP "));
     Serial.print(_localCounter);
     Serial.println(F("------"));
+    Serial.print(F("Address: "));
+    Serial.print(enabled.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(enabled.value());
+    Serial.println(F(" - (Enabled)"));
     Serial.print(F("Address: "));
     Serial.print(hyst.address());
     Serial.print(F(" - Value :"));
@@ -541,7 +556,7 @@ void Rollup::EEPROMGet(){
     Serial.println(F("   - (Pause)"));
   #endif
 
-  for(unsigned short x = 0; x < _stages+1; x++){/*
+  for(unsigned short x = 0; x < stages.value()+1; x++){/*
     stage[x].mod.getInEEPROM();
     stage[x].target.getInEEPROM();*/
 

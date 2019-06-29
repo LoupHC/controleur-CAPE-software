@@ -22,24 +22,20 @@
 #include "GreenhouseLib_FF.h"
 
 //****************************************************
-//******************FAN FUNCTIONS************************
+//******************DEVICE FUNCTIONS************************
 //****************************************************************/
-<<<<<<< HEAD
 
-void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
-  //define opening/closing pins
-  _output.init(outputType, relayType, pin);
-=======
+
 unsigned short OnOffDevice::_EEPROMindex = 0;
 unsigned short OnOffDevice::_counter = 0;
 
 OnOffDevice::OnOffDevice(){
-    _localIndex = FAN_INDEX + _EEPROMindex;
-    _EEPROMindex += FAN_INDEX_SIZE;
+    _localIndex = DEVICE_INDEX + _EEPROMindex;
+    _EEPROMindex += DEVICE_INDEX_SIZE;
     _localCounter = _counter;
     _counter++;
 
-    mod.setLimits(0, 10);
+    mod.setLimits(-10, 10);
     mod.setAddress(_localIndex);
     _localIndex += sizeof(float);
 
@@ -47,18 +43,15 @@ OnOffDevice::OnOffDevice(){
     hyst.setAddress(_localIndex);
     _localIndex += sizeof(float);
 
-    EEPROMTimer = 0;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+    type.setLimits(0,2);
+    type.setAddress(_localIndex);
+    _localIndex += sizeof(byte);
+
+    enabled.setAddress(_localIndex);
+    _localIndex += sizeof(boolean);
+
+    initOverride(LOCK, 0,0);
 }
-
-void OnOffDevice::lockOn(){
-  _activeOverride = OFF_VAL;
-  overRide[0].target = true;
-  overRide[0].active = true;
-
-<<<<<<< HEAD
-=======
-OnOffDevice::~OnOffDevice(){}
 
 void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
   //define opening/closing pins
@@ -66,57 +59,47 @@ void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
 }
 
 void OnOffDevice::lockOn(){
-  _activeOverride = OFF_VAL;
-  overRide[0].target = true;
-  overRide[0].active = true;
+  initOverride(LOCK, 0, true);
+  checkOverride(LOCK, true);
 
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 }
 
 void OnOffDevice::lockOff(){
-  _activeOverride = OFF_VAL;
-  overRide[0].target = false;
-  overRide[0].active = true;
+  initOverride(LOCK, 0, false);
+  checkOverride(LOCK, true);
 }
 
-void OnOffDevice::unlock(){
-  overRide[0].active = false;
-}
-
-void OnOffDevice::resetLockTimer(){
-  overrideTimer = 0;
-}
 void OnOffDevice::lockOnAndWait(int minuts){
-  overRide[0].target = true;
-  overRide[0].active = true;
-  lockedAndWaiting = true;
-  overrideWaitingTime = minuts;
-  resetLockTimer();
+  if(minuts != 0){
+    resetLockTimer(minuts);
+  }
+  lockOn();
 }
 
 void OnOffDevice::lockOffAndWait(int minuts){
-  overRide[0].target = false;
-  overRide[0].active = true;
-  lockedAndWaiting = true;
-  overrideWaitingTime = minuts;
-  resetLockTimer();
-}
-
-boolean OnOffDevice::isLock(){
-  if(overRide[0].active == true){
-    return true;
+  if(minuts != 0){
+    resetLockTimer(minuts);
   }
-  else{
-    return false;
-  }
+  lockOff();
 }
 
 
 //programmation functions
+void OnOffDevice::adjustModLimits(){
+  if(type.value() == HEATERTYPE){
+    mod.setLimits(-10,0);
+  }
+  else if(type.value() == FANTYPE){
+    mod.setLimits(0,10);
+  }
+}
 
-void OnOffDevice::setParameters(float modif, float hysteresis){
+void OnOffDevice::setParameters(byte typ, float modif, float hysteresis, bool enab){
+  type.setValue(typ);
+  adjustModLimits();
   hyst.setValue(hysteresis);
   mod.setValue(modif);
+  enabled.setValue(enab);
 }
 /*
 Or one by one...
@@ -130,7 +113,7 @@ boolean OnOffDevice::override(){
   }
 }
 
-boolean OnOffDevice::isActive(){
+boolean OnOffDevice::isOn(){
   if(_output.isActive()){
     return true;
   }
@@ -139,22 +122,7 @@ boolean OnOffDevice::isActive(){
   }
 }
 
-<<<<<<< HEAD
 
-=======
-unsigned short OnOffDevice::nb(){
-  return _localCounter;
-}
-
-unsigned short OnOffDevice::EEPROMIndexBegin(){
-  return FAN_INDEX + (FAN_INDEX_SIZE*_localCounter);
-}
-
-unsigned short OnOffDevice::EEPROMIndexEnd(){
-  return _localIndex;
-}
-
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 boolean OnOffDevice::TEST_parameterOffLimits(){
   if(hyst.isOffLimit()||mod.isOffLimit()){
     return true;
@@ -163,14 +131,133 @@ boolean OnOffDevice::TEST_parameterOffLimits(){
     return false;
   }
 }
+void OnOffDevice::EEPROMGet(){
+  #ifdef DEBUG_EEPROM
+    Serial.println(F("-------------------"));
+    Serial.print(F("--------DEVICE "));
+    Serial.print(_localCounter);
+    Serial.println(F("--------"));
+    Serial.print(F("Address: "));
+    Serial.print(enabled.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(enabled.value());
+    Serial.println(F(" - (Enabled)"));
+    Serial.print(F("Address: "));
+    Serial.print(hyst.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(hyst.value());
+    Serial.println(F(" - (Hysteresis)"));
+    Serial.print(F("Address: "));
+    Serial.print(mod.address());
+    Serial.print(F(" - Value :"));
+    Serial.print(mod.value());
+    Serial.println(F("   - (Mod)"));
+    Serial.print(F("Address: "));
+    Serial.print(type.address());
+    if(type.value() == FANTYPE){    Serial.println(F(" - Type : Fan"));    }
+    else if(type.value() == HEATERTYPE){    Serial.println(F(" - Type : Heater"));    }
+  #endif
+}
 
-<<<<<<< HEAD
-unsigned short Fan::_EEPROMindex = 0;
-unsigned short Fan::_counter = 0;
+unsigned short OnOffDevice::nb(){
+  return _localCounter;
+}
 
-Fan::Fan(){
-    _localIndex = FAN_INDEX + _EEPROMindex;
-    _EEPROMindex += FAN_INDEX_SIZE;
+unsigned short OnOffDevice::EEPROMIndexBegin(){
+  return DEVICE_INDEX + (DEVICE_INDEX_SIZE*_localCounter);
+}
+
+unsigned short OnOffDevice::EEPROMIndexEnd(){
+  return _localIndex;
+}
+/*
+Start or stop the device when a certain temperature is reached
+Adjust to an external target temperature (Mode VAR_TEMP)
+*/
+
+void OnOffDevice::routine(float target, float temp){
+  adjustModLimits();
+  if (isActivated()){
+    if(type.value() == FANTYPE){
+      fanRoutine(target, temp);
+    }
+    else if(type.value() == HEATERTYPE){
+      heaterRoutine(target, temp);
+    }
+    else if(type.value() == VALVTYPE){
+      valvRoutine();
+    }
+  }
+  else{
+    _output.stop();
+    clearOverrides();
+  }
+}
+
+void OnOffDevice::valvRoutine(){
+  checkOverrideTimer();
+  _activeOverride = activeOverride();
+  if(_activeOverride != OFF_VAL){
+    _output.start();
+    if((bool)overRide[_activeOverride].target == true){
+      _output.start();
+    }
+    else if((bool)overRide[_activeOverride].target == false){
+      _output.stop();
+    }
+  }
+}
+void OnOffDevice::fanRoutine(float target, float temp){
+  checkOverrideTimer();
+  _activeOverride = activeOverride();
+  if(_activeOverride != OFF_VAL){
+    if((bool)overRide[_activeOverride].target == true){
+      _output.start();
+    }
+    else if((bool)overRide[_activeOverride].target == false){
+      _output.stop();
+    }
+  }
+  else{
+      float activationTemp = target + mod.value();
+      if (temp < (activationTemp - hyst.value())) {
+        	_output.stop();
+      }
+      else if (temp > activationTemp) {
+        	_output.start();
+      }
+  }
+}
+
+void OnOffDevice::heaterRoutine(float target, float temp){
+    checkOverrideTimer();
+    _activeOverride = activeOverride();
+    if(_activeOverride != OFF_VAL){
+      if((bool)overRide[_activeOverride].target == true){
+        _output.start();
+      }
+      else if((bool)overRide[_activeOverride].target == false){
+        _output.stop();
+      }
+    }
+    else{
+        float activationTemp = target + mod.value();
+        if (temp > (activationTemp + hyst.value())) {
+          	_output.stop();
+        }
+        else if (temp < activationTemp) {
+          	_output.start();
+        }
+    }
+  }
+
+/*
+unsigned short Device::_EEPROMindex = 0;
+unsigned short Device::_counter = 0;
+
+Device::Device(){
+    _localIndex = DEVICE_INDEX + _EEPROMindex;
+    _EEPROMindex += DEVICE_INDEX_SIZE;
     _localCounter = _counter;
     _counter++;
 
@@ -183,14 +270,11 @@ Fan::Fan(){
     _localIndex += sizeof(float);
 
 }
-=======
 
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-
-void Fan::EEPROMGet(){
+void Device::EEPROMGet(){
   #ifdef DEBUG_EEPROM
     Serial.println(F("-------------------"));
-    Serial.print(F("--------FAN "));
+    Serial.print(F("--------DEVICE "));
     Serial.print(_localCounter);
     Serial.println(F("--------"));
     Serial.print(F("Address: "));
@@ -207,10 +291,11 @@ void Fan::EEPROMGet(){
 }
 
 /*
-Start or stop the fan when a certain temperature is reached
+Start or stop the device when a certain temperature is reached
 Adjust to an external target temperature (Mode VAR_TEMP)
 */
-void Fan::routine(float target, float temp){
+/*
+void Device::routine(float target, float temp){
     checkOverrideTimer();
     _activeOverride = activeOverride();
     if(_activeOverride != OFF_VAL){
@@ -232,16 +317,16 @@ void Fan::routine(float target, float temp){
     }
   }
 
-<<<<<<< HEAD
-  unsigned short Fan::nb(){
+
+  unsigned short Device::nb(){
     return _localCounter;
   }
 
-  unsigned short Fan::EEPROMIndexBegin(){
-    return FAN_INDEX + (FAN_INDEX_SIZE*_localCounter);
+  unsigned short Device::EEPROMIndexBegin(){
+    return DEVICE_INDEX + (DEVICE_INDEX_SIZE*_localCounter);
   }
 
-  unsigned short Fan::EEPROMIndexEnd(){
+  unsigned short Device::EEPROMIndexEnd(){
     return _localIndex;
   }
 
@@ -265,61 +350,15 @@ void Fan::routine(float target, float temp){
 
   }
 
-void Heater::routine(float target, float temp){
-    checkOverrideTimer();
-    _activeOverride = activeOverride();
-    if(_activeOverride != OFF_VAL){
-      if((bool)overRide[_activeOverride].target == true){
-        _output.start();
-      }
-      else if((bool)overRide[_activeOverride].target == false){
-        _output.stop();
-      }
-    }
-    else{
-        float activationTemp = target + mod.value();
-        if (temp > (activationTemp + hyst.value())) {
-          	_output.stop();
-        }
-        else if (temp < activationTemp) {
-          	_output.start();
-        }
-    }
-  }
 
-=======
-/*
-Start or stop the fan when a certain temperature is reached
-Adjust to an external target temperature (Mode VAR_TEMP)
-*/
-void Heater::routine(float target, float temp){
-    checkOverrideTimer();
-    _activeOverride = activeOverride();
-    if(_activeOverride != OFF_VAL){
-      if((bool)overRide[_activeOverride].target == true){
-        _output.start();
-      }
-      else if((bool)overRide[_activeOverride].target == false){
-        _output.stop();
-      }
-    }
-    else{
-        float activationTemp = target + mod.value();
-        if (temp > (activationTemp + hyst.value())) {
-          	_output.stop();
-        }
-        else if (temp < activationTemp) {
-          	_output.start();
-        }
-    }
-  }
 
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+
 void Heater::EEPROMGet(){
 /*
   hyst.getInEEPROM();
   mod.getInEEPROM();
 */
+/*
   #ifdef DEBUG_EEPROM
     Serial.println(F("-------------------"));
     Serial.print(F("--------HEATER "));
@@ -349,3 +388,4 @@ unsigned short Heater::EEPROMIndexBegin(){
 unsigned short Heater::EEPROMIndexEnd(){
   return _localIndex;
 }
+*/

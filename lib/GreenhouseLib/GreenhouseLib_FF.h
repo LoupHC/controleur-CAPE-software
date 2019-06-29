@@ -34,131 +34,54 @@
 class OnOffDevice : public Device
 {
   public:
-
-      //initialization functions
-<<<<<<< HEAD
-=======
       OnOffDevice();
-      ~OnOffDevice();
-
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+      //initialization functions
       void initOutput(byte outputType, boolean relayType, byte pin);
 
+      //Action function
       void lockOn();
       void lockOff();
       void lockOnAndWait(int minuts);
       void lockOffAndWait(int minuts);
-      void unlock();
-      void resetLockTimer();
-      boolean isLock();
+
+      void routine(float target, float temp);
 
       //programmation functions
-      void setParameters(float temp, float hyst);
+      void setParameters(byte type, float temp, float hyst, bool enabled);
 
 			//return private variables
       floatParameter hyst;
       floatParameter mod;
-			boolean isActive();
+      byteParameter type;
+			boolean isOn();
       boolean override();
 
-  		unsigned short EEPROMIndexBegin();
-  		unsigned short EEPROMIndexEnd();
+
 
       boolean TEST_parameterOffLimits();
 
-<<<<<<< HEAD
-      boolean TEST_parameterOffLimits();
 
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
+      void EEPROMGet();
+      unsigned short EEPROMIndexBegin();
+      unsigned short EEPROMIndexEnd();
+      unsigned short nb();
 
     protected:
+
+      void heaterRoutine(float target, float temp);
+      void fanRoutine(float target, float temp);
+      void valvRoutine();
+      void adjustModLimits();
+
       Output _output;
-      byte _activeOverride;/*
-      void stop();
-      void start();
-			//Parameters
-      boolean _relayType;
-      boolean _activate;
-      boolean _desactivate;
-			byte _pin;
-<<<<<<< HEAD
+      byte _activeOverride;
 
-			//Timer
-      elapsedMillis EEPROMTimer;*/
-
-=======
-*/
-			//Indexes
-			unsigned short _localIndex;
+      unsigned short _localCounter;
+      static unsigned short _counter;
+      unsigned short _localIndex;
       static unsigned short _EEPROMindex;
-  		unsigned short _localCounter;
-  		static unsigned short _counter;
-			//Timer
-      elapsedMillis EEPROMTimer;
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 
 
 };
 
-
-/*
-OBJECT : Fan (cooling unit)
-
-Parameters :
-- activation temperature
-- hysteresis
-*/
-class Fan : public OnOffDevice
-{
-public:
-<<<<<<< HEAD
-  Fan();
-  void routine(float target, float temp);
-  void EEPROMGet();
-  unsigned short nb();
-  unsigned short EEPROMIndexBegin();
-  unsigned short EEPROMIndexEnd();
-
-private:
-  unsigned short _localCounter;
-  static unsigned short _counter;
-  unsigned short _localIndex;
-  static unsigned short _EEPROMindex;
-
-=======
-  void routine(float target, float temp);
-  void EEPROMGet();
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-};
-
-/*
-OBJECT : Heater (heating unit)
-
-Parameters :
-- hysteresis
-- activation temperature
-*/
-
-class Heater : public OnOffDevice
-{
-public:
-<<<<<<< HEAD
-  Heater();
-  void routine(float target, float temp);
-  void EEPROMGet();
-  unsigned short nb();
-  unsigned short EEPROMIndexBegin();
-  unsigned short EEPROMIndexEnd();
-
-private:
-  unsigned short _localCounter;
-  static unsigned short _counter;
-  unsigned short _localIndex;
-  static unsigned short _EEPROMindex;
-=======
-  void routine(float target, float temp);
-  void EEPROMGet();
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-};
 #endif

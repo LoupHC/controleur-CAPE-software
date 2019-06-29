@@ -4,6 +4,7 @@
 #include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
+#include "GreenhouseLib_overrides.h"
 
 #include <Wire.h>
 #include "Adafruit_MCP23008.h"
@@ -12,27 +13,6 @@ extern  Adafruit_MCP23008 mcp;
 
 #ifndef GreenhouseLib_devices_h
 #define GreenhouseLib_devices_h
-
-class Override{
-  public:
-    boolean active;
-    byte target;
-    /*
-    bool active;
-    byteParameter type;
-    byteParameter ID;
-    boolParameter enabled;
-    byteParameter hrStart;
-    byteParameter mnStart;
-    byteParameter hrStop;
-    byteParameter mnStop;
-    byteParameter comparator;
-    floatParameter floatVar;
-    floatParameter hyst;
-    boolParameter boolVar;
-    elapsedMillis counter;
-    byteParameter target;*/
-};
 
 class Output{
   public:
@@ -57,19 +37,14 @@ class Output{
     static boolean _MCP23008IsInitialized;
 };
 
-class Device {
+class Device : public OverrideManager{
   public:
-    //override functions
-    byte activeOverride();
-    void setOverride(byte priority, byte target);
-    void disableOverride(byte priority);
-    void checkOverrideTimer();
-    void printOverrides();
+    void desactivateDevice();
+    void activateDevice();
+    boolean isActivated();
 
-    Override overRide[MAX_OVERRIDES];
-    elapsedMillis overrideTimer;
-    bool lockedAndWaiting;
-    int overrideWaitingTime;
+  protected :
+    boolParameter enabled;
 
 };
 

@@ -43,7 +43,6 @@ class Timepoint
 		void setTimepoint(short hour, short min);
 		void updateTimepoint();
     void EEPROMGet();
-    void EEPROMPut();
 		//float coolingTemp();
 		//float heatingTemp();
 

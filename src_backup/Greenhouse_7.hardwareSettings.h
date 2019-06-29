@@ -8,6 +8,8 @@
 #define DHT22               1003//Temperature and humidity
 #define SHT1X               1004//Temperature and humidity
 #define RTC_DS3231          2000//RTC
+#define TEST_CLOCKF         2001//RTC
+#define TEST_CLOCKFF        2002//RTC
 #define HYDREON_RG11        3000//Rain sensor
 //************************************************************
 //****************INTERFACE ID*********************
@@ -20,7 +22,7 @@
 //************************************************************
 //****************HARDWARE SETTINGS*********************
 //************************************************************
-//*************SENSORS********************
+//*************SENSORS*************M*******
 #define GH_TEMPERATURE      SHT1X
 #define GH_HUMIDITY         SHT1X
 //#define OUT_TEMPERATURE     DS18B20
@@ -37,15 +39,20 @@
 #define I2CADDR_LCD         0x27
 #define I2CADDR_KEY         0x26
 #define KEYPAD_DISPLAY          //Comment to desactivate keypad interface (only main menu)
-//define COMPUTER_INTERFACE    //Uncomment to desactivate interface programming, only parameters from this sheet are kept in memory
+//#define COMPUTER_INTERFACE    //Uncomment to desactivate interface programming, only parameters from this sheet are kept in memory
+
 //*************DATA IMPORT/EXPORT*********************
+
+//#define UNIT_TEST         //Uncomment to run unit-tests
+
 #define EXCEL_PROGRAMMER
 
 #define EXCEL_DATALOGGER
-#define EXPORT_DELAY        60
+#define EXPORT_DELAY        10
 #define MAX_LINES_PER_FILE  10000
 //*************VERSION*********************
-#define FIRST_BOOT          105
+#define FIRST_BOOT          109
+
 
 //************************************************************
 //*******************CONTROL PARAMETERS***********************
@@ -55,17 +62,15 @@
 #define TIMEPOINTS            4          //# of timepoints
 #define ROLLUPS               2          //# of rollups
 #define STAGES                4          //# of cool stages (for rollups)
-#define FANS                  1          //# of fans
+#define DEVICES                  1          //# of devices
 #define HEATERS               1          //# of heaters
 //********************PINOUT**************************
 #define ROLLUP1_OPENING_PIN   0    //connect this pin to the opening relay (west motor)
 #define ROLLUP1_CLOSING_PIN   1    //connect this pin to the closing relay (west motor)
 #define ROLLUP2_OPENING_PIN   2    //connect this pin to the opening relay (east motor)
 #define ROLLUP2_CLOSING_PIN   3    //connect this pin to the closing relay (east motor)
-#define HEATER1_PIN           4    //connect this pin to the heater relay
-#define HEATER2_PIN           OFF    //connect this pin to the heater relay
-#define FAN1_PIN              5  //Connect this pin to the fan relay
-#define FAN2_PIN              OFF  //Connect this pin to the fan relay
+#define DEVICE1_PIN           4    //connect this pin to the heater relay
+#define DEVICE2_PIN           5    //connect this pin to the heater relay
 #define ALARM_PIN             7    //Connect this pin to the safety buzzer
 
 //*************COORD GÉOGRAPHIQUES*********************

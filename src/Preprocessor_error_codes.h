@@ -25,21 +25,14 @@
       #error Rollup2 pin is missing
 #endif
 
-#if FAN1_PIN == OFF && FANS > 0
-      #error Fan1 pin is missing
+#if DEVICE1_PIN == OFF && DEVICES > 0
+      #error Device1 pin is missing
 #endif
 
-#if FAN2_PIN == OFF && FANS > 1
-      #error Fan2 pin is missing
+#if DEVICE2_PIN == OFF && DEVICES > 1
+      #error Device2 pin is missing
 #endif
 
-#if HEATER1_PIN == OFF && HEATERS > 0
-      #error Heater1 pin is missing
-#endif
-
-#if HEATER2_PIN == OFF && HEATERS > 1
-      #error Heater2 pin is missing
-#endif
 
 //Too much class instances for greenhouseLib
 #if TIMEPOINTS < 0 ||  TIMEPOINTS > MAX_TIMEPOINTS
@@ -53,11 +46,8 @@
 #if STAGES < 0 || STAGES > MAX_STAGES
   #error So many stages... really?
 #endif
-#if FANS < 0 || FANS > MAX_FANS
-  #error So many fans... really?
-#endif
-#if HEATERS < 0 || HEATERS > MAX_HEATERS
-  #error So many heaters... really?
+#if DEVICES < 0 || DEVICES > MAX_DEVICES
+  #error So many devices... really?
 #endif
 
 //Variables are off limits
@@ -73,16 +63,10 @@
 #if (ROLLUP2_CLOSING_PIN  > 7 || ROLLUP2_CLOSING_PIN < 0) && ROLLUP2_CLOSING_PIN != OFF && defined(I2C_OUTPUTS)
   #error Check your pinout...
 #endif
-#if (FAN1_PIN  > 7 || FAN1_PIN < 0) && FAN1_PIN != OFF && defined(I2C_OUTPUTS)
+#if (DEVICE1_PIN  > 7 || DEVICE1_PIN < 0) && DEVICE1_PIN != OFF && defined(I2C_OUTPUTS)
   #error Check your pinout...
 #endif
-#if (FAN2_PIN  > 7 || FAN2_PIN < 0) && FAN2_PIN != OFF && defined(I2C_OUTPUTS)
-  #error Check your pinout...
-#endif
-#if (HEATER1_PIN  > 7 || HEATER1_PIN) < 0 && HEATER1_PIN != OFF && defined(I2C_OUTPUTS)
-  #error Check your pinout...
-#endif
-#if (HEATER2_PIN  > 7 || HEATER2_PIN) < 0 && HEATER2_PIN != OFF && defined(I2C_OUTPUTS)
+#if (DEVICE2_PIN  > 7 || DEVICE2_PIN < 0) && DEVICE2_PIN != OFF && defined(I2C_OUTPUTS)
   #error Check your pinout...
 #endif
 #if (ALARM_PIN  > 7 || ALARM_PIN) < 0 && ALARM_PIN != OFF && defined(I2C_OUTPUTS)
@@ -297,7 +281,7 @@
   #error R2_S4_TARGET OFF LIMITS
 #endif
 
-//Fans
+//Devices
 #if F1_HYST > 5 || F1_HYST < 0
   #error F1_HYST OFF LIMITS
 #endif

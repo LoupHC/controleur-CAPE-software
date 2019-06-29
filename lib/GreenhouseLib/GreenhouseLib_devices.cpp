@@ -62,9 +62,9 @@
         mcp.digitalWrite(_pin, _desactivate);
       }
     }
-      #ifdef DEBUG_FAN
+      #ifdef DEBUG_DEVICE
         Serial.println(F("-------------"));
-        Serial.println(F("Stop fan"));
+        Serial.println(F("Stop device"));
         Serial.println(F("-------------"));
       #endif
     }
@@ -82,9 +82,9 @@
           mcp.digitalWrite(_pin, _activate);
         }
       }
-      #ifdef DEBUG_FAN
+      #ifdef DEBUG_DEVICE
         Serial.println(F("-------------"));
-        Serial.println(F("Start fan"));
+        Serial.println(F("Start device"));
         Serial.println(F("-------------"));
       #endif
     }
@@ -110,48 +110,24 @@
           return false;
         }
       }
+      else{
+        return false;
+      }
     }
 
-      byte Device::activeOverride(){
-        for(int x = 0; x < MAX_OVERRIDES;x++){
-          if(overRide[x].active == true){
-            return  x;
-          }
-        }
-        return OFF_VAL;
-      }
-
-      void Device::printOverrides(){
-        Serial.println("ACTIVE OVERRIDES");
-        for(int x = 0; x < MAX_OVERRIDES;x++){
-          Serial.print("state : ");
-          Serial.print(overRide[x].active);
-          Serial.print("- target : ");
-          Serial.println(overRide[x].target);
-        }
-      }
-
-      void Device::checkOverrideTimer(){
-        if(lockedAndWaiting == true){
-          if(overrideTimer >= (unsigned long)overrideWaitingTime*60000){
-            overRide[0].active = false;
-            lockedAndWaiting = false;
-          }
-        }
-      }
-
-      void Device::setOverride(byte priority, byte target){
-        overRide[priority].active = true;
-        overRide[priority].target = target;
-      }
-
-      void Device::disableOverride(byte priority){
-        overRide[priority].active = false;
-        overRide[priority].target = 0;
-      }
+    void Device::desactivateDevice(){
+      enabled.setValue(false);
+    }
+    void Device::activateDevice(){
+      enabled.setValue(true);
+    }
+    bool Device::isActivated(){
+      return enabled.value();
+    }
 
     //Create an alarm instance
     Alarm::Alarm(){
+
       for(int x = 0; x < MAX_ALARM_SEQUENCES;x++){
         sequence[x].onTime = 0;
         sequence[x].offTime = 0;

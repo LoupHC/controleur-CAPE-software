@@ -65,10 +65,8 @@ Greenhouse greenhouse;
 
   Rollup &R1 = greenhouse.rollup[0];
   Rollup &R2 = greenhouse.rollup[1];
-  Fan &F1 = greenhouse.fan[0];
-  Fan &F2 = greenhouse.fan[1];
-  Heater &H1 = greenhouse.heater[0];
-  Heater &H2 = greenhouse.heater[1];
+  OnOffDevice &D1 = greenhouse.device[0];
+  OnOffDevice &D2 = greenhouse.device[1];
   Timepoint &T1 = greenhouse.timepoint[0];
   Timepoint &T2 = greenhouse.timepoint[1];
   Timepoint &T3 = greenhouse.timepoint[2];
@@ -76,17 +74,7 @@ Greenhouse greenhouse;
   Timepoint &T5 = greenhouse.timepoint[4];
   Alarm &alarm = greenhouse.alarm;
 
-//********************VARIABLES**************************
 
-//Time array
-byte rightNow[6];
-//Temperature inside the greenhouse
-float greenhouseTemperature;
-float greenhouseHumidity;
-float outsideTemperature;
-boolean rain;
-
-boolean sensorFailure = false;
 
 //********************SENSORS**************************
 //See "Greenhouse_sensors.h" for sensor functions
@@ -94,13 +82,13 @@ boolean sensorFailure = false;
 //********************OVERRIDES**************************
 //See "Greenhouse_overrides.h" for overrides functions
 #include "Greenhouse_4.overrides.h"
-//********************INTERFACE**************************
-//See "Greenhouse_interface.h" for LCD display functions
-#include "Greenhouse_5.interface.h"
 //********************IMPORTS/EXPORTS**************************
 //See "Greenhouse_importExport.h" for import/export functions
 #include "Greenhouse_8.import.h"
 #include "Greenhouse_9.export.h"
+//********************INTERFACE**************************
+//See "Greenhouse_interface.h" for LCD display functions
+#include "Greenhouse_5.interface.h"
 //********************ERRORS**************************
 #include "Preprocessor_error_codes.h"
 
@@ -125,23 +113,10 @@ void setup() {
   #ifdef KEYPAD_DISPLAY
     keypad.begin( makeKeymap(keys) );
   #endif
-  //last recorded value if probe doesnt reply back at first cycle
-    sensorBackup();
-  //start communication with temp probe
-    sensors.begin();
-    sensors.setResolution(12);
-    sht1x.initSensor();
-  //start communication with clock
-  #if RTC == RTC_DS3231
-    rtc.begin();
-  #endif
-  #if RAIN_SENSOR == HYDREON_RG11
-    pinMode(RAIN_SWITCH, INPUT_PULLUP);
-  #endif
-
+  initSensors();
   //Add safety alarm
   alarm.init(MCP23008, ACT_LOW, ALARM_PIN);
-  alarm.addSequence(1, 200, 1000);
+  alarm.addSequence(1, 1000, 1000);
 
   // change RTC settings
   #ifdef RTC_TIME_SET
@@ -170,6 +145,7 @@ void setup() {
   #ifdef UNIT_TEST
     TestRunner::setTimeout(30);
   #endif
+  readDataFromSDFile(rtc.getDateStr());
 }
 
 
@@ -180,25 +156,24 @@ int x = 0;
 
 void loop() {
   x++;
-  //Serial.println(greenhouseTemperature);
   //actual time
   getDateAndTime();
-  //actual temperature
+  //get data from sensors
   getGreenhouseTemp();
-  //actual humididty
+  getOutsideTemp();
   getGreenhouseHum();
-  //rain
+  getOutsideHum();
   getRain();
+  getCurrent();
+  //adjustWeatherSettings
+  autoWeather();
   //diplay infos on LCD screen
   lcdDisplay();
   #if defined(ALARM_MAX_TEMP) && !defined(ALARM_MIN_TEMP)
-    alarm.above(greenhouseTemperature,ALARM_MAX_TEMP);
+    alarm.above(greenhouseTemperature,greenhouse.maxtemp.value());
   #endif
   #if defined(ALARM_MIN_TEMP) && !defined(ALARM_MAX_TEMP)
-    alarm.below(greenhouseTemperature, ALARM_MIN_TEMP);
-  #endif
-  #if defined(ALARM_MIN_TEMP) && defined(ALARM_MAX_TEMP)
-    alarm.offRange(greenhouseTemperature, ALARM_MIN_TEMP, ALARM_MAX_TEMP);
+    alarm.below(greenhouseTemperature, greenhouse.mintemp.value();
   #endif
   alarm.conditionalTo(sensorFailure, 1);
   alarm.checkAlarm();
@@ -209,8 +184,8 @@ void loop() {
   #ifdef EXCEL_DATALOGGER
     dataloggingToExcel();
   #endif
+    dataloggingToSD();
   #ifdef UNIT_TEST
     TestRunner::run();
   #endif
-
 }

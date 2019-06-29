@@ -2,18 +2,13 @@
 //************************************************************
 //****************HARDWARE ID*********************
 //************************************************************
-#define DS18B20             1000//Temperature only
-#define DHT11               1001//Temperature and humidity
-#define DHT12               1002//Temperature and humidity
-#define DHT22               1003//Temperature and humidity
-#define SHT1X               1004//Temperature and humidity
-#define RTC_DS3231          2000//RTC
-<<<<<<< HEAD
-#define TEST_CLOCKF         2001//RTC
-#define TEST_CLOCKFF        2002//RTC
-=======
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
-#define HYDREON_RG11        3000//Rain sensor
+#define DS18B20             100//Temperature only
+#define DHT11               101//Temperature and humidity
+#define DHT12               102//Temperature and humidity
+#define DHT22               103//Temperature and humidity
+#define SHT1X               104//Temperature and humidity
+#define RTC_DS3231          200//RTC
+#define HYDREON_RG11        300//Rain sensor
 //************************************************************
 //****************INTERFACE ID*********************
 //************************************************************
@@ -26,39 +21,43 @@
 //****************HARDWARE SETTINGS*********************
 //************************************************************
 //*************SENSORS*************M*******
-#define GH_TEMPERATURE      SHT1X
-#define GH_HUMIDITY         SHT1X
+#define GH_TEMPERATURE      DS18B20
+//#define GH_HUMIDITY         D
 //#define OUT_TEMPERATURE     DS18B20
 #define RAIN_SENSOR         HYDREON_RG11
 //#define WIND_SPEED
 //#define LIGHT
 #define RTC                 RTC_DS3231
 //*************SENSORS PINOUT*********************
-#define SHT1X_DATA          4 //connect this pin to the SHT1X data line
-#define SHT1X_CLOCK         5 //connect this pin to the SHT1X clock line
-#define DS18B20_DATA        7 //connect this pin to the DS18B20 data line
+#define TEMP2_DATA          4 //connect this pin to the SHT1X data line
+#define TEMP2_CLOCK         5 //connect this pin to the SHT1X clock line
+#define TEMP1_CLOCK         7 //connect this pin to the DS18B20 data line
+#define TEMP1_DATA          6 //connect this pin to the DS18B20 data line
 #define RAIN_SWITCH         3
+#define WIND_ANALOG_SENSOR  A3
+#define LIGHT_SENSOR        A2
+#define CURRENT_SENSOR1     A1
+#define CURRENT_SENSOR2     A0
 //*************INTERFACE*********************
 #define I2CADDR_LCD         0x27
-#define I2CADDR_KEY         0x26
+//#define I2CADDR_KEY         0x23 //Otomatillo
+
+#define I2CADDR_KEY         0x26 //Otomate
 #define KEYPAD_DISPLAY          //Comment to desactivate keypad interface (only main menu)
+
 //#define COMPUTER_INTERFACE    //Uncomment to desactivate interface programming, only parameters from this sheet are kept in memory
 
 //*************DATA IMPORT/EXPORT*********************
 
-<<<<<<< HEAD
 //#define UNIT_TEST         //Uncomment to run unit-tests
-=======
-#define UNIT_TEST         //Uncomment to run unit-tests
->>>>>>> 8635b916547bc6428a90a9dd528a5a01848050a7
 
-#define EXCEL_PROGRAMMER
+//#define EXCEL_PROGRAMMER
 
-#define EXCEL_DATALOGGER
-#define EXPORT_DELAY        10
+//#define EXCEL_DATALOGGER
+#define EXPORT_DELAY        60
 #define MAX_LINES_PER_FILE  10000
 //*************VERSION*********************
-#define FIRST_BOOT          109
+#define FIRST_BOOT          111
 
 
 //************************************************************
@@ -69,8 +68,7 @@
 #define TIMEPOINTS            4          //# of timepoints
 #define ROLLUPS               2          //# of rollups
 #define STAGES                4          //# of cool stages (for rollups)
-#define FANS                  1          //# of fans
-#define HEATERS               1          //# of heaters
+#define DEVICES               2          //# of devices
 //********************PINOUT**************************
 #define ROLLUP1_OPENING_PIN   0    //connect this pin to the opening relay (west motor)
 #define ROLLUP1_CLOSING_PIN   1    //connect this pin to the closing relay (west motor)

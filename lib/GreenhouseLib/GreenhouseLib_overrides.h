@@ -4,8 +4,6 @@
 #include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
-#include "GreenhouseLib_FF.h"
-#include "GreenhouseLib_rollups.h"
 
 
 #ifndef GreenhouseLib_overrides_h
@@ -13,6 +11,21 @@
 
 
 
+class Timer{
+  public:
+    void reset();
+    void start(int on, int off);
+    void start(int on);
+    void loop(int on, int off);
+    boolean isOn();
+
+  private:
+    byteParameter activeTimer;
+    byteParameter inactiveTimer;
+    elapsedMillis timer;
+    bool lockedAndWaiting;
+    int overrideWaitingTime;
+};
 
 
 class OverrideR{
@@ -25,9 +38,10 @@ class OverrideR{
     byteParameter priority;
     boolParameter enabled;
     byteParameter target;
+
+
   protected:
     bool _active;
-    //bool initialized();
 };
 
 class ClockRelativeOverride : public OverrideR {
@@ -69,50 +83,81 @@ class BoolRelativeOverride : public OverrideR {
     void checkIfActive(bool variable);
 
   private:
+
     static unsigned short _EEPROMindex;
     unsigned short _localIndex;
 };
 
 
+class Override{
+  public:
+    boolean active;
+    byte target;
+};
+
+
 class OverrideManager{
   public:
+    //Clock overrides calls
+    void initOverride(byte ID, byte priority, byte hrStart, byte mnStart, byte hrStop, byte mnStop, byte target);
+    void checkOverride(byte ID, byte hr, byte mn);
+    void checkOverride(byte ID, byte hr, byte mn, byte isAboveTarget);
+
+    byte hourStart(byte ID);
+    byte minStart(byte ID);
+    byte hourStop(byte ID);
+    byte minStop(byte ID);
+
+    //Float override calls
+    void initOverride(byte ID, byte priority, byte comparator, float value, float hyst, byte target);
+    void checkOverride(byte ID, float variable);
+    float floatVar(byte ID);
+
+    //Bool overrides calls
+    void initOverride(byte ID, byte priority, byte target);
+    void checkOverride(byte ID, bool variable);
+
+    //override calls
     bool isActive(byte ID);
     bool isEnabled(byte ID);
     bool isInitialized(byte ID);
     void enable(byte ID);
     void disable(byte ID);
     void clearOverride(byte ID);
-    void clearOverrides();
-    //Clock overrides calls
-    void initOverride(byte ID, byte priority, byte hrStart, byte mnStart, byte hrStop, byte mnStop, byte target);
-    void checkOverride(byte ID, Rollup &rollup, byte hr, byte mn);
-    void checkOverride(byte ID, Fan &fan, byte hr, byte mn);
-    void checkOverride(byte ID, Heater &heater, byte hr, byte mn);
-    //Float override calls
-    void initOverride(byte ID, byte priority, byte comparator, float value, float hyst, byte target);
-    void checkOverride(byte ID, Rollup &rollup, float variable);
-    void checkOverride(byte ID, Fan &fan,float variable);
-    void checkOverride(byte ID, Heater &heater,float variable);
-    //Bool overrides calls
-    void initOverride(byte ID, byte priority, byte target);
-    void checkOverride(byte ID, Rollup &rollup, bool variable);
-    void checkOverride(byte ID, Fan &fan, bool variable);
-    void checkOverride(byte ID, Heater &heater, bool variable);
-
     byte indexPosition(byte ID);
+    byte overrideTarget(byte ID);
+
+    void clearOverridesInEEPROM();
+
+    //priority dispatcher
+    byte activeOverride();
+    void setOverride(byte priority, byte target);
+    void disableOverride(byte priority);
+    void clearOverrides();
+    void disableOverrides();
+    void checkOverrideTimer();
+    void printOverrides();
+    void resetLockTimer(unsigned long seconds);
+
+    void unlock();
+    boolean isLock();
 
 
     ClockRelativeOverride clockOv[MAX_CLOCK_OV];
     FloatRelativeOverride floatOv[MAX_FLOAT_OV];
     BoolRelativeOverride boolOv[MAX_BOOL_OV];
 
+  protected:
+    Override overRide[MAX_OVERRIDES];
+    elapsedMillis overrideTimer;
+    bool lockedAndWaiting;
+    unsigned long overrideWaitingTime;
+
   private:
     bool idIsUnique(byte ID);
-    static byte _clockOvCount;
-    static byte _floatOvCount;
-    static byte _boolOvCount;
-
-
+    byte _clockOvCount = 0;
+    byte _floatOvCount = 0;
+    byte _boolOvCount = 0;
 };
 
 #endif

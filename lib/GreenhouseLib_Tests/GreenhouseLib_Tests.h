@@ -51,7 +51,7 @@ test(Rollup_EEPROM_Overflow){
       }
     }
     else {
-      if(greenhouse.rollup[x].EEPROMIndexEnd() <= FAN_INDEX){
+      if(greenhouse.rollup[x].EEPROMIndexEnd() <= DEVICE_INDEX){
           testPassed++;
       }
     }
@@ -59,44 +59,22 @@ test(Rollup_EEPROM_Overflow){
   assertEqual(testPassed, greenhouse.rollups.value());
 }
 
-test(Fans_EEPROM_Overflow){
+test(Devices_EEPROM_Overflow){
   int testPassed = 0;
 
-  for(int x = 0; x < greenhouse.fans.value();x++){
-    if(greenhouse.fans.value() > x+1){
-      if(greenhouse.fan[x].EEPROMIndexEnd() < greenhouse.fan[x+1].EEPROMIndexBegin()){
-          testPassed++;
-      }
-    }
-    else if(greenhouse.heaters.value() >= 1){
-      if(greenhouse.fan[x].EEPROMIndexEnd() < greenhouse.heater[0].EEPROMIndexBegin()){
+  for(int x = 0; x < greenhouse.devices.value();x++){
+    if(greenhouse.devices.value() > x+1){
+      if(greenhouse.device[x].EEPROMIndexEnd() < greenhouse.device[x+1].EEPROMIndexBegin()){
           testPassed++;
       }
     }
     else{
-      if(greenhouse.fan[x].EEPROMIndexEnd() < TIMEPOINT_INDEX){
+      if(greenhouse.device[x].EEPROMIndexEnd() < TIMEPOINT_INDEX){
           testPassed++;
       }
     }
   }
-  assertEqual(testPassed, greenhouse.fans.value());
-}
-test(Heaters_EEPROM_Overflow){
-  int testPassed = 0;
-
-  for(int x = 0; x < greenhouse.fans.value();x++){
-    if(greenhouse.heaters.value() > x+1){
-      if(greenhouse.heater[x].EEPROMIndexEnd() < greenhouse.heater[x+1].EEPROMIndexBegin()){
-          testPassed++;
-      }
-    }
-    else{
-      if(greenhouse.heater[x].EEPROMIndexEnd() < TIMEPOINT_INDEX){
-          testPassed++;
-      }
-    }
-  }
-  assertEqual(testPassed, greenhouse.heaters.value());
+  assertEqual(testPassed, greenhouse.devices.value());
 }
 
 test(Timepoints_EEPROM_Overflow){

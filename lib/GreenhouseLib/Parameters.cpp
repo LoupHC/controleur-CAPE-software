@@ -27,20 +27,24 @@
 
 #define DEF_ADDRESS -111
 
+void Parameter::setAddress(int address){
+  _address = address;
+}
+int Parameter::address(){
+  return _address;
+}
+
+
+
 floatParameter::floatParameter(){
-  _address = DEF_ADDRESS;
+  setAddress(DEF_ADDRESS);
 }
 floatParameter::~floatParameter(){}
 
-void floatParameter::setAddress(int address){
-  _address = address;
-}
-int floatParameter::address(){
-  return _address;
-}
+
 void floatParameter::setValue(float value){
-  if(_address != DEF_ADDRESS){
-      EEPROM.put(_address, value);
+  if(address() != DEF_ADDRESS){
+      EEPROM.put(address(), value);
   }
 }
 
@@ -58,9 +62,9 @@ float floatParameter::maximum(){
 }
 
 float floatParameter::value(){
-  if(_address != DEF_ADDRESS){
+  if(address() != DEF_ADDRESS){
     float variable;
-    EEPROM.get(_address, variable);
+    EEPROM.get(address(), variable);
 
     return variable;
   }
@@ -79,19 +83,13 @@ boolean floatParameter::isOffLimit(){
 //short parameter
 
 shortParameter::shortParameter(){
-  _address = DEF_ADDRESS;
+  setAddress(DEF_ADDRESS);
 }
 shortParameter::~shortParameter(){}
 
-void shortParameter::setAddress(int address){
-  _address = address;
-}
-int shortParameter::address(){
-  return _address;
-}
 void shortParameter::setValue(short value){
-  if(_address != DEF_ADDRESS){
-      EEPROM.put(_address, value);
+  if(address() != DEF_ADDRESS){
+      EEPROM.put(address(), value);
 
   }
 }
@@ -110,9 +108,9 @@ short shortParameter::maximum(){
 }
 
 short shortParameter::value(){
-  if(_address != DEF_ADDRESS){
+  if(address() != DEF_ADDRESS){
     short variable;
-    EEPROM.get(_address, variable);
+    EEPROM.get(address(), variable);
 
     return variable;
   }
@@ -130,19 +128,14 @@ boolean shortParameter::isOffLimit(){
 //unsigned short Parameters
 
 uShortParameter::uShortParameter(){
-  _address = DEF_ADDRESS;
+  setAddress(DEF_ADDRESS);
 }
 uShortParameter::~uShortParameter(){}
 
-void uShortParameter::setAddress(int address){
-  _address = address;
-}
-int uShortParameter::address(){
-  return _address;
-}
+
 void uShortParameter::setValue(unsigned short value){
-  if(_address != DEF_ADDRESS){
-        EEPROM.put(_address, value);
+  if(address() != DEF_ADDRESS){
+        EEPROM.put(address(), value);
   }
 }
 
@@ -161,9 +154,9 @@ unsigned short uShortParameter::maximum(){
 }
 
 unsigned short uShortParameter::value(){
-  if(_address != DEF_ADDRESS){
+  if(address() != DEF_ADDRESS){
     unsigned short variable;
-    EEPROM.get(_address, variable);
+    EEPROM.get(address(), variable);
 
     return variable;
   }
@@ -179,19 +172,13 @@ boolean uShortParameter::isOffLimit(){
 }
 
 byteParameter::byteParameter(){
-  _address = DEF_ADDRESS;
+  setAddress(DEF_ADDRESS);
 }
 byteParameter::~byteParameter(){}
 
-void byteParameter::setAddress(int address){
-  _address = address;
-}
-int byteParameter::address(){
-  return _address;
-}
 void byteParameter::setValue(byte value){
-  if(_address != DEF_ADDRESS){
-      EEPROM.put(_address, value);
+  if(address() != DEF_ADDRESS){
+      EEPROM.put(address(), value);
   }
 }
 
@@ -210,9 +197,9 @@ byte byteParameter::maximum(){
 }
 
 byte byteParameter::value(){
-  if(_address != DEF_ADDRESS){
+  if(address() != DEF_ADDRESS){
     byte variable;
-    EEPROM.get(_address, variable);
+    EEPROM.get(address(), variable);
 
     return variable;
   }
@@ -230,261 +217,25 @@ boolean byteParameter::isOffLimit(){
 //boolean parameter
 
 boolParameter::boolParameter(){
-  _address = DEF_ADDRESS;
+  setAddress(DEF_ADDRESS);
 }
 boolParameter::~boolParameter(){}
 
-void boolParameter::setAddress(int address){
-  _address = address;
-}
-int boolParameter::address(){
-  return _address;
-}
 void boolParameter::setValue(bool value){
-  if(_address != DEF_ADDRESS){
-      EEPROM.put(_address, value);
+  if(address() != DEF_ADDRESS){
+      EEPROM.put(address(), value);
   }
 }
 
 boolean boolParameter::value(){
-  if(_address != DEF_ADDRESS){
+  if(address() != DEF_ADDRESS){
     boolean variable;
-    EEPROM.get(_address, variable);
+    EEPROM.get(address(), variable);
 
     return variable;
   }
   return false;
 }
-//short parameters
-
-/*
-shortParameter::shortParameter(){
-  _EEPROM = false;
-  _watchLimits = false;
-}
-shortParameter::~shortParameter(){}
-
-void shortParameter::setAddress(int address){
-  _EEPROM = true;
-  _address = address;
-}
-int shortParameter::address(){
-  return _address;
-}
-void shortParameter::setValue(short value){
-    if(_watchLimits){
-      if(!isOffLimit()){
-        _value = value;
-      }
-    }
-    else{
-      _value = value;
-    }
-    if(_EEPROM){
-      loadInEEPROM();
-    }
-}
-void shortParameter::setLimits(short minimum, short maximum){
-  _watchLimits = true;
-  _minimum = minimum;
-  _maximum = maximum;
-}
-
-void shortParameter::loadInEEPROM(){
-  if(_EEPROM){
-    EEPROM.put(_address, _value);
-  }
-}
-void shortParameter::getInEEPROM(){
-  short variable;
-  if(_EEPROM){
-    EEPROM.get(_address, variable);
-    setValue(variable);
-  }
-}
-short shortParameter::minimum(){
-  return _minimum;
-}
-short shortParameter::maximum(){
-  return _maximum;
-}
-
-short shortParameter::value(){
-  return _value;
-}
-
-boolean shortParameter::isOffLimit(){
-  if ((_value < _minimum) || (_value > _maximum)){
-    return true;
-  }
-  else{
-    return false;
-  }
-}
-
-//unsigned short parameters
-
-uShortParameter::uShortParameter(){
-  _EEPROM = false;
-  _watchLimits = false;
-}
-uShortParameter::~uShortParameter(){}
-
-void uShortParameter::setAddress(int address){
-  _EEPROM = true;
-  _address = address;
-}
-int uShortParameter::address(){
-  return _address;
-}
-void uShortParameter::setValue(unsigned short value){
-    if(_watchLimits){
-      if(!isOffLimit()){
-        _value = value;
-      }
-    }
-    else{
-      _value = value;
-    }
-    if(_EEPROM){
-      loadInEEPROM();
-    }
-}
-void uShortParameter::setLimits(unsigned short minimum, unsigned short maximum){
-  _watchLimits = true;
-  _minimum = minimum;
-  _maximum = maximum;
-}
-
-void uShortParameter::loadInEEPROM(){
-  EEPROM.put(_address, _value);
-}
-void uShortParameter::getInEEPROM(){
-  unsigned short variable;
-  if(_EEPROM){
-    EEPROM.get(_address, variable);
-    setValue(variable);
-  }
-}
-unsigned short uShortParameter::minimum(){
-  return _minimum;
-}
-unsigned short uShortParameter::maximum(){
-  return _maximum;
-}
-unsigned short uShortParameter::value(){
-  return _value;
-}
-
-boolean uShortParameter::isOffLimit(){
-  if ((_value < _minimum) || (_value > _maximum)){
-    return true;
-  }
-  else{
-    return false;
-  }
-}
-
-//Byte parameter
-
-byteParameter::byteParameter(){
-  _EEPROM = false;
-  _watchLimits = false;
-}
-byteParameter::~byteParameter(){}
-
-void byteParameter::setAddress(int address){
-  _EEPROM = true;
-  _address = address;
-}
-int byteParameter::address(){
-  return _address;
-}
-void byteParameter::setValue(byte value){
-    if(_watchLimits){
-      if(!isOffLimit()){
-        _value = value;
-      }
-    }
-    else{
-      _value = value;
-    }
-    if(_EEPROM){
-      loadInEEPROM();
-    }
-}
-
-
-
-void byteParameter::setLimits (byte minimum, byte maximum){
-  _watchLimits = true;
-  _minimum = minimum;
-  _maximum = maximum;
-}
-
-void byteParameter::loadInEEPROM(){
-  EEPROM.update(_address, _value);
-}
-void byteParameter::getInEEPROM(){
-  byte variable;
-  if(_EEPROM){
-    variable = EEPROM.read(_address);
-    setValue(variable);
-  }
-}
-byte byteParameter::minimum(){
-  return _minimum;
-}
-byte byteParameter::maximum(){
-  return _maximum;
-}
-byte byteParameter::value(){
-  return _value;
-}
-boolean byteParameter::isOffLimit(){
-  if ((_value < _minimum) || (_value > _maximum)){
-    return true;
-  }
-  else{
-    return false;
-  }
-}
-//boolean parameter
-
-boolParameter::boolParameter(){
-  _EEPROM = false;
-}
-boolParameter::~boolParameter(){}
-
-void boolParameter::setAddress(int address){
-  _EEPROM = true;
-  _address = address;
-}
-int boolParameter::address(){
-  return _address;
-}
-void boolParameter::setValue(bool value){
-  _value = value;
-  if(_EEPROM){
-    loadInEEPROM();
-  }
-}
-
-void boolParameter::loadInEEPROM(){
-  EEPROM.update(_address, _value);
-}
-
-void boolParameter::getInEEPROM(){
-  byte variable;
-  if(_EEPROM){
-    variable = EEPROM.read(_address);
-    setValue(variable);
-  }
-}
-boolean boolParameter::value(){
-  return _value;
-}
-*/
 
 
 

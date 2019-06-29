@@ -40,19 +40,20 @@
 
 
 
-class Greenhouse : public OverrideManager
+class Greenhouse
 {
   public:
-    Greenhouse(int timezone, float latitude, float longitude, byte timepoints, byte rollups, byte stages, byte fans, byte heaters);
+    Greenhouse(int timezone, float latitude, float longitude, byte timepoints, byte rollups, byte devices);
     Greenhouse();
     ~Greenhouse();
-    void initGreenhouse(short timezone, float latitude, float longitude, byte timepoints, byte rollups, byte stages, byte fans, byte heaters);
+    void initGreenhouse(short timezone, float latitude, float longitude, byte timepoints, byte rollups,byte devices, bool dn, bool wa);
     void setNow(byte rightNow[]);
     void setWeather(byte weather);
     void solarCalculations();
     void startingTime(byte rightNow[]);
     void startingParameters();
     void EEPROMGet();
+    void testRollups(boolean state);
 
     TimeLord myLord;
     #if MAX_TIMEPOINTS >= 1
@@ -61,11 +62,8 @@ class Greenhouse : public OverrideManager
     #if MAX_ROLLUPS >= 1
       Rollup rollup[MAX_ROLLUPS];
     #endif
-    #if MAX_FANS >= 1
-      Fan fan[MAX_FANS];
-    #endif
-    #if MAX_HEATERS >= 1
-      Heater heater[MAX_HEATERS];
+    #if MAX_DEVICES >= 1
+      OnOffDevice device[MAX_DEVICES];
     #endif
 
 
@@ -86,15 +84,24 @@ class Greenhouse : public OverrideManager
     float coolingTemp();
     boolean isRamping();
 
-
+    boolParameter  dif;
+    boolParameter  prenight;
+    boolParameter  daynight;
+    boolParameter  weatheradjust;
+    byteParameter weatherP;
     shortParameter timezone;         //time zone of your location (Most of Quebec : -5)
     floatParameter longitude;
     floatParameter latitude;
     byteParameter timepoints;        //# of timepoints
     byteParameter rollups;           //# of rollups
-    byteParameter stages;
-    byteParameter fans;              //# of fans
-    byteParameter heaters;           //# of heaters
+    byteParameter devices;              //# of devices
+
+    byteParameter insideTemp;
+    byteParameter outsideTemp;
+    byteParameter luxMeter;
+    byteParameter rainSensor;
+    byteParameter anemometer;
+
     Alarm alarm;
 
   private:
@@ -105,10 +112,12 @@ class Greenhouse : public OverrideManager
     float _coolingTemp;     //reference temperature for cooling devices
     float _newHeatingTemp;     //reference temperature for heating devices
     float _newCoolingTemp;     //reference temperature for cooling devices
+    float _coolingTempStep;
+    float _heatingTempStep;
     boolean _ramping;
 
     byte _timepoint;        //actual timepoint
-    byte _weather;
+    byte _lastTimepoint;
 
 
     byte _alarmPin;
@@ -124,7 +133,9 @@ class Greenhouse : public OverrideManager
     void selectActualProgram();
     void checkProgramSuccession();
     void setTempCible();
+    void updateTempTargets();
     void startRamping();
+    boolean otherRollupsAreMoving(byte exception);
 
     elapsedMillis ramping;  //ramping timer
     elapsedMillis beep;

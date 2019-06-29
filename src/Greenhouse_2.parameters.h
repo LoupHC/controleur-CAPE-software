@@ -45,51 +45,51 @@ TIMEPOINTS PARAMETERS - SYNTAX RULES:
 - ramping (RAMP) : 0 to 60
 */
 //*******************************************************Timepoint 1
-#define TP1_TYPE            SR
-#define TP1_HOUR            0
+#define TP1_TYPE            CLOCK
+#define TP1_HOUR            9
 #define TP1_MN_MOD          0
 #define TP1_HEAT_SUN        20
 #define TP1_COOL_SUN        22
 #define TP1_HEAT_CLOUD      16
 #define TP1_COOL_CLOUD      18
-#define TP1_RAMP            15
+#define TP1_RAMP            0
 //*******************************************************Timepoint 2
 #define TP2_TYPE            CLOCK
-#define TP2_HOUR            10
+#define TP2_HOUR            9
 #define TP2_MN_MOD          0
 #define TP2_HEAT_SUN        22
 #define TP2_COOL_SUN        25
 #define TP2_HEAT_CLOUD      18
 #define TP2_COOL_CLOUD      20
-#define TP2_RAMP            15
+#define TP2_RAMP            0
 //*******************************************************Timepoint 3
-#define TP3_TYPE            SS
-#define TP3_HOUR            -1
+#define TP3_TYPE            CLOCK
+#define TP3_HOUR            19
 #define TP3_MN_MOD          0
 #define TP3_HEAT_SUN        18
 #define TP3_COOL_SUN        20
 #define TP3_HEAT_CLOUD      16
 #define TP3_COOL_CLOUD      18
-#define TP3_RAMP            15
+#define TP3_RAMP            0
 //*******************************************************Timepoint 4
-#define TP4_TYPE            SS
-#define TP4_HOUR            0
+#define TP4_TYPE            CLOCK
+#define TP4_HOUR            19
 #define TP4_MN_MOD          0
 #define TP4_HEAT_SUN        18
 #define TP4_COOL_SUN        20
 #define TP4_HEAT_CLOUD      16
 #define TP4_COOL_CLOUD      18
-#define TP4_RAMP            15
+#define TP4_RAMP            0
 //*******************************************************Timepoint 5
 
-#define TP5_TYPE            SS
+#define TP5_TYPE            CLOCK
 #define TP5_HOUR            0
 #define TP5_MN_MOD          30
 #define TP5_HEAT_SUN        16
 #define TP5_COOL_SUN        20
 #define TP5_HEAT_CLOUD      16
 #define TP5_COOL_CLOUD      18
-#define TP5_RAMP            30
+#define TP5_RAMP            0
 //*******************************************************************
 /*
 (SEE Greenhouse_userManual.h FOR MORE DETAILS)
@@ -102,15 +102,15 @@ ROLLUP PARAMETERS - SYNTAX RULES :
 */
 //*******************************************************Rollup 1 (overral parameters)
 #define R1_HYST             1
-#define R1_ROTUP            25
-#define R1_ROTDOWN          25
-#define R1_PAUSE            5
+#define R1_ROTUP            200
+#define R1_ROTDOWN          200
+#define R1_PAUSE            30
 //*******************************************************Rollup 2 (overral parameters)
 
 #define R2_HYST             1
-#define R2_ROTUP            25
-#define R2_ROTDOWN          25
-#define R2_PAUSE            5
+#define R2_ROTUP            200
+#define R2_ROTDOWN          200
+#define R2_PAUSE            30
 
 //*******************************************************************
 /*
@@ -135,44 +135,32 @@ ROLLUP STAGES - SYNTAX RULES :
 
 #define R2_S0_MOD           0
 #define R2_S0_TARGET        0
-#define R2_S1_MOD           1
-#define R2_S1_TARGET        10
-#define R2_S2_MOD           2
-#define R2_S2_TARGET        30
-#define R2_S3_MOD           3
-#define R2_S3_TARGET        50
-#define R2_S4_MOD           4
-#define R2_S4_TARGET        70
+#define R2_S1_MOD           0
+#define R2_S1_TARGET        25
+#define R2_S2_MOD           1
+#define R2_S2_TARGET        50
+#define R2_S3_MOD           2
+#define R2_S3_TARGET        75
+#define R2_S4_MOD           3
+#define R2_S4_TARGET        100
 
 //*************************************************************************
 /*
 (SEE Greenhouse_userManual.h FOR MORE DETAILS)
 
-FAN PARAMETERS - SYNTAX RULES:
+DEVICE PARAMETERS - SYNTAX RULES:
 - hysteresis (HYST): 0 to 5
 - temperature modificator (MOD): -5 to 10
 */
-//*******************************************************Fan parameters
+//*******************************************************Device parameters
 
-#define F1_HYST             1
-#define F1_MOD              1
-#define F2_HYST             1
-#define F2_MOD              3
+#define D1_TYPE             FANTYPE
+#define D1_HYST             1
+#define D1_MOD              0
+#define D2_TYPE             HEATERTYPE
+#define D2_HYST             1
+#define D2_MOD              0
 
-//**********************************************************************
-/*
-(SEE Greenhouse_userManual.h FOR MORE DETAILS)
-
-HEATER PARAMETERS - SYNTAX RULES:
-- hysteresis : 0 to 5
-- temperature modificator : -10 to 5
-*/
-//*******************************************************Heater parameters
-
-#define H1_HYST             2
-#define H1_MOD              -1
-#define H2_HYST             2
-#define H2_MOD              -1
 
 //************************************************************************
 
@@ -199,7 +187,7 @@ Action :
 Conditions :
  -Full ventiliation action is called
 Action :
- - open rollups and start all fans for a while (FULL_VENTILATION_DELAY(min))
+ - open rollups and start all devices for a while (FULL_VENTILATION_DELAY(min))
 */
 
 /*#define FULL_VENTILATION
@@ -217,7 +205,7 @@ Action :
   AND/OR
   - activate heater
   AND/OR
-  - activate fan(s)
+  - activate device(s)
 */
 /*
 #define HEATER1_DESHUM
@@ -226,11 +214,11 @@ Action :
 #define HEATER1_DESHUM_STOP_HOUR       6
 #define HEATER1_DESHUM_STOP_MIN        10
 
-#define FAN1_DESHUM
-#define FAN1_DESHUM_START_HOUR         6
-#define FAN1_DESHUM_START_MIN          5
-#define FAN1_DESHUM_STOP_HOUR          6
-#define FAN1_DESHUM_STOP_MIN           20
+#define DEVICE1_DESHUM
+#define DEVICE1_DESHUM_START_HOUR         6
+#define DEVICE1_DESHUM_START_MIN          5
+#define DEVICE1_DESHUM_STOP_HOUR          6
+#define DEVICE1_DESHUM_STOP_MIN           20
 
 #define ROLLUP1_DESHUM
 #define ROLLUP1_DESHUM_INCREMENT       50
@@ -250,62 +238,25 @@ Action :
 */
 
 
-#define R1_FIX
 #define FIX_R1_PRIORITY 3
-#define R1_HRSTART  21
-#define R1_MNSTART  50
-#define R1_HRSTOP 22
-#define R1_MNSTOP 15
+#define R1_HRSTART  7
+#define R1_MNSTART  0
+#define R1_HRSTOP 7
+#define R1_MNSTOP 30
 #define R1_TARGET 50
 
-//#define R2_FIX
-#define FIX_R2_PRIORITY 3
-#define R2_HRSTART  5
-#define R2_MNSTART  5
-#define R2_HRSTOP 5
-#define R2_MNSTOP 5
-#define R2_TARGET 50
+#define FIX_D1_PRIORITY 2
+#define D1_HRSTART  7
+#define D1_MNSTART  0
+#define D1_HRSTOP 7
+#define D1_MNSTOP 30
+#define D1_TARGET  true
 
-//#define F1_FIX
-#define FIX_F1_PRIORITY 2
-#define F1_HRSTART  5
-#define F1_MNSTART  5
-#define F1_HRSTOP 5
-#define F1_MNSTOP 5
-#define F1_TARGET  true
-
-//#define F2_FIX
-#define FIX_F2_PRIORITY 2
-#define F2_HRSTART  5
-#define F2_MNSTART  5
-#define F2_HRSTOP 5
-#define F2_MNSTOP 5
-#define F2_TARGET  true
-
-#define H1_FIX
-#define FIX_H1_PRIORITY 2
-#define H1_HRSTART  21
-#define H1_MNSTART  50
-#define H1_HRSTOP 22
-#define H1_MNSTOP 5
-#define H1_TARGET  true
-
-//#define H2_FIX
-#define FIX_H2_PRIORITY 2
-#define H2_HRSTART  5
-#define H2_MNSTART  5
-#define H2_HRSTOP 5
-#define H2_MNSTOP 5
-#define H2_TARGET  true
-
-//#define DESHUM_AUTO_HEAT
 #define DESHUM_PRIORITY    3
 #define DESHUM_HOT         80
 
-#define DESHUM_AUTO_FAN
 #define DESHUM_COLD_PRIORITY    3
 #define DESHUM_COLD        80
 
-#define RAIN_CLOSE
 #define RAIN_PRIORITY      2
 #define RAIN_TARGET        20

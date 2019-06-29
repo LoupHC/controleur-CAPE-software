@@ -79,9 +79,9 @@ Stage 3: At 26C, rollup will open at 75%. At 25C, it will close back to 50%.
 Stage 4: At 27C, rollup will open at 100%. At 25C, it will close back to 75%.
 
 
-********************Fans/heaters parameters***************
+********************Devices/heaters parameters***************
 
-Fan parameters set the general behaviour of ON/OFF cooling devices (typically, fans), according to measured temperature and cooling reference temperature
+Device parameters set the general behaviour of ON/OFF cooling devices (typically, devices), according to measured temperature and cooling reference temperature
 Two parameters are asked :
 - hysteresis (tolerated temperature drop before shutting)
 - temperature modificator (Adds to cooling reference temperature, defines at which temperature it starts)
@@ -89,12 +89,12 @@ Two parameters are asked :
 Example :
 #define F1_MOD          3
 #define F1_HYST         1
-At cooling reference +3, fan will starts.
-At cooling reference temperature +3 (mod) -1 (hyst), fan will stops.
+At cooling reference +3, device will starts.
+At cooling reference temperature +3 (mod) -1 (hyst), device will stops.
 
 If cooling reference temperature is 24C :
-At 27C, fan will starts.
-At 26C, fan will stops.
+At 27C, device will starts.
+At 26C, device will stops.
 
 Heater parameters set the general behaviour of ON/OFF heating devices (typically, heaters), according to measured temperature and heating reference temperature
 - hysteresis (tolerated temperature rise before shutting)
