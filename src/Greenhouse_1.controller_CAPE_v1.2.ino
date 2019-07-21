@@ -56,7 +56,6 @@
 #include "Greenhouse_2.parameters.h"
 #include "Greenhouse_10.debugLines.h"
 
-
 #include "GreenhouseLib.h"
 
 Greenhouse greenhouse;
@@ -65,8 +64,10 @@ Greenhouse greenhouse;
 
   Rollup &R1 = greenhouse.rollup[0];
   Rollup &R2 = greenhouse.rollup[1];
+  Rollup &R3 = greenhouse.rollup[2];
   OnOffDevice &D1 = greenhouse.device[0];
   OnOffDevice &D2 = greenhouse.device[1];
+  OnOffDevice &D3 = greenhouse.device[2];
   Timepoint &T1 = greenhouse.timepoint[0];
   Timepoint &T2 = greenhouse.timepoint[1];
   Timepoint &T3 = greenhouse.timepoint[2];
@@ -130,6 +131,7 @@ void setup() {
   getGreenhouseTemp();
   getGreenhouseHum();
   getRain();
+  getWind();
 
   loadParameters();
 
@@ -164,6 +166,7 @@ void loop() {
   getGreenhouseHum();
   getOutsideHum();
   getRain();
+  getWind();
   getCurrent();
   //adjustWeatherSettings
   autoWeather();
@@ -178,7 +181,7 @@ void loop() {
   alarm.conditionalTo(sensorFailure, 1);
   alarm.checkAlarm();
   //timepoint and target temperatures definitions, outputs routine
-  greenhouse.fullRoutine(rightNow, greenhouseTemperature);
+  greenhouse.fullRoutine(rightNow, greenhouseTemperature.value());
   checkOverrides();
 
   #ifdef EXCEL_DATALOGGER

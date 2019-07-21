@@ -30,6 +30,7 @@
 #include "GreenhouseLib_rollups.h"
 #include "GreenhouseLib_FF.h"
 #include "GreenhouseLib_timing.h"
+#include "GreenhouseLib_sensors.h"
 
 
 

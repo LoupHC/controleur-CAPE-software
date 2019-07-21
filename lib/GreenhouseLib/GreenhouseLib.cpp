@@ -179,11 +179,9 @@ boolean Greenhouse::otherRollupsAreMoving(byte exception){
       if (rollup[x].isMoving()){
         return true;
       }
-      else{
-        return false;
-      }
     }
   }
+  return false;
 }
 
 void Greenhouse::fullRoutine(byte rightNow[6], float greenhouseTemperature){
@@ -207,6 +205,9 @@ void Greenhouse::fullRoutine(byte rightNow[6], float greenhouseTemperature){
     }
     else if(device[x].type.value() == HEATERTYPE){
       device[x].routine(_heatingTemp, greenhouseTemperature);
+    }
+    else if(device[x].type.value() == VALVTYPE){
+      device[x].valvRoutine();
     }
   }
   #endif

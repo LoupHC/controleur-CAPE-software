@@ -5,7 +5,6 @@
 #include "Parameters.h"
 #include "Defines.h"
 
-
 #ifndef GreenhouseLib_overrides_h
 #define GreenhouseLib_overrides_h
 
@@ -48,6 +47,7 @@ class ClockRelativeOverride : public OverrideR {
   public:
     ClockRelativeOverride();
     void checkIfActive(byte hr, byte mn);
+    void checkIfActive(byte hr, byte mn, byte condition);
 
     byteParameter hrStart;
     byteParameter mnStart;
@@ -89,19 +89,14 @@ class BoolRelativeOverride : public OverrideR {
 };
 
 
-class Override{
-  public:
-    boolean active;
-    byte target;
-};
-
-
 class OverrideManager{
   public:
     //Clock overrides calls
     void initOverride(byte ID, byte priority, byte hrStart, byte mnStart, byte hrStop, byte mnStop, byte target);
     void checkOverride(byte ID, byte hr, byte mn);
-    void checkOverride(byte ID, byte hr, byte mn, byte isAboveTarget);
+
+    void checkOverride(ClockRelativeOverride& ov, byte hr, byte mn);
+    void checkOverride(ClockRelativeOverride& ov, byte hr, byte mn, byte isAboveTarget);
 
     byte hourStart(byte ID);
     byte minStart(byte ID);
@@ -126,14 +121,15 @@ class OverrideManager{
     void clearOverride(byte ID);
     byte indexPosition(byte ID);
     byte overrideTarget(byte ID);
-
+    void OverridesEEPROMGet();
     void clearOverridesInEEPROM();
 
     //priority dispatcher
     byte activeOverride();
+    byte overrideTarget();
+
     void setOverride(byte priority, byte target);
     void disableOverride(byte priority);
-    void clearOverrides();
     void disableOverrides();
     void checkOverrideTimer();
     void printOverrides();
@@ -142,13 +138,15 @@ class OverrideManager{
     void unlock();
     boolean isLock();
 
+    int getFreeRam();
+
+    ClockRelativeOverride& id(byte ID);
 
     ClockRelativeOverride clockOv[MAX_CLOCK_OV];
     FloatRelativeOverride floatOv[MAX_FLOAT_OV];
     BoolRelativeOverride boolOv[MAX_BOOL_OV];
 
   protected:
-    Override overRide[MAX_OVERRIDES];
     elapsedMillis overrideTimer;
     bool lockedAndWaiting;
     unsigned long overrideWaitingTime;

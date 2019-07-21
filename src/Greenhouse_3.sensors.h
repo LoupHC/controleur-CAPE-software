@@ -11,6 +11,7 @@
   #include <DallasTemperature.h>
   #include <DS3231.h>
   #include <SHT1x.h>
+  #include <GreenhouseLib_sensors.h>
   //Create DS18B20 objects
   OneWire oneWire1(TEMP1_CLOCK);
   DallasTemperature ds18b20_in(&oneWire1);
@@ -29,6 +30,16 @@
   //Time array
   byte rightNow[6];
   //sensors
+
+  Temperature greenhouseTemperature;
+  Temperature outsideTemperature;
+  Humidity greenhouseHumidity;
+  Humidity outsideHumidity;
+
+  Current motorOne;
+  Current motorTwo;
+
+  /*
   float greenhouseTemperature;
   float greenhouseTemperature24h = 0;
   float greenhouseTemperature72h = 0;
@@ -43,7 +54,7 @@
   float outsideHumidity = 0;
   float outsideAbsoluteHumidity = 0;
   float outsideHumidityDeficit = 0;
-
+*/
   float r1current;
   float r2current;
 
@@ -88,7 +99,7 @@ int startDay = 1;
 int startMonth = 1;
 int startYear = 0;
 
-void areRollupsInTestMode(){
+void setRollupsInTestMode(){
   if(tempSensorTest != 0 || clockTest != 0){
       greenhouse.testRollups(true);
   }
@@ -99,17 +110,17 @@ void areRollupsInTestMode(){
 void sensorBackup(){
   if(EEPROM.read(1) == 111){
     float emergencyTemp = EEPROM.read(2);
-    greenhouseTemperature = emergencyTemp;
+    greenhouseTemperature.registerValue(emergencyTemp);
   }
   else{
-    greenhouseTemperature = 20;
+    greenhouseTemperature.registerValue(20);
   }
   if(EEPROM.read(3) == 111){
     float emergencyHum = EEPROM.read(4);
-    greenhouseHumidity = emergencyHum;
+    greenhouseHumidity.registerValue(emergencyHum);
   }
   else{
-    greenhouseHumidity = 50;
+    greenhouseHumidity.registerValue(50);
   }
 }
 void resetLuxReadings(){
@@ -171,15 +182,16 @@ void getRain(){
 void getWind(){
   //0-5V (0-30 m/s) analog wind sensor
   int aRead = analogRead(WIND_ANALOG_SENSOR);
-  windSpeed = 108/1023*aRead; //108km/h = 30m/s
+  windSpeed = (float)108/(float)1023*(float)aRead; //108km/h = 30m/s
 
 }
 
 void getCurrent(){
   float currentRead1 = ((float)10/(float)1023*analogRead(CURRENT_SENSOR1)-5);
   float currentRead2 = ((float)10/(float)1023*analogRead(CURRENT_SENSOR2)-5);
-  r1current = abs(currentRead1);
-  r2current = abs(currentRead2);
+
+  motorOne.registerValue(abs(currentRead1));
+  motorTwo.registerValue(abs(currentRead2));
 }
 
 
@@ -204,7 +216,7 @@ void testTime(){
 }
 
 void getDateAndTime(){
-  areRollupsInTestMode();
+  setRollupsInTestMode();
   if(clockTest == TEST_CLOCKF){
     t = rtc.getTime();
 
@@ -282,19 +294,19 @@ float testIncrement = 0.05;
 
 void testTemp(){
   if(risingTest == false){
-    greenhouseTemperature = startTempTest + testIncrement;
+    greenhouseTemperature.registerValue(startTempTest + testIncrement);
     risingTest = true;
   }
   else if((risingTest == true)&&(droppingTest == false)){
-    greenhouseTemperature += testIncrement;
+    greenhouseTemperature.registerValue(greenhouseTemperature.value() + testIncrement);
   }
   else if((risingTest == true)&&(droppingTest == true)){
-    greenhouseTemperature -= testIncrement;
+    greenhouseTemperature.registerValue(greenhouseTemperature.value() - testIncrement);
   }
-  if(greenhouseTemperature >= stopTempTest){
+  if(greenhouseTemperature.value() >= stopTempTest){
     droppingTest = true;
   }
-  if(greenhouseTemperature <= startTempTest){
+  if(greenhouseTemperature.value() <= startTempTest){
     droppingTest = false;
     risingTest = false;
     tempSensorTest = 0;
@@ -302,7 +314,7 @@ void testTemp(){
 }
 
 void getGreenhouseTemp(){
-  areRollupsInTestMode();
+  setRollupsInTestMode();
   if(tempSensorTest == TEST_TEMP){
     testTemp();
   }
@@ -312,14 +324,14 @@ void getGreenhouseTemp(){
       ds18b20_in.requestTemperatures();
       temp = ds18b20_in.getTempCByIndex(0);
 
-      checkSensorFailure(greenhouseTemperature, temp, -127.00,1,&sensorFailure);
+      checkSensorFailure(greenhouseTemperature.value(), temp, -127.00,1,&sensorFailure);
     }
     else if(greenhouse.insideTemp.value() == STH1X_TEMP){
       temp = sht1x_in.readTemperatureC();
-      checkSensorFailure(greenhouseTemperature, temp, -40.00,1,&sensorFailure);
+      checkSensorFailure(greenhouseTemperature.value(), temp, -40.00,1,&sensorFailure);
     }
     if(!sensorFailure){
-      greenhouseTemperature = temp;
+      greenhouseTemperature.registerValue(temp);
     }
   }
 }
@@ -330,17 +342,17 @@ float absoluteHumidity(float temperature, float humidity){
 }
 
 void getGreenhouseHum(){
-  areRollupsInTestMode();
+  setRollupsInTestMode();
   float hum;
 
   if(greenhouse.insideTemp.value() == STH1X_TEMP){
     hum = sht1x_in.readHumidity();
-    checkSensorFailure(greenhouseHumidity, hum, 0,3,&sensorFailure);
+    checkSensorFailure(greenhouseHumidity.value(), hum, 0,3,&sensorFailure);
   }
   if(!sensorFailure){
-    greenhouseHumidity = hum;
-    greenhouseAbsoluteHumidity = absoluteHumidity(greenhouseTemperature, greenhouseHumidity);
-    greenhouseHumidityDeficit = absoluteHumidity(greenhouseTemperature, 100) - absoluteHumidity(greenhouseTemperature, greenhouseHumidity);
+    greenhouseHumidity.registerValue(hum);
+    //greenhouseAbsoluteHumidity = absoluteHumidity(greenhouseTemperature, greenhouseHumidity);
+    //greenhouseHumidityDeficit = absoluteHumidity(greenhouseTemperature, 100) - absoluteHumidity(greenhouseTemperature, greenhouseHumidity);
   }
 }
 
@@ -348,25 +360,24 @@ void getOutsideTemp(){
     float temp;
     if(greenhouse.outsideTemp.value() == DS18B20_TEMP){
       ds18b20_out.requestTemperatures();
-      outsideTemperature = ds18b20_out.getTempCByIndex(0);
+      outsideTemperature.registerValue(ds18b20_out.getTempCByIndex(0));
     }
     else if(greenhouse.outsideTemp.value() == STH1X_TEMP){
-      outsideTemperature = sht1x_out.readTemperatureC();
+      outsideTemperature.registerValue(sht1x_out.readTemperatureC());
     }
     else{
-      outsideTemperature = OFF_VAL;
+      outsideTemperature.registerValue(OFF_VAL);
     }
 }
 
 void getOutsideHum(){
   if(greenhouse.outsideTemp.value() == STH1X_TEMP){
-    outsideHumidity = sht1x_out.readHumidity();
-    outsideAbsoluteHumidity = absoluteHumidity(outsideTemperature, outsideHumidity);
-    outsideHumidityDeficit = absoluteHumidity(outsideTemperature, 100) - absoluteHumidity(outsideTemperature, outsideHumidity);
+    outsideHumidity.registerValue(sht1x_out.readHumidity());
+    //outsideAbsoluteHumidity = absoluteHumidity(outsideTemperature, outsideHumidity);
+    //outsideHumidityDeficit = absoluteHumidity(outsideTemperature, 100) - absoluteHumidity(outsideTemperature, outsideHumidity);
   }
   else{
-    outsideHumidity = 0;
-    outsideAbsoluteHumidity = 0;
+    outsideHumidity.registerValue(0);
   }
 }
 
@@ -446,7 +457,7 @@ void getDailyLux(){
 void luxCalculations(){
   if(minutCount > 10000){
     getLux();
-    greenhouse.weatherP.setValue(luxToWeatherRatio(averageLux));
+    //greenhouse.weatherP.setValue(luxToWeatherRatio(averageLux));
     minutCount = 0;
   }
   if(hourCount > 3600000){

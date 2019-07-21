@@ -485,7 +485,7 @@ String  printTimepoint(int nb){
 void lcdPrintOutput(String item, byte _column, byte _row, OnOffDevice device){
 
     //Device
-  lcd.setCursor(_column, _row); lcd.print(F("          "));
+  lcd.setCursor(_column, _row); lcd.print(F("      "));
   if(device.isActivated()){
     lcd.setCursor(_column, _row); lcd.print(item);
     if(device.isOn() == true){
@@ -494,16 +494,17 @@ void lcdPrintOutput(String item, byte _column, byte _row, OnOffDevice device){
     else{
       lcd.print(F("OFF"));
     }
+    lcd.print(F("|"));
     if(device.isLock()){
-      lcd.setCursor(_column+8, _row);
+      lcd.setCursor(_column+5, _row);
       lcd.write((byte)LOCKS);
     }
     else if(device.isActive(CLOCKOV1)||device.isActive(CLOCKOV2)||device.isActive(CLOCKOV3)){
-      lcd.setCursor(_column+8, _row);
+      lcd.setCursor(_column+5, _row);
       lcd.write((byte)CLOCKS);
     }
     else if(device.isActive(DESHUM)){
-      lcd.setCursor(_column+8, _row);
+      lcd.setCursor(_column+5, _row);
       lcd.write((byte)HUMIDS);
     }
   }
@@ -546,12 +547,12 @@ void lcdPrintTemp(byte _row){
 
     lcd.setCursor(0,_row); lcd.print(F("         "));
     lcd.setCursor(0,_row);
-    if(sensorFailure == false){lcd.print(greenhouseTemperature); lcd.print(F("C"));}
+    if(sensorFailure == false){lcd.print(greenhouseTemperature.value()); lcd.print(F("C"));}
     else if(sensorFailure == true){lcd.print(F("!!!"));}
 
-    if(greenhouseHumidity != 0){
+    if(greenhouseHumidity.value() != 0){
       lcd.setCursor(4,_row);
-      if(sensorFailure == false){ lcd.print(F("C-   "));lcd.setCursor(6,_row); lcd.print((int)greenhouseHumidity);lcd.print("%");}
+      if(sensorFailure == false){ lcd.print(F("C-   "));lcd.setCursor(6,_row); lcd.print((int)greenhouseHumidity.value());lcd.print("%");}
       else if(sensorFailure == true){lcd.print(F("!!!"));}
     }
 }
@@ -572,7 +573,7 @@ boolean fanIsActive(int nb){
   }
 }
 boolean closeFromCoolingTemp(){
-  if((greenhouseTemperature> greenhouse.coolingTemp())|| (greenhouseTemperature > (greenhouse.coolingTemp() - ((greenhouse.coolingTemp()-greenhouse.heatingTemp())/2)) && (greenhouseTemperature < greenhouse.coolingTemp()))){
+  if((greenhouseTemperature.value()> greenhouse.coolingTemp())|| (greenhouseTemperature.value() > (greenhouse.coolingTemp() - ((greenhouse.coolingTemp()-greenhouse.heatingTemp())/2)) && (greenhouseTemperature.value() < greenhouse.coolingTemp()))){
     return true;
   }
   else{
@@ -581,7 +582,7 @@ boolean closeFromCoolingTemp(){
 }
 
 boolean heatingDeviceIsActive(){
-  if(heaterIsActive(0) || heaterIsActive(1)){
+  if(heaterIsActive(0) || heaterIsActive(1)|| heaterIsActive(2)){
     return true;
   }
   else{
@@ -590,7 +591,7 @@ boolean heatingDeviceIsActive(){
 }
 
 boolean coolingDeviceIsActive(){
-    if((fanIsActive(0)||fanIsActive(1)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated())){
+    if((fanIsActive(0)||fanIsActive(1)||fanIsActive(2)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()||greenhouse.rollup[2].isActivated())){
       return true;
     }
     else{
@@ -598,7 +599,7 @@ boolean coolingDeviceIsActive(){
     }
 }
 boolean someDeviceIsActive(){
-  if(heaterIsActive(0) || heaterIsActive(1)||fanIsActive(0)||fanIsActive(1)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()){
+  if(heaterIsActive(0) || heaterIsActive(1)|| heaterIsActive(2)||fanIsActive(0)||fanIsActive(1)||fanIsActive(2)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()||greenhouse.rollup[2].isActivated()){
     return true;
   }
   else{
@@ -610,6 +611,7 @@ byte heatingDevices(){
   int x = 0;
   if(heaterIsActive(0)){x++;}
   if(heaterIsActive(1)){x++;}
+  if(heaterIsActive(2)){x++;}
   return x;
 }
 
@@ -617,19 +619,27 @@ byte otherHeatingDevices(int nb){
   int x = 0;
   if(nb == 0){
     if(heaterIsActive(1)){x++;}
+    if(heaterIsActive(2)){x++;}
   }
   else if(nb == 1){
     if(heaterIsActive(0)){x++;}
+    if(heaterIsActive(2)){x++;}
+  }
+  else if(nb == 2){
+    if(heaterIsActive(0)){x++;}
+    if(heaterIsActive(1)){x++;}
   }
   return x;
 }
 
 byte coolingDevices(){
   int x = 0;
-  if(heaterIsActive(0)){x++;}
-  if(heaterIsActive(1)){x++;}
+  if(fanIsActive(0)){x++;}
+  if(fanIsActive(1)){x++;}
+  if(fanIsActive(2)){x++;}
   if(greenhouse.rollup[0].isActivated()){x++;}
   if(greenhouse.rollup[1].isActivated()){x++;}
+  if(greenhouse.rollup[2].isActivated()){x++;}
   return x;
 }
 
@@ -714,40 +724,45 @@ void lcdPrintTime(byte _row){
 }
 
 void lcdPrintOutputs(){
-  if(greenhouse.rollups.value() >= 1){
-    lcdPrintRollups("R1: ","OPENING", "CLOSING", 0, 2, R1);
+
+  if(D1.type.value() == FANTYPE){
+    lcdPrintOutput("F1:", 0, 3, D1);
+  }
+  else if(D1.type.value() == HEATERTYPE){
+      lcdPrintOutput("H1:", 0, 3, D1);
+  }
+  else if(D1.type.value() == VALVTYPE){
+      lcdPrintOutput("V1:", 0, 3, D1);
   }
 
-  if(greenhouse.rollups.value() == 2){
-    lcdPrintRollups("|R2: ","|OPENING", "|CLOSING", 9, 2, R2);
-  }
-
-  if((greenhouse.devices.value() >= 1)){
-    if(D1.type.value() == FANTYPE){
-      lcdPrintOutput("F1: ", 0, 3, D1);
-    }
-    else if(D1.type.value() == HEATERTYPE){
-        lcdPrintOutput("H1: ", 0, 3, D1);
-    }
-    else if(D1.type.value() == VALVTYPE){
-        lcdPrintOutput("V1: ", 0, 3, D1);
-    }
-  }
-  if(greenhouse.devices.value() >= 2){
+  if(!R3.isActivated()){
     if(D2.type.value() == FANTYPE){
-      lcdPrintOutput("|F2: ", 9, 3, D2);
+      lcdPrintOutput("F2:", 7, 3, D2);
     }
     else if(D2.type.value() == HEATERTYPE){
-      lcdPrintOutput("|H2: ", 9, 3, D2);
+      lcdPrintOutput("H2:", 7, 3, D2);
     }
     else if(D2.type.value() == VALVTYPE){
-      lcdPrintOutput("|V2: ", 9, 3, D2);
+      lcdPrintOutput("V2:", 7, 3, D2);
     }
   }
-  if(greenhouse.devices.value() == 0){
-    lcd.setCursor(0, 3);
-    lcd.print(F("               "));
+  if(!R3.isActivated()){
+    if(D3.type.value() == FANTYPE){
+      lcdPrintOutput("F3:", 14, 3, D3);
+    }
+    else if(D3.type.value() == HEATERTYPE){
+      lcdPrintOutput("H3:", 14, 3, D3);
+    }
+    else if(D3.type.value() == VALVTYPE){
+      lcdPrintOutput("V3:", 14, 3, D3);
+    }
   }
+  lcdPrintRollups("R1: ","OPENING", "CLOSING", 0, 2, R1);
+  lcdPrintRollups("|R2: ","|OPENING", "|CLOSING", 9, 2, R2);
+  if((!D2.isActivated())&&(!D3.isActivated())){
+    lcdPrintRollups("|R3: ","|OPENING", "|CLOSING", 9, 3, R3);
+  }
+
 }
 
 void yearRoundStartTime(){
@@ -1115,6 +1130,15 @@ void printReviewInstructions(){
   lcd.print(F("activation (press D)"));
 }
 
+void printWeatherAdjustExtremes(){
+  lcd.setCursor(7,3);
+  if(usvariable == 1){
+    lcd.print("[CLD]");
+  }
+  if(usvariable == 100){
+    lcd.print("[SUN]");
+  }
+}
 void printCursor(float number, float increment, byte row, byte line){
   byte cursor = 0;
   if(number > 9){
@@ -1692,33 +1716,59 @@ String header(String text, int nb){
   return text + index;
 }
 
-const String unlockList[]  = {"unlock"};
+const char unlock_s[] PROGMEM = "unlock";
+const char activate_s[] PROGMEM = "activate";
+const char cancel_s[] PROGMEM = "cancel";
+const char fan_s[] PROGMEM = "fan";
+const char heater_s[] PROGMEM = "heater";
+const char valv_s[] PROGMEM = "valv";
+const char confirm_s[] PROGMEM = "confirm";
+const char enabled_s[] PROGMEM = "enabled";
+const char disabled_s[] PROGMEM = "disabled";
+const char manual_s[] PROGMEM = "manual";
+const char sun_s[] PROGMEM = "sund";
+
+const char* const unlockList[] PROGMEM = {unlock_s};
 const int sizeOfUnlockList = sizeof(unlockList)/sizeof(unlockList[0]);
-const String activateList[]  = {"activate"};
+const char* const activateList[] PROGMEM = {activate_s};
 const int sizeOfActivateList = sizeof(activateList)/sizeof(activateList[0]);
-const String confirmList[]  = {"cancel", "confirm"};
+const char* const confirmList[] PROGMEM = {cancel_s, confirm_s};
 const int sizeOfConfirmList = sizeof(confirmList)/sizeof(confirmList[0]);
-const String deviceList[]  = {"fan","heater", "valv"};
+const char* const deviceList[] PROGMEM = {fan_s,heater_s,valv_s};
 const int sizeOfDeviceList = sizeof(deviceList)/sizeof(deviceList[0]);
-const String enableList[]  = {"disabled","enabled"};
+const char* const enableList[] PROGMEM = {disabled_s,enabled_s};
 const int sizeOfEnableList = sizeof(enableList)/sizeof(enableList[0]);
-const String timeRefList[]  = {"manual","sun"};
+const char* const timeRefList[] PROGMEM = {manual_s,sun_s};
 const int sizeOfTimeRefList = sizeof(timeRefList)/sizeof(enableList[0]);
 
 //********************ROLLUP SPECIFIC MENUS********************
 
-const String	mainRollupList[] = {"disable", "parameters", "override"};
+const char disable_s[] PROGMEM = "disable";
+const char parameters_s[] PROGMEM = "parameters";
+const char overrides_s[] PROGMEM = "overrides";
+const char rotationtime_s[] PROGMEM = "rotation time";
+const char steps_s[] PROGMEM = "steps";
+const char rain_s[] PROGMEM = "rain";
+const char wind_s[] PROGMEM =  "wind";
+const char timer3_s[] PROGMEM = "timer 3";
+const char timer2_s[] PROGMEM = "timer 2";
+const char timer1_s[] PROGMEM = "timer 1";
+const char lockat_s[] PROGMEM = "lock at %";
+const char lockclose_s[] PROGMEM = "lock close";
+const char lockopen_s[] PROGMEM = "lock open";
+
+const char* const	mainRollupList[] PROGMEM = {disable_s, parameters_s, overrides_s};
 const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
 byte lastSelectedElementInRollupList = 3;
 
-const String	rollupParametersList[] = {"rotation time", "steps"};
+const char* const	rollupParametersList[] PROGMEM= {rotationtime_s, steps_s};
 const int sizeOfRollupParametersList = sizeof(rollupParametersList)/sizeof(rollupParametersList[0]);
 
-const String	overrideRollupList[] = {"rain", "wind","timer 3","timer 2","timer 1","lock at %","lock close","lock open"};
+const char* const	overrideRollupList[] PROGMEM= {rain_s, wind_s,timer3_s,timer2_s,timer1_s,lockat_s,lockclose_s,lockopen_s};
 //const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
 const int sizeOfOverrideRollupList = sizeof(overrideRollupList)/sizeof(overrideRollupList[0]);
 
-const String	overrideRollupLockList[] = {"rain","wind","timer 3","timer 2","timer 1","unlock"};
+const char* const	overrideRollupLockList[] PROGMEM= {rain_s,wind_s,timer3_s,timer2_s,timer1_s,unlock_s};
 const int sizeOfOverrideRollupLockList = sizeof(overrideRollupLockList)/sizeof(overrideRollupLockList[0]);
 
 void mainRollup(int nb){
@@ -1780,12 +1830,14 @@ void enableRollup(int nb){
   }
 }
 byte clockOvIndex;
+
 byte clockOv(byte index){
   switch(index){
     case 0 : return CLOCKOV1; break;
     case 1 : return CLOCKOV2; break;
     case 2 : return CLOCKOV3; break;
   }
+  return OFF_VAL;
 }
 void overridesRollup(int nb){
   printHeader(header(("R"),nb),F(" - OVERRIDE       "));
@@ -2078,16 +2130,20 @@ String deviceHeader(int nb){
   }
 }
 
-const String	mainDeviceList[] = {"disable","parameters","overrides"};
+const char humidity_s[] PROGMEM = "humidity";
+const char lockon_s[] PROGMEM = "lock ON";
+const char lockoff_s[] PROGMEM = "lock OFF";
+
+const char* const		mainDeviceList[] PROGMEM = {disable_s,parameters_s,overrides_s};
 const int sizeOfMainDeviceList = sizeof(mainDeviceList)/sizeof(mainDeviceList[0]);
 byte lastSelectedElementInDeviceList = 3;
 
-const String	overrideDeviceList[] = {"humidity","timer 3","timer 2","timer 1","lock OFF","lock ON"};
+const char* const		overrideDeviceList[] PROGMEM = {humidity_s,timer3_s,timer2_s,timer1_s,lockoff_s,lockon_s};
 //const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
 const int sizeOfOverrideDeviceList = sizeof(overrideDeviceList)/sizeof(overrideDeviceList[0]);
 byte lastSelectedElementInOverrideDeviceList = 6;
 
-const String	overrideDeviceLockList[] = {"humidity","timer 3","timer 2","timer 1","unlock"};
+const char* const		overrideDeviceLockList[] PROGMEM = {humidity_s,timer3_s,timer2_s,timer1_s,unlock_s};
 //const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
 const int sizeOfOverrideDeviceLockList = sizeof(overrideDeviceLockList)/sizeof(overrideDeviceLockList[0]);
 byte lastSelectedElementInOverrideDeviceLockList = 5;
@@ -2204,18 +2260,34 @@ void clockOverrideStopDevice(int nb){
   printAdjustInstructions();
   confirmVariable((short)0, greenhouse.device[nb].hourStop(clockOv(clockOvIndex)),(short)23, (short)0, greenhouse.device[nb].minStop(clockOv(clockOvIndex)), (short)59);
   if(choiceIsConfirmed()){
-    greenhouse.device[nb].initOverride(clockOv(clockOvIndex), FIX_D1_PRIORITY+clockOvIndex, svariable3, svariable4, svariable1, svariable2, true);
-    display(genericId(HOME));
-
+    if(greenhouse.device[nb].type.value() == VALVTYPE && greenhouse.weatheradjust.value() == true){
+      display(deviceId(nb, FIXOV4));
+    }
+    else{
+      greenhouse.device[nb].initOverride(clockOv(clockOvIndex), FIX_D1_PRIORITY+clockOvIndex, svariable3, svariable4, svariable1, svariable2, true);
+      display(genericId(HOME));
+    }
   }
 }
+
+void weatherConditional(int nb){
+  printHeader(deviceHeader(nb),F(" - WEATHER CONDITION"));
+  printAdjustInstructions();
+  confirmVariable((unsigned short)1,(unsigned short) greenhouse.device[nb].overrideTarget(CLOCKOV1+clockOvIndex),(unsigned short)100);
+  printWeatherAdjustExtremes();
+
+  if(choiceIsConfirmed()){
+    greenhouse.device[nb].initOverride(clockOv(clockOvIndex), FIX_D1_PRIORITY+clockOvIndex, svariable3, svariable4, svariable1, svariable2, usvariable);
+    display(genericId(HOME));
+  }
+}
+
 void humidityDevice(int nb){
   printHeader(deviceHeader(nb),F(" - HR(%) OVERRIDE"));
   confirmVariable(greenhouse.device[nb].isEnabled(DESHUM), enableList, sizeOfEnableList);
   if(choiceIsConfirmed()){
     switch (selectedElement) {
-      case 0: greenhouse.device[nb].disable(DESHUM);display(genericId(HOME));
-break;
+      case 0: greenhouse.device[nb].disable(DESHUM);display(genericId(HOME));break;
       case 1: display(deviceId(nb, HUMIDITY2));break;
     }
   }
@@ -2321,14 +2393,22 @@ void stopTempDevice(int nb){
 }
 //********************TIMEPOINTS SPECIFIC MENUS********************
 
-const String	mainTimepointList[] = {"adjustments","periods","temperatures"};
+const char adjustments_s[] PROGMEM = "adjustments";
+const char periods_s[] PROGMEM = "periods";
+const char temperatures_s[] PROGMEM = "temperatures";
+const char weatheradjust_s[] PROGMEM = "weather adjust";
+const char daynightsettings_s[] PROGMEM = "day/night settings";
+const char adjustt24h_s[] PROGMEM = "adjust T24h";
+
+
+const char* const		mainTimepointList[] PROGMEM= {adjustments_s,periods_s,temperatures_s};
 const int sizeOfMainTimepointList = sizeof(mainTimepointList)/sizeof(mainTimepointList[0]);
 byte lastSelectedElementInTimepointList = 3;
 
-const String	adjustTemperaturesList[] = {"weather adjust","day/night settings","adjust T24h"};
+const char* const		adjustTemperaturesList[] PROGMEM= {weatheradjust_s,daynightsettings_s,adjustt24h_s};
 const int sizeOfAdjustTemperaturesList = sizeof(adjustTemperaturesList)/sizeof(adjustTemperaturesList[0]);
 
-const String	adjustTemperaturesBasicList[] = {"adjust T24h"};
+const char* const		adjustTemperaturesBasicList[] PROGMEM= {adjustt24h_s};
 const int sizeOfAdjustTemperaturesBasicList = sizeof(adjustTemperaturesBasicList)/sizeof(adjustTemperaturesBasicList[0]);
 
 void adjustAndSetTimepoint(Timepoint &timepoint){
@@ -2503,9 +2583,6 @@ void adjustTemperature(int nb, byte menu){
 void nextTemperatureMenu(int nb, byte menu){
   //premier menu
   if (menu == MAIN){
-    if(greenhouse.daynight.value() == false){
-      resetMenuCount();
-    }
     if(setFanTempOnly()){
       display(timepointId(nb, COOLINGSUN));
     }
@@ -2620,10 +2697,17 @@ void mainTimepoint(){
   }
 }
 
-const String	periodsListNMP[] = {"(prenight)", "(morning)","NIGHT","DAY"};
-const String	periodsListNM[] = {"prenight", "(morning)","NIGHT","DAY"};
-const String	periodsListNP[] = {"(prenight)", "morning","NIGHT","DAY"};
-const String	periodsList[] = {"prenight", "morning","NIGHT","DAY"};
+const char bprenight_s[] PROGMEM = "(prenight)";
+const char bmorning_s[] PROGMEM = "(morning)";
+const char prenight_s[] PROGMEM = "prenight";
+const char morning_s[] PROGMEM = "morning";
+const char day_s[] PROGMEM = "DAY";
+const char night_s[] PROGMEM = "NIGHT";
+
+const char* const	periodsListNMP[] PROGMEM= {bprenight_s, bmorning_s,night_s,day_s};
+const char* const	periodsListNM[] PROGMEM= {prenight_s, bmorning_s,night_s,day_s};
+const char* const	periodsListNP[] PROGMEM= {bprenight_s, morning_s,night_s,day_s};
+const char* const	periodsList[] PROGMEM= {prenight_s, morning_s,night_s,day_s};
 const int sizeOfPeriodsList = sizeof(periodsList)/sizeof(periodsList[0]);
 byte lastSelectedElementInPeriodsList = 3;
 
@@ -2979,20 +3063,24 @@ void insidetempdata(){
   printHeader(F("   INSIDE TEMP/HUM  "));
   lcd.setCursor(0,1);
   lcd.print(F("T:"));
-  lcd.print(greenhouseTemperature);
+  lcd.print(greenhouseTemperature.value());
+  lcd.print(F("C"));
+  lcd.setCursor(0,2);
+  lcd.print(F("T24h:"));
+  lcd.print((int)greenhouseTemperature.average24h());
   lcd.print(F("C"));
   if(greenhouse.insideTemp.value() == STH1X_TEMP){
     lcd.setCursor(8,1);
     lcd.print(F("|HR:"));
-    lcd.print(greenhouseHumidity);
+    lcd.print(greenhouseHumidity.value());
     lcd.print(F("%"));
     lcd.setCursor(8,2);
     lcd.print(F("|HA:"));
-    lcd.print(greenhouseAbsoluteHumidity);
+    lcd.print((int)greenhouseHumidity.absolute(greenhouseTemperature.value()));
     lcd.print(F("g/m3"));
     lcd.setCursor(8,3);
     lcd.print(F("|HD:"));
-    lcd.print(greenhouseHumidityDeficit);
+    lcd.print((int)greenhouseHumidity.deficit(greenhouseTemperature.value()));
     lcd.print(F("g/m3"));
   }
   if(choiceIsConfirmed()){
@@ -3005,21 +3093,29 @@ void outsidetempdata(){
     printHeader(F("  OUTSIDE TEMP/HUM  "));
     lcd.setCursor(0,1);
     lcd.print(F("T:"));
-    lcd.print(outsideTemperature);
+    lcd.print(outsideTemperature.value());
+    lcd.print(F("C"));
+    lcd.setCursor(0,2);
+    lcd.print(F("Min:"));
+    lcd.print(outsideTemperature.min24h());
+    lcd.print(F("C"));
+    lcd.setCursor(0,3);
+    lcd.print(F("Max:"));
+    lcd.print(outsideTemperature.max24h());
     lcd.print(F("C"));
   }
   if(greenhouse.outsideTemp.value() == STH1X_TEMP){
     lcd.setCursor(8,1);
     lcd.print(F("|HR:"));
-    lcd.print(outsideHumidity);
+    lcd.print(outsideHumidity.value());
     lcd.print(F("%"));
     lcd.setCursor(8,2);
     lcd.print(F("|HA:"));
-    lcd.print(outsideAbsoluteHumidity);
+    lcd.print((int)outsideHumidity.absolute(outsideTemperature.value()));
     lcd.print(F("g/m3"));
     lcd.setCursor(8,3);
     lcd.print(F("|HD:"));
-    lcd.print(outsideHumidityDeficit);
+    lcd.print((int)outsideHumidity.deficit(outsideTemperature.value()));
     lcd.print(F("g/m3"));
   }
   if(choiceIsConfirmed()){
@@ -3076,14 +3172,14 @@ void currentsensor(){
     if(R1.isActivated()){
       lcd.setCursor(0,1);
       lcd.print(F("R1 : "));
-      lcd.print(r1current);
-      lcd.print(F("A  "));
+      lcd.print(motorOne.average());
+      lcd.print(F(" A  "));
     }
     if(R2.isActivated()){
       lcd.setCursor(0,2);
       lcd.print(F("R2 : "));
-      lcd.print(r2current);
-      lcd.print(F("A  "));
+      lcd.print(motorTwo.average());
+      lcd.print(F(" A  "));
     }
     if(choiceIsConfirmed()){
       display(genericId(HOME));
@@ -3113,7 +3209,7 @@ void tests(){
 
 void mockTemp(){;
   adjustfvariable(-10,20,50);
-  greenhouseTemperature = fvariable;
+  greenhouseTemperature.registerValue(fvariable);
   homeDisplay();
   menu = MODE_PROGRAM;
   greenhouse.testRollups(true);
@@ -3256,33 +3352,16 @@ void setWeather(){
 
 }
 
-void printWeatherAdjustExtremes(){
-  lcd.setCursor(7,3);
-  if(usvariable == 0){
-    lcd.print("[CLD]");
-  }
-  if(usvariable == 99){
-    lcd.print("[SUN]");
-  }
-}
 void weatherRatio(){
 
     printHeader(F("  WEATHER-ADJUST(%) "));
     printAdjustInstructions();
 
-    unsigned short weather;
-    if(greenhouse.weather() == 0){
-      weather = 99;
-    }
-    else{
-      weather = greenhouse.weather()-1;
-    }
-
-    confirmVariable(0,weather,99);
+    confirmVariable(1,greenhouse.weather(),100);
     printWeatherAdjustExtremes();
 
     if(nextIsConfirmed()){
-      greenhouse.setWeather(usvariable+1);
+      greenhouse.setWeather(usvariable);
     }
     if(choiceIsConfirmed()){
       display(genericId(HOME));
@@ -3435,6 +3514,7 @@ const indexedMenu	deviceMenus[] = {
     {FIXOV1, clockOverrideDevice},
     {FIXOV2, clockOverrideStartDevice},
     {FIXOV3, clockOverrideStopDevice},
+    {FIXOV4, weatherConditional},
     {HUMIDITY1, humidityDevice},
     {HUMIDITY2, humidityTargetDevice},
     {ENABLE, disableDevice},
@@ -3593,6 +3673,7 @@ void printMenu(){
     if(menuID == deviceId(x,FIXOV1)){  printDevice(x, FIXOV1);}
     if(menuID == deviceId(x,FIXOV2)){  printDevice(x, FIXOV2);}
     if(menuID == deviceId(x,FIXOV3)){  printDevice(x, FIXOV3);}
+    if(menuID == deviceId(x,FIXOV4)){  printDevice(x, FIXOV4);}
     if(menuID == deviceId(x,HUMIDITY1)){  printDevice(x, HUMIDITY1);}
     if(menuID == deviceId(x,HUMIDITY2)){  printDevice(x, HUMIDITY2);}
     if(menuID == deviceId(x,ENABLE)){  printDevice(x, ENABLE);}
@@ -3689,12 +3770,12 @@ void selectActiveKey(){
  keyPressed = keypad.getKey();
 
  switch(keyPressed){
-   case '1' : key = keyPressed;if(greenhouse.rollups.value() >= 1){resetMenuCount();display(rollupId(0,MAIN));menu = MODE_PROGRAM;}break;
-   case '2' : key = keyPressed;if(greenhouse.rollups.value() >= 2){resetMenuCount();display(rollupId(1,MAIN));menu = MODE_PROGRAM;}break;
-   case '3' : key = keyPressed;if(greenhouse.devices.value() >= 1){resetMenuCount();display(deviceId(0,MAIN));menu = MODE_PROGRAM;}break;
-   case '4' : key = keyPressed;if(greenhouse.devices.value() >= 2){resetMenuCount();display(deviceId(1,MAIN));menu = MODE_PROGRAM;}break;
-   case '5' : key = keyPressed;break;
-   case '6' : key = keyPressed;break;
+   case '1' : key = keyPressed;resetMenuCount();display(rollupId(0,MAIN));menu = MODE_PROGRAM;break;
+   case '2' : key = keyPressed;resetMenuCount();display(rollupId(1,MAIN));menu = MODE_PROGRAM;break;
+   case '3' : key = keyPressed;resetMenuCount();if((!D2.isActivated())&&(!D3.isActivated())){display(rollupId(2,MAIN));}menu = MODE_PROGRAM;break;
+   case '4' : key = keyPressed;resetMenuCount();display(deviceId(0,MAIN));menu = MODE_PROGRAM;break;
+   case '5' : key = keyPressed;resetMenuCount();if(!R3.isActivated()){display(deviceId(1,MAIN));menu = MODE_PROGRAM;}break;
+   case '6' : key = keyPressed;resetMenuCount();if(!R3.isActivated()){display(deviceId(2,MAIN));menu = MODE_PROGRAM;}break;
    case '7' : key = keyPressed;break;
    case '8' : key = keyPressed;break;
    case '9' : key = keyPressed;resetMenuCount();display(genericId(WEATHER));menu = MODE_PROGRAM;break;

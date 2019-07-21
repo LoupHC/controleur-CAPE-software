@@ -54,14 +54,20 @@ void memorySettings(){
   if(greenhouse.rollups.value() >= 1){
     R1.EEPROMGet();
   }
-  if(greenhouse.rollups.value() == 2){
+  if(greenhouse.rollups.value() >= 2){
     R2.EEPROMGet();
+  }
+  if(greenhouse.rollups.value() == 3){
+    R3.EEPROMGet();
   }
   if(greenhouse.devices.value() >= 1){
     D1.EEPROMGet();
   }
-  if(greenhouse.devices.value() == 2){
+  if(greenhouse.devices.value() >= 2){
     D2.EEPROMGet();
+  }
+  if(greenhouse.devices.value() == 3){
+    D3.EEPROMGet();
   }
   /*
   if(greenhouse.heaters.value() >= 1){
@@ -112,32 +118,56 @@ void defaultSettings(){
       R1.stage[4].target.setValue(R1_S4_TARGET);
     #endif
 
-    #if ROLLUPS == 2
+    #if ROLLUPS >= 2
       R2.setParameters(STAGES, R2_HYST, R2_ROTUP, R2_ROTDOWN, R2_PAUSE, false);
     #endif
-    #if ROLLUPS == 2 && STAGES >= 1
+    #if ROLLUPS >= 2 && STAGES >= 1
       R2.stage[0].mod.setValue(R2_S0_MOD);
       R2.stage[0].target.setValue(R2_S0_TARGET);
       R2.stage[1].mod.setValue(R2_S1_MOD);
       R2.stage[1].target.setValue(R2_S1_TARGET);
     #endif
-    #if ROLLUPS == 2 && STAGES >= 2
+    #if ROLLUPS >= 2 && STAGES >= 2
       R2.stage[2].mod.setValue(R2_S2_MOD);
       R2.stage[2].target.setValue(R2_S2_TARGET);
     #endif
-    #if ROLLUPS == 2 && STAGES >= 3
+    #if ROLLUPS >= 2 && STAGES >= 3
       R2.stage[3].mod.setValue(R2_S3_MOD);
       R2.stage[3].target.setValue(R2_S3_TARGET);
     #endif
-    #if ROLLUPS == 2 && STAGES >= 4
+    #if ROLLUPS >= 2 && STAGES >= 4
       R2.stage[4].mod.setValue(R2_S4_MOD);
       R2.stage[4].target.setValue(R2_S4_TARGET);
+    #endif
+    #if ROLLUPS == 3
+      R3.setParameters(STAGES, R2_HYST, R2_ROTUP, R2_ROTDOWN, R2_PAUSE, false);
+    #endif
+    #if ROLLUPS == 3 && STAGES >= 1
+      R3.stage[0].mod.setValue(R2_S0_MOD);
+      R3.stage[0].target.setValue(R2_S0_TARGET);
+      R3.stage[1].mod.setValue(R2_S1_MOD);
+      R3.stage[1].target.setValue(R2_S1_TARGET);
+    #endif
+    #if ROLLUPS == 3 && STAGES >= 2
+      R3.stage[2].mod.setValue(R2_S2_MOD);
+      R3.stage[2].target.setValue(R2_S2_TARGET);
+    #endif
+    #if ROLLUPS == 3 && STAGES >= 3
+      R3.stage[3].mod.setValue(R2_S3_MOD);
+      R3.stage[3].target.setValue(R2_S3_TARGET);
+    #endif
+    #if ROLLUPS == 3 && STAGES >= 4
+      R3.stage[4].mod.setValue(R2_S4_MOD);
+      R3.stage[4].target.setValue(R2_S4_TARGET);
     #endif
     #if DEVICES >= 1
       D1.setParameters(D1_TYPE,D1_MOD, D1_HYST, false);
     #endif
-    #if DEVICES == 2
+    #if DEVICES >= 2
       D2.setParameters(D2_TYPE,D2_MOD, D2_HYST, false);
+    #endif
+    #if DEVICES == 3
+      D3.setParameters(D2_TYPE,D2_MOD, D2_HYST, false);
     #endif
     #if TIMEPOINTS >= 1
       T1.setParameters(TP1_TYPE, TP1_HOUR, TP1_MN_MOD, TP1_HEAT_SUN, TP1_COOL_SUN, TP1_HEAT_CLOUD, TP1_COOL_CLOUD, TP1_RAMP);
@@ -456,19 +486,13 @@ void loadParameters(){
       memorySettings();
     }
     //Define pinout for each devices
-    if(greenhouse.rollups.value() >= 1){
       R1.initOutputs(MCP23008, ACT_HIGH, ROLLUP1_OPENING_PIN, ROLLUP1_CLOSING_PIN);
-    }
-    if(greenhouse.rollups.value() == 2){
       R2.initOutputs(MCP23008, ACT_HIGH, ROLLUP2_OPENING_PIN, ROLLUP2_CLOSING_PIN);
-    }
-    if(greenhouse.devices.value() == 1){
-      D1.initOutput(MCP23008, ACT_HIGH, DEVICE1_PIN);
-    }
-    if(greenhouse.devices.value() == 2){
+      R3.initOutputs(MCP23008, ACT_HIGH, DEVICE2_PIN, DEVICE3_PIN);
       D1.initOutput(MCP23008, ACT_HIGH, DEVICE1_PIN);
       D2.initOutput(MCP23008, ACT_HIGH, DEVICE2_PIN);
-    }
+      D3.initOutput(MCP23008, ACT_HIGH, DEVICE3_PIN);
+
 
     EEPROMReset = MEMORY_SETTINGS;
 

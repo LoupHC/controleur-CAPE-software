@@ -22,7 +22,7 @@
 //************************************************************
 //*************SENSORS*************M*******
 #define GH_TEMPERATURE      DS18B20
-//#define GH_HUMIDITY         D
+//#define GH_HUMIDITY
 //#define OUT_TEMPERATURE     DS18B20
 #define RAIN_SENSOR         HYDREON_RG11
 //#define WIND_SPEED
@@ -41,8 +41,8 @@
 //*************INTERFACE*********************
 #define I2CADDR_LCD         0x27
 //#define I2CADDR_KEY         0x23 //Otomatillo
-
-#define I2CADDR_KEY         0x26 //Otomate
+//#define I2CADDR_KEY         0x26 //Otomate v.1
+#define I2CADDR_KEY         0x3E //Otomate v.2
 #define KEYPAD_DISPLAY          //Comment to desactivate keypad interface (only main menu)
 
 //#define COMPUTER_INTERFACE    //Uncomment to desactivate interface programming, only parameters from this sheet are kept in memory
@@ -66,9 +66,9 @@
 
 //********************GREENHOUSE**************************
 #define TIMEPOINTS            4          //# of timepoints
-#define ROLLUPS               2          //# of rollups
+#define ROLLUPS               3          //# of rollups
 #define STAGES                4          //# of cool stages (for rollups)
-#define DEVICES               2          //# of devices
+#define DEVICES               3          //# of devices
 //********************PINOUT**************************
 #define ROLLUP1_OPENING_PIN   0    //connect this pin to the opening relay (west motor)
 #define ROLLUP1_CLOSING_PIN   1    //connect this pin to the closing relay (west motor)
@@ -76,6 +76,7 @@
 #define ROLLUP2_CLOSING_PIN   3    //connect this pin to the closing relay (east motor)
 #define DEVICE1_PIN           4    //connect this pin to the heater relay
 #define DEVICE2_PIN           5    //connect this pin to the heater relay
+#define DEVICE3_PIN           6    //connect this pin to the heater relay
 #define ALARM_PIN             7    //Connect this pin to the safety buzzer
 
 //*************COORD GÉOGRAPHIQUES*********************

@@ -31,7 +31,7 @@
 #define GreenhouseLib_FF_h
 
 
-class OnOffDevice : public Device
+class OnOffDevice  : public OverrideManager
 {
   public:
       OnOffDevice();
@@ -45,6 +45,7 @@ class OnOffDevice : public Device
       void lockOffAndWait(int minuts);
 
       void routine(float target, float temp);
+      void valvRoutine();
 
       //programmation functions
       void setParameters(byte type, float temp, float hyst, bool enabled);
@@ -53,6 +54,7 @@ class OnOffDevice : public Device
       floatParameter hyst;
       floatParameter mod;
       byteParameter type;
+      boolParameter enabled;
 			boolean isOn();
       boolean override();
 
@@ -66,14 +68,18 @@ class OnOffDevice : public Device
       unsigned short EEPROMIndexEnd();
       unsigned short nb();
 
-    protected:
+      void desactivateDevice();
+      void activateDevice();
+      boolean isActivated();
 
+    protected :
+
+      Output output;
+      
       void heaterRoutine(float target, float temp);
       void fanRoutine(float target, float temp);
-      void valvRoutine();
       void adjustModLimits();
 
-      Output _output;
       byte _activeOverride;
 
       unsigned short _localCounter;

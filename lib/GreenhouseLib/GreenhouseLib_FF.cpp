@@ -55,7 +55,7 @@ OnOffDevice::OnOffDevice(){
 
 void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
   //define opening/closing pins
-  _output.init(outputType, relayType, pin);
+  output.init(outputType, relayType, pin);
 }
 
 void OnOffDevice::lockOn(){
@@ -114,12 +114,23 @@ boolean OnOffDevice::override(){
 }
 
 boolean OnOffDevice::isOn(){
-  if(_output.isActive()){
+  if(output.isActive()){
     return true;
   }
   else{
     return false;
   }
+}
+
+void OnOffDevice::desactivateDevice(){
+  enabled.setValue(false);
+  output.stop();
+}
+void OnOffDevice::activateDevice(){
+  enabled.setValue(true);
+}
+bool OnOffDevice::isActivated(){
+  return enabled.value();
 }
 
 
@@ -184,47 +195,45 @@ void OnOffDevice::routine(float target, float temp){
     else if(type.value() == HEATERTYPE){
       heaterRoutine(target, temp);
     }
-    else if(type.value() == VALVTYPE){
-      valvRoutine();
-    }
-  }
-  else{
-    _output.stop();
-    clearOverrides();
   }
 }
 
 void OnOffDevice::valvRoutine(){
-  checkOverrideTimer();
-  _activeOverride = activeOverride();
-  if(_activeOverride != OFF_VAL){
-    _output.start();
-    if((bool)overRide[_activeOverride].target == true){
-      _output.start();
+  if (isActivated()){
+    checkOverrideTimer();
+    _activeOverride = activeOverride();
+    if(_activeOverride != OFF_VAL){
+      if((bool)overrideTarget() == true){
+        output.start();
+      }
+      else if((bool)overrideTarget() == false){
+        output.stop();
+      }
     }
-    else if((bool)overRide[_activeOverride].target == false){
-      _output.stop();
+    else{
+      output.stop();
     }
   }
 }
+
 void OnOffDevice::fanRoutine(float target, float temp){
   checkOverrideTimer();
   _activeOverride = activeOverride();
   if(_activeOverride != OFF_VAL){
-    if((bool)overRide[_activeOverride].target == true){
-      _output.start();
+    if((bool)overrideTarget() == true){
+      output.start();
     }
-    else if((bool)overRide[_activeOverride].target == false){
-      _output.stop();
+    else if((bool)overrideTarget() == false){
+      output.stop();
     }
   }
   else{
       float activationTemp = target + mod.value();
       if (temp < (activationTemp - hyst.value())) {
-        	_output.stop();
+        	output.stop();
       }
       else if (temp > activationTemp) {
-        	_output.start();
+        	output.start();
       }
   }
 }
@@ -233,20 +242,20 @@ void OnOffDevice::heaterRoutine(float target, float temp){
     checkOverrideTimer();
     _activeOverride = activeOverride();
     if(_activeOverride != OFF_VAL){
-      if((bool)overRide[_activeOverride].target == true){
-        _output.start();
+      if((bool)overrideTarget() == true){
+        output.start();
       }
-      else if((bool)overRide[_activeOverride].target == false){
-        _output.stop();
+      else if((bool)overrideTarget() == false){
+        output.stop();
       }
     }
     else{
         float activationTemp = target + mod.value();
         if (temp > (activationTemp + hyst.value())) {
-          	_output.stop();
+          	output.stop();
         }
         else if (temp < activationTemp) {
-          	_output.start();
+          	output.start();
         }
     }
   }
@@ -300,19 +309,19 @@ void Device::routine(float target, float temp){
     _activeOverride = activeOverride();
     if(_activeOverride != OFF_VAL){
       if((bool)overRide[_activeOverride].target == true){
-        _output.start();
+        output.start();
       }
       else if((bool)overRide[_activeOverride].target == false){
-        _output.stop();
+        output.stop();
       }
     }
     else{
         float activationTemp = target + mod.value();
         if (temp < (activationTemp - hyst.value())) {
-          	_output.stop();
+          	output.stop();
         }
         else if (temp > activationTemp) {
-          	_output.start();
+          	output.start();
         }
     }
   }

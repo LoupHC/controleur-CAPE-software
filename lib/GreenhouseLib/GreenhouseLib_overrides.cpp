@@ -2,7 +2,60 @@
 
 
 
+
 //Override manager
+
+void OverrideManager::OverridesEEPROMGet(){
+/*
+  hyst.getInEEPROM();
+  rotationUp.getInEEPROM();
+  rotationDown.getInEEPROM();
+  pause.getInEEPROM();
+*/
+  for(unsigned short x = 0; x < MAX_CLOCK_OV; x++){/*
+    stage[x].mod.getInEEPROM();
+    stage[x].target.getInEEPROM();*/
+
+    #ifdef DEBUG_EEPROM
+      Serial.print(F("-------CLOCK  "));
+      Serial.print(clockOv[x].ID.value());
+      Serial.println(F("------"));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].enabled.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].enabled.value());
+      Serial.println(F(" - (enabled) "));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].priority.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].priority.value());
+      Serial.println(F(" - (priority) "));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].hrStart.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].hrStart.value());
+      Serial.println(F(" - (hrStart) "));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].mnStart.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].mnStart.value());
+      Serial.println(F(" - (mnStart) "));
+      Serial.print(clockOv[x].hrStop.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].hrStop.value());
+      Serial.println(F(" - (hrStop) "));
+      Serial.print(F("Address: "));
+      Serial.print(clockOv[x].mnStop.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].mnStop.value());
+      Serial.println(F(" - (mnStop) "));
+      Serial.print(clockOv[x].target.address());
+      Serial.print(F(" - Value :"));
+      Serial.print(clockOv[x].target.value());
+      Serial.println(F(" - (target) "));
+    #endif
+  }
+}
 
 bool OverrideManager::isActive(byte id){
   if((isEnabled(id)) && (isInitialized(id))){
@@ -339,19 +392,86 @@ byte OverrideManager::overrideTarget(byte id){
   return OFF_VAL;
 }
 
-void OverrideManager::clearOverrides(){
-  for(int x = 0; x < MAX_OVERRIDES;x++){
-    overRide[x].active = false;
-    overRide[x].target = false;
-  }
-}
+
 byte OverrideManager::activeOverride(){
-  for(int x = 0; x < MAX_OVERRIDES;x++){
-    if(overRide[x].active == true){
-      return  x;
+    for(int x = 0; x < MAX_CLOCK_OV;x++){
+      if(clockOv[x].isActive()){
+        return 1;
+      }
+    }
+    for(int x = 0; x < MAX_FLOAT_OV;x++){
+      if(floatOv[x].isActive()){
+        return 1;
+      }
+    }
+    for(int x = 0; x < MAX_BOOL_OV;x++){
+      if(boolOv[x].isActive()){
+        return 1;
+      }
+    }
+  return OFF_VAL;
+}
+
+boolean OverrideManager::isLock(){
+  byte priority = MAX_OVERRIDES;
+  byte index = MAX_OVERRIDES;
+  byte target;
+
+  for(int x = MAX_CLOCK_OV; x > 0;x--){
+    if(clockOv[x-1].isActive() && clockOv[x-1].priority.value() < priority){
+      priority = clockOv[x-1].priority.value() ;
+      target = clockOv[x-1].target.value();
     }
   }
-  return OFF_VAL;
+  for(int x = MAX_FLOAT_OV; x > 0;x--){
+    if(floatOv[x-1].isActive() && floatOv[x-1].priority.value() < priority){
+      priority = floatOv[x-1].priority.value() ;
+      target = floatOv[x-1].target.value();
+    }
+  }
+  for(int x = MAX_BOOL_OV; x > 0;x--){
+    if(boolOv[x-1].isActive() && boolOv[x-1].priority.value() < priority){
+      priority = boolOv[x-1].priority.value() ;
+      target = boolOv[x-1].target.value();
+    }
+  }
+  if(priority == 0){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+byte OverrideManager::overrideTarget(){
+
+  byte priority = MAX_OVERRIDES;
+  byte index = MAX_OVERRIDES;
+  byte target;
+
+  for(int x = MAX_CLOCK_OV; x > 0;x--){
+    if(clockOv[x-1].isActive() && clockOv[x-1].priority.value() < priority){
+      priority = clockOv[x-1].priority.value() ;
+      target = clockOv[x-1].target.value();
+    }
+  }
+  for(int x = MAX_FLOAT_OV; x > 0;x--){
+    if(floatOv[x-1].isActive() && floatOv[x-1].priority.value() < priority){
+      priority = floatOv[x-1].priority.value() ;
+      target = floatOv[x-1].target.value();
+    }
+  }
+  for(int x = MAX_BOOL_OV; x > 0;x--){
+    if(boolOv[x-1].isActive() && boolOv[x-1].priority.value() < priority){
+      priority = boolOv[x-1].priority.value() ;
+      target = boolOv[x-1].target.value();
+    }
+  }
+  if(priority != MAX_OVERRIDES){
+    return target;
+  }
+  else{
+    return OFF_VAL;
+  }
 }
 void OverrideManager::unlock(){
   checkOverride(LOCK, false);
@@ -364,24 +484,6 @@ void OverrideManager::unlock(){
     overrideTimer = 0;
   }
 
-  boolean OverrideManager::isLock(){
-    if(overRide[0].active == true){
-      return true;
-    }
-    else{
-      return false;
-    }
-  }
-  void OverrideManager::printOverrides(){
-    Serial.println("ACTIVE OVERRIDES");
-    for(int x = 0; x < MAX_OVERRIDES;x++){
-      Serial.print("state : ");
-      Serial.print(overRide[x].active);
-      Serial.print("- target : ");
-      Serial.println(overRide[x].target);
-    }
-  }
-
   void OverrideManager::checkOverrideTimer(){
     if(lockedAndWaiting == true){
       if(overrideTimer >= overrideWaitingTime*1000){
@@ -391,53 +493,35 @@ void OverrideManager::unlock(){
     }
   }
 
-  void OverrideManager::setOverride(byte priority, byte target){
-    overRide[priority].active = true;
-    overRide[priority].target = target;
 
-  }
-
-  void OverrideManager::disableOverride(byte priority){
-    overRide[priority].active = false;
-    overRide[priority].target = 0;
-  }
-  void OverrideManager::checkOverride(byte id, byte hr, byte mn){
+  ClockRelativeOverride& OverrideManager::id(byte ID){
     for(int x = 0; x < MAX_CLOCK_OV;x++){
-      if(clockOv[x].ID.value() == id){
-        if(clockOv[x].enabled.value()){
-          clockOv[x].checkIfActive(hr, mn);
-        }
-        else{
-          clockOv[x].desactivate();
-        }
-        if(clockOv[x].isActive()){
-          setOverride(clockOv[x].priority.value(), clockOv[x].target.value());
-        }
-        else if(!clockOv[x].isActive()){
-          disableOverride(clockOv[x].priority.value());
-        }
+      if(clockOv[x].ID.value() == ID){
+        return clockOv[x];
       }
     }
+    return clockOv[0];
   }
 
-  void OverrideManager::checkOverride(byte id, byte hr, byte mn, byte condition){
-    for(int x = 0; x < MAX_CLOCK_OV;x++){
-      if(clockOv[x].ID.value() == id){
-        if(clockOv[x].enabled.value()){
-          clockOv[x].checkIfActive(hr, mn);
+  void OverrideManager::checkOverride(ClockRelativeOverride& override, byte hr, byte mn){
+        if(override.enabled.value()){
+          override.checkIfActive(hr, mn);
         }
         else{
-          clockOv[x].desactivate();
+          override.desactivate();
         }
-        if(clockOv[x].isActive() && condition >= clockOv[x].target.value()){
-          setOverride(clockOv[x].priority.value(), true);
+  }
+
+
+  void OverrideManager::checkOverride(ClockRelativeOverride& override, byte hr, byte mn, byte condition){
+
+        if(override.enabled.value()){
+          override.checkIfActive(hr, mn, condition);
         }
-        else if(!clockOv[x].isActive() || condition < clockOv[x].target.value()){
-          disableOverride(clockOv[x].priority.value());
+        else{
+          override.desactivate();
         }
       }
-    }
-  }
 
   void OverrideManager::checkOverride(byte id, bool variable){
     for(int x = 0; x < MAX_BOOL_OV;x++){
@@ -447,12 +531,6 @@ void OverrideManager::unlock(){
         }
         else{
           boolOv[x].desactivate();
-        }
-        if(boolOv[x].isActive()){
-          setOverride(boolOv[x].priority.value(), boolOv[x].target.value());
-        }
-        else if(!boolOv[x].isActive()){
-          disableOverride(boolOv[x].priority.value());
         }
       }
     }
@@ -466,12 +544,6 @@ void OverrideManager::unlock(){
         }
         else{
           floatOv[x].desactivate();
-        }
-        if(floatOv[x].isActive()){
-          setOverride(floatOv[x].priority.value(), floatOv[x].target.value());
-        }
-        else if(!floatOv[x].isActive()){
-          disableOverride(floatOv[x].priority.value());
         }
       }
     }
@@ -505,6 +577,7 @@ void OverrideManager::unlock(){
         _localIndex += sizeof(byte);
         mnStop.setLimits(0,59);
         mnStop.setAddress(_localIndex);
+        _localIndex += sizeof(byte);
 
       }
 
@@ -517,7 +590,21 @@ void OverrideManager::unlock(){
           desactivate();
         }
       }
+      void ClockRelativeOverride::checkIfActive(byte hr, byte mn, byte condition){
+        Serial.print("Condition : ");
+        Serial.print(condition);
+        Serial.print("target : ");
+        Serial.print(target.value());
 
+        if(isBetween(hrStart.value(), mnStart.value(), hr, mn, hrStop.value(), mnStop.value()) && condition >= target.value()){
+          activate();
+          Serial.println("activate");
+        }
+        else{
+          desactivate();
+          Serial.println("desactivate");
+        }
+      }
 //FLOAT RELATIVE
       unsigned short FloatRelativeOverride::_EEPROMindex = 0;
 

@@ -2,8 +2,8 @@
 //**************************************SD CARD***************
 #include <SPI.h>
 #include <SD.h>
-
-const int chipSelect = 10;
+//Otomate V.2
+const int chipSelect = 53;
 
 File datalog;
 
@@ -16,9 +16,9 @@ void exportData(){
     Serial.print(F("ROW,SET,"));
     Serial.println(counter);
     Serial.print(F("DATA,DATE,TIME,"));
-    Serial.print(greenhouseTemperature);
+    Serial.print(greenhouseTemperature.value());
     Serial.print(F("),F("));
-    Serial.println(greenhouseHumidity);
+    Serial.println(greenhouseHumidity.value());
     Serial.print(F("CELL,SET,G2,"));
     Serial.println(exportCounter);
 }
@@ -39,9 +39,9 @@ void exportDataToSD(){
     Serial.print(":");
     Serial.print(greenhouse.mn());
     Serial.print(":00,T:,");
-    Serial.print(greenhouseTemperature);
+    Serial.print(greenhouseTemperature.value());
     Serial.print(F(",C,HR:,"));
-    Serial.print(greenhouseHumidity);
+    Serial.print(greenhouseHumidity.value());
     Serial.print(F(",%,Rain:,"));
     Serial.print(totalRainfall);
     Serial.print(F(",mm,"));
@@ -55,9 +55,9 @@ void exportDataToSD(){
     datalog.print(":");
     datalog.print(greenhouse.mn());
     datalog.print(":00,T:,");
-    datalog.print(greenhouseTemperature);
+    datalog.print(greenhouseTemperature.value());
     datalog.print(F(",C,HR:,"));
-    datalog.print(greenhouseHumidity);
+    datalog.print(greenhouseHumidity.value());
     datalog.print(F(",%,Rain:,"));
     datalog.print(totalRainfall);
     datalog.print(F(",mm,"));

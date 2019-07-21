@@ -102,15 +102,15 @@ ROLLUP PARAMETERS - SYNTAX RULES :
 */
 //*******************************************************Rollup 1 (overral parameters)
 #define R1_HYST             1
-#define R1_ROTUP            200
-#define R1_ROTDOWN          200
-#define R1_PAUSE            30
+#define R1_ROTUP            20
+#define R1_ROTDOWN          20
+#define R1_PAUSE            20
 //*******************************************************Rollup 2 (overral parameters)
 
 #define R2_HYST             1
-#define R2_ROTUP            200
-#define R2_ROTDOWN          200
-#define R2_PAUSE            30
+#define R2_ROTUP            20
+#define R2_ROTDOWN          20
+#define R2_PAUSE            20
 
 //*******************************************************************
 /*
@@ -239,16 +239,16 @@ Action :
 
 
 #define FIX_R1_PRIORITY 3
-#define R1_HRSTART  7
+#define R1_HRSTART  3
 #define R1_MNSTART  0
-#define R1_HRSTOP 7
+#define R1_HRSTOP 3
 #define R1_MNSTOP 30
 #define R1_TARGET 50
 
 #define FIX_D1_PRIORITY 2
-#define D1_HRSTART  7
+#define D1_HRSTART  3
 #define D1_MNSTART  0
-#define D1_HRSTOP 7
+#define D1_HRSTOP 3
 #define D1_MNSTOP 30
 #define D1_TARGET  true
 

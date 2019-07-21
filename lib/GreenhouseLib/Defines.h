@@ -9,6 +9,7 @@
 //#define DEBUG_ROLLUP1_OVERRIDES
 //#define DEBUG_ROLLUP1_TIMING
 //#define DEBUG_ROLLUP2_TIMING
+//#define DEBUG_ROLLUP3_TIMING
 //#define DEBUG_ROLLUP1_POSITION
 //#define DEBUG_ROLLUP2_POSITION
 //#define DEBUG_ROLLUP1_STATE
@@ -46,7 +47,7 @@
 #endif
 
 #ifndef MAX_OVERRIDES
-  #define MAX_OVERRIDES 5
+  #define MAX_OVERRIDES 6
 #endif
 
 #define MAX_CLOCK_OV    3
@@ -55,14 +56,14 @@
 //rain
 //wind
 //outsideTemp
-#define MAX_BOOL_OV     3
+#define MAX_BOOL_OV     2
 
 #define MAX_ALARM_SEQUENCES 3
 
 //EEPROM indexation
 #define ROLLUP_INDEX      10
-#define DEVICE_INDEX         121
-#define TIMEPOINT_INDEX   220
+#define DEVICE_INDEX         171
+#define TIMEPOINT_INDEX   240
 
 
 #define GREENHOUSE_INDEX        2000
@@ -72,7 +73,7 @@
 
 
 #define ROLLUP_INDEX_SIZE       50
-#define DEVICE_INDEX_SIZE       11
+#define DEVICE_INDEX_SIZE       12
 #define TIMEPOINT_INDEX_SIZE    24
 
 #define CLOCKOV_INDEX_SIZE      10

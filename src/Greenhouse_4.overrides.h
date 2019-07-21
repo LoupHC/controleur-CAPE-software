@@ -61,7 +61,7 @@ float deshum_cold = 80;
 boolean rainOverride(byte ID, Rollup rollup){
   float shuttingTemp = greenhouse.coolingTemp() + rollup.stage[0].target.value();
   byte targetIncrement = rollup.overrideTarget(RAINOV);
-  if((rain == true)&&(rollup.incrementCounter() >= targetIncrement)&&(greenhouseTemperature >= shuttingTemp )){
+  if((rain == true)&&(rollup.incrementCounter() >= targetIncrement)&&(greenhouseTemperature.value() >= shuttingTemp )){
     return true;
   }
   else{
@@ -74,17 +74,24 @@ boolean rainOverride(byte ID, Rollup rollup){
 void checkOverrides(){
 
   for (byte x = 0; x < greenhouse.rollups.value(); x++){
-    greenhouse.rollup[x].checkOverride(CLOCKOV1,greenhouse.hr(), greenhouse.mn());
-    greenhouse.rollup[x].checkOverride(CLOCKOV2,greenhouse.hr(), greenhouse.mn());
-    greenhouse.rollup[x].checkOverride(CLOCKOV3,greenhouse.hr(), greenhouse.mn());
+    greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1),greenhouse.hr(), greenhouse.mn());
+    greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV2),greenhouse.hr(), greenhouse.mn());
+    greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV3),greenhouse.hr(), greenhouse.mn());
     greenhouse.rollup[x].checkOverride(RAINOV, rainOverride(RAINOV, R1));
     //greenhouse.rollup[x].checkOverride(WIND, windSpeed);
     //greenhouse.rollup[x].checkOverride(OUTTEMP, greenhouseTemperature);
   }
   for (byte x = 0; x < greenhouse.devices.value(); x++){
-    greenhouse.device[x].checkOverride(CLOCKOV1,greenhouse.hr(), greenhouse.mn());
-    greenhouse.device[x].checkOverride(CLOCKOV2,greenhouse.hr(), greenhouse.mn());
-    greenhouse.device[x].checkOverride(CLOCKOV3,greenhouse.hr(), greenhouse.mn());
-    greenhouse.device[x].checkOverride(DESHUM,greenhouseHumidity);
+    if(greenhouse.device[x].type.value()  == VALVTYPE){
+      greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1),greenhouse.hr(), greenhouse.mn(), greenhouse.weather());
+      greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV2),greenhouse.hr(), greenhouse.mn(), greenhouse.weather());
+      greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV3),greenhouse.hr(), greenhouse.mn(), greenhouse.weather());
+    }
+    else{
+      greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1),greenhouse.hr(), greenhouse.mn());
+      greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV2),greenhouse.hr(), greenhouse.mn());
+      greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV3),greenhouse.hr(), greenhouse.mn());
+    }
+    greenhouse.device[x].checkOverride(DESHUM,greenhouseHumidity.value());
   }
 }

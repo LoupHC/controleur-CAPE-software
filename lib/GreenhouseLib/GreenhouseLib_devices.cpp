@@ -115,16 +115,6 @@
       }
     }
 
-    void Device::desactivateDevice(){
-      enabled.setValue(false);
-    }
-    void Device::activateDevice(){
-      enabled.setValue(true);
-    }
-    bool Device::isActivated(){
-      return enabled.value();
-    }
-
     //Create an alarm instance
     Alarm::Alarm(){
 

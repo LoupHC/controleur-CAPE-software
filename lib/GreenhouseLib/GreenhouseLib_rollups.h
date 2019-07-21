@@ -72,7 +72,7 @@ Parameters :
 - pause time between increments (max. 250 sec.)
 */
 
-class Rollup : public Device
+class Rollup  : public OverrideManager
 {
   public:
     //initialization functions
@@ -101,6 +101,7 @@ class Rollup : public Device
     uShortParameter rotationUp;
     uShortParameter rotationDown;
     uShortParameter pause;
+    boolParameter enabled;
 
 
     Stage stage[MAX_STAGES];
@@ -123,6 +124,9 @@ class Rollup : public Device
     void setTest(boolean state);
 
 
+    void desactivateDevice();
+    void activateDevice();
+    boolean isActivated();
     //Parameters
   private:
     boolean _test;
