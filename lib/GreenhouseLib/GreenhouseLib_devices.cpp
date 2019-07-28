@@ -119,7 +119,7 @@
     Alarm::Alarm(){
 
       for(int x = 0; x < MAX_ALARM_SEQUENCES;x++){
-        sequence[x].onTime = 0;
+        sequence[x].onTime = 1000;
         sequence[x].offTime = 0;
       }
       _sequencePlaying = OFF;
@@ -141,6 +141,7 @@
     //above a certain value, alarm will execute default sequence (constant alarm)
     void Alarm::above(float parameter, float value){
         if(parameter > value){
+          //Serial.println("above");
           _sequencePlaying = 0;
         }
         else{
@@ -163,6 +164,7 @@
     //under a certain value, alarm will execute default sequence (constant alarm)
     void Alarm::below(float parameter, float value){
         if(parameter < value){
+          //Serial.println("below");
           _sequencePlaying = 0;
         }
         else{
@@ -233,22 +235,20 @@
 
     //execute the selected sequence
     void Alarm::checkAlarm(){
-      //Serial.print("counter : ");
-      //Serial.println(counter);
-      //if(_sequencePlaying != OFF){
-      //Serial.print("offtime : ");
-      //Serial.println(sequence[_sequencePlaying].offTime);
-      //Serial.print("ontime : ");
-      //Serial.println(sequence[_sequencePlaying].onTime);
-      //}
+      /*Serial.print("counter : ");
+      Serial.println(counter);
+      if(_sequencePlaying != OFF){
+      Serial.print("offtime : ");
+      Serial.println(sequence[_sequencePlaying].offTime);
+      Serial.print("ontime : ");
+      Serial.println(sequence[_sequencePlaying].onTime);
+    }*/
       if(_sequencePlaying == OFF){
         output.stop();
-        //activate(false);
         counter = 0;
       }
       else if(sequence[_sequencePlaying].offTime == 0){
         output.start();
-        //activate(true);
         counter = 0;
       }
       else{

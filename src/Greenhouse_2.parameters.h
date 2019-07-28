@@ -260,3 +260,6 @@ Action :
 
 #define RAIN_PRIORITY      2
 #define RAIN_TARGET        20
+
+#define WIND_PRIORITY      1
+#define MAX_WIND_SPEED     80

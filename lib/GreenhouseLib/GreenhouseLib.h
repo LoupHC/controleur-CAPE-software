@@ -104,6 +104,11 @@ class Greenhouse
     byteParameter anemometer;
 
     Alarm alarm;
+    boolParameter lowTempAlarm;
+    floatParameter minTemp;
+    boolParameter highTempAlarm;
+    floatParameter maxTemp;
+
 
   private:
     byte  _overrideProgramCounter;

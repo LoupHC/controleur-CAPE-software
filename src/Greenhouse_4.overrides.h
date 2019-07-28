@@ -78,8 +78,8 @@ void checkOverrides(){
     greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV2),greenhouse.hr(), greenhouse.mn());
     greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV3),greenhouse.hr(), greenhouse.mn());
     greenhouse.rollup[x].checkOverride(RAINOV, rainOverride(RAINOV, R1));
-    //greenhouse.rollup[x].checkOverride(WIND, windSpeed);
-    //greenhouse.rollup[x].checkOverride(OUTTEMP, greenhouseTemperature);
+    greenhouse.rollup[x].checkOverride(WINDOV, windSpeed);
+    greenhouse.rollup[x].checkOverride(OUTTEMP, outsideTemperature.value());
   }
   for (byte x = 0; x < greenhouse.devices.value(); x++){
     if(greenhouse.device[x].type.value()  == VALVTYPE){
@@ -94,4 +94,6 @@ void checkOverrides(){
     }
     greenhouse.device[x].checkOverride(DESHUM,greenhouseHumidity.value());
   }
+  R1.checkCurrent(r1current);
+  R2.checkCurrent(r2current);
 }

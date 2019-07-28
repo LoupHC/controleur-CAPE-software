@@ -68,11 +68,12 @@ Greenhouse greenhouse;
   OnOffDevice &D1 = greenhouse.device[0];
   OnOffDevice &D2 = greenhouse.device[1];
   OnOffDevice &D3 = greenhouse.device[2];
+  OnOffDevice &D4 = greenhouse.device[3];
+  OnOffDevice &D5 = greenhouse.device[4];
   Timepoint &T1 = greenhouse.timepoint[0];
   Timepoint &T2 = greenhouse.timepoint[1];
   Timepoint &T3 = greenhouse.timepoint[2];
   Timepoint &T4 = greenhouse.timepoint[3];
-  Timepoint &T5 = greenhouse.timepoint[4];
   Alarm &alarm = greenhouse.alarm;
 
 
@@ -147,7 +148,7 @@ void setup() {
   #ifdef UNIT_TEST
     TestRunner::setTimeout(30);
   #endif
-  readDataFromSDFile(rtc.getDateStr());
+  startRecordingToSD();
 }
 
 
@@ -172,12 +173,13 @@ void loop() {
   autoWeather();
   //diplay infos on LCD screen
   lcdDisplay();
-  #if defined(ALARM_MAX_TEMP) && !defined(ALARM_MIN_TEMP)
-    alarm.above(greenhouseTemperature,greenhouse.maxtemp.value());
-  #endif
-  #if defined(ALARM_MIN_TEMP) && !defined(ALARM_MAX_TEMP)
-    alarm.below(greenhouseTemperature, greenhouse.mintemp.value();
-  #endif
+
+  if(greenhouse.lowTempAlarm.value() == true){
+    alarm.below(greenhouseTemperature.value(),greenhouse.minTemp.value());
+  }
+  if(greenhouse.highTempAlarm.value() == true){
+    alarm.above(greenhouseTemperature.value(), greenhouse.maxTemp.value());
+  }
   alarm.conditionalTo(sensorFailure, 1);
   alarm.checkAlarm();
   //timepoint and target temperatures definitions, outputs routine

@@ -90,7 +90,7 @@ class Rollup  : public OverrideManager
     void forceStop();
     //routihe functions
 		void routine(float target, float temp);
-
+    void checkCurrent(float current);
     //Parameters functions
     void setParameters(byte stages, float hyst, unsigned short rotationUp, unsigned short rotationDown, unsigned short pause, bool enabled);
     void setIncrementCounter(unsigned short increment);
@@ -102,6 +102,7 @@ class Rollup  : public OverrideManager
     uShortParameter rotationDown;
     uShortParameter pause;
     boolParameter enabled;
+    floatParameter currentLimit;
 
 
     Stage stage[MAX_STAGES];
@@ -127,8 +128,24 @@ class Rollup  : public OverrideManager
     void desactivateDevice();
     void activateDevice();
     boolean isActivated();
-    //Parameters
+
+
+    void checkOverrideTimer();
+    void resetLockTimer(unsigned long seconds);
+    void keepLockInMemory(byte increment);
+
+    void unlock();
+
+
   private:
+
+    boolParameter lock;
+    byteParameter lockTarget;
+
+    elapsedMillis overrideTimer;
+    bool lockedAndWaiting;
+    unsigned long overrideWaitingTime;
+
     boolean _test;
     byte _increments;
     //const parameters

@@ -6,6 +6,12 @@
 const int chipSelect = 53;
 
 File datalog;
+int lastMinutRecord;
+int lastHourRecord;
+
+int minutCount = 0;
+const int exportDelayForDailyRecord = 5;//minuts
+
 
 //***************************************************
 //*********************EXPORTS**************************
@@ -23,152 +29,181 @@ void exportData(){
     Serial.println(exportCounter);
 }
 
-void exportDataToSD(){
+String dailyRecord(){
 
-  t = rtc.getTime();
-  String dayy = String(t.date);
-  String monthh = String(t.mon);
-  String yearr = String(t.year);
-  String datalogFile = dayy + monthh + yearr + ".txt";
-  Serial.println(datalogFile);
+    t = rtc.getTime();
 
-  datalog = SD.open(datalogFile, FILE_WRITE);
+    String day_s = String(t.date);
+    String fullday_s;
 
-  if (datalog) {
-    Serial.print(greenhouse.hr());
-    Serial.print(":");
-    Serial.print(greenhouse.mn());
-    Serial.print(":00,T:,");
-    Serial.print(greenhouseTemperature.value());
-    Serial.print(F(",C,HR:,"));
-    Serial.print(greenhouseHumidity.value());
-    Serial.print(F(",%,Rain:,"));
-    Serial.print(totalRainfall);
-    Serial.print(F(",mm,"));
-    Serial.print(luxReading[0]);
-    Serial.print(F(",lux,Rollup1:,"));
-    Serial.print(R1.incrementCounter());
-    Serial.print(F(",%,Rollup2:"));
-    Serial.print(R1.incrementCounter());
-    Serial.println(F(",%,"));
-    datalog.print(greenhouse.hr());
-    datalog.print(":");
-    datalog.print(greenhouse.mn());
-    datalog.print(":00,T:,");
-    datalog.print(greenhouseTemperature.value());
-    datalog.print(F(",C,HR:,"));
-    datalog.print(greenhouseHumidity.value());
-    datalog.print(F(",%,Rain:,"));
-    datalog.print(totalRainfall);
-    datalog.print(F(",mm,"));
-    datalog.print(luxReading[0]);
-    datalog.print(F(",lux,Rollup1:,"));
-    datalog.print(R1.incrementCounter());
-    datalog.print(F(",%,Rollup2:"));
-    datalog.print(R1.incrementCounter());
-    datalog.println(F(",%,"));
-    datalog.close(); // close the file
-  }
+    if(t.date<10){
+      fullday_s = String('0'+day_s);
+    }
+    else{
+      fullday_s = String(day_s);
+    }
 
+    String month_s = String(t.mon);
+    String fullmonth_s;
+
+    if(t.mon<10){
+      fullmonth_s = String('0'+month_s);
+    }
+    else{
+      fullmonth_s = String(month_s);
+    }
+
+    String year_s = String(t.year);
+    String fileName = year_s + fullmonth_s + fullday_s+".txt";
+
+    return fileName;
+}
+
+String monthlyRecord(){
+
+    t = rtc.getTime();
+
+    String month_s = String(t.mon);
+    String fullmonth_s;
+
+    if(t.mon<10){
+      fullmonth_s = String('0'+month_s);
+    }
+    else{
+      fullmonth_s = String(month_s);
+    }
+
+    String year_s = String(t.year);
+    String fileName = year_s + fullmonth_s +".txt";
+
+    return fileName;
 }
 
 
+void exportData(String record){
+  datalog = SD.open(record, FILE_WRITE);
+  if (SD.exists(record)) {
+    Serial.println(record);
+  }
+  else{
+    Serial.println(F("Error writing to file"));
+  }
+  if (datalog) {
+    datalog.print(greenhouse.hr());
+    datalog.print(F(":"));
+    datalog.print(greenhouse.mn());
+    datalog.print(F(":00,"));
+    datalog.print(greenhouseTemperature.value());
+    datalog.print(F(","));
+    datalog.print(greenhouseHumidity.value());
+    datalog.print(F(","));
+    datalog.print(greenhouseHumidity.absolute(greenhouseTemperature.value()));
+    datalog.print(F(","));
+    datalog.print(outsideTemperature.value());
+    datalog.print(F(","));
+    datalog.print(outsideHumidity.value());
+    datalog.print(F(","));
+    datalog.print(outsideHumidity.absolute(outsideTemperature.value()));
+    datalog.print(F(","));
+    datalog.print(rain);
+    datalog.print(F(","));
+    datalog.print(totalRainfall);
+    datalog.print(F(","));
+    datalog.print(windSpeed);
+    datalog.print(F(","));
+    datalog.print(luxReading[0]);
+    datalog.print(F(","));
+    datalog.print((float)luxReading[0]*0.0079);
+    datalog.print(F(","));
+    datalog.print(greenhouse.weather());
+    datalog.print(F(","));
+    datalog.print(greenhouse.heatingTemp());
+    datalog.print(F(","));
+    datalog.print(greenhouse.coolingTemp());
+    datalog.print(F(","));
+    datalog.print(R1.incrementCounter());
+    datalog.print(F(","));
+    datalog.print(R2.incrementCounter());
+    datalog.print(F(","));
+    datalog.print(R3.incrementCounter());
+    datalog.print(F(","));
+    datalog.print(D1.isOn());
+    datalog.print(F(","));
+    datalog.print(D2.isOn());
+    datalog.print(F(","));
+    datalog.println(D3.isOn());
+  }
+  datalog.close(); // close the file
 
-void readDataFromSDFile(char	*string){
+}
 
-  t = rtc.getTime();
-  String dayy = String(t.date);
-  String monthh = String(t.mon);
-  String yearr = String(t.year);
-  String datalogFile = dayy + monthh + yearr + ".txt";
+String recordHeader(){
+  return "Time,InTemp,InHum,InAbs,OutTemp,OutHum,OutAbs,isRaining,Rainfall,Windspeed,Lux,W/m²,Weather ratio,CoolingT,HeatingT,R1,R2,R3,D1,D2,D3";
+}
 
-  Serial.print("Initializing SD card...");
+void startRecordingToSD(){
+
+
+  Serial.println(F("Initializing SD card..."));
 
   if (!SD.begin(chipSelect)) {
-    Serial.println("Card failed, or not present");
-    // don't do anything more:
+    Serial.println(F("Card failed, or not present"));
     return;
   }
-  datalog = SD.open(datalogFile);
 
-  if (SD.exists(datalogFile)) {
-    Serial.println("file exists.");
-  }
-  if (datalog) {/*
-    while (datalog.available()) {
-      Serial.write(datalog.read());
-    }*/
+  //daily record file
+  if (!SD.exists(dailyRecord())) {
+    Serial.println(F("Creating daily record file"));
+    datalog = SD.open(dailyRecord(), FILE_WRITE);
+    datalog.println(recordHeader());
     datalog.close();
   }
-}
-
-void updateExportParameters(){
-
-  Serial.println(F("CELL,GET,F2"));
-  int tableDelay =  get(F("B7"));
-  exportDelay = tableDelay;
-
-  Serial.println(F("CELL,GET,G2"));
-  int counter =  get(F("B7"));
-  exportCounter = counter;
-
-
-}
-
-void saveExportAndClear(){
-  String date = rtc.getDateStr();
-  String now = rtc.getTimeStr();
-  String fileName = date +"." + now + ".datalogging";
-  Serial.print(F("SAVEWORKBOOKAS,"));
-  Serial.println(fileName);
-  exportCounter = 0;
-
-  Serial.println(F("CLEARRANGE,A,2,D,10000"));
-  String delay = String(exportDelay);
-  Serial.print(F("CELL,SET,F2,"));
-  Serial.println(delay);
-  Serial.print(F("CELL,SET,G2,0"));
-
-}
-
-void dataloggingToExcel(){
-  if (exportTimer >= (exportDelay*1000)){
-
-    checkFeedback(EXCEL_DATALOGGER_ID);
-    if(connectionEstablished){
-      updateExportParameters();
-    }
-    //counter havent started yet
-
-    if(exportCounter == 0){
-      if (connectionEstablished){
-        exportCounter++;
-        exportData();
-      }
-      else{
-        exportCounter = 0;
-      }
-    }
-    //counter have started
-    else{
-      if(exportCounter < maxLines){
-        if(connectionEstablished){
-          exportCounter++;
-          exportData();
-        }
-      }
-      else{
-        if(connectionEstablished){
-          saveExportAndClear();
-        }
-      }
-    }
-    exportTimer = 0;
+  if (SD.exists(dailyRecord())) {
+    Serial.println(F("Daily record file exists"));
   }
+  else{
+    Serial.println(F("error creating file"));
+  }
+
+  //monthly record file
+
+  if (!SD.exists(monthlyRecord())) {
+    Serial.println(F("Creating monthly record file"));
+    datalog = SD.open(monthlyRecord(), FILE_WRITE);
+    datalog.println(recordHeader());
+    datalog.close();
+  }
+  if (SD.exists(monthlyRecord())) {
+    Serial.println(F("Monthly record file exists"));
+  }
+  else{
+    Serial.println(F("error creating file"));
+  }
+  /*//Read file
+    if (datalog) {
+    while (datalog.available()) {
+      Serial.write(datalog.read());
+    }
+    datalog.close();
+  }*/
 }
+
 void dataloggingToSD(){
-  if (exportTimer >= (exportDelay*1000)){
-        exportDataToSD();
-        exportTimer = 0;
+
+  byte checkMin;
+  //new record every X minuts
+  if(greenhouse.mn() != lastMinutRecord){
+    lastMinutRecord = greenhouse.mn();
+    minutCount++;
+  }
+  if (minutCount >= exportDelayForDailyRecord){
+    exportData(dailyRecord());
+    minutCount = 0;
+  }
+  //new record every hour
+
+  if (greenhouse.hr() != lastHourRecord){
+      exportData(monthlyRecord());
+      lastHourRecord = greenhouse.hr();
     }
 }

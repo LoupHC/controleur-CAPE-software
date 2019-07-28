@@ -41,8 +41,8 @@ class OnOffDevice  : public OverrideManager
       //Action function
       void lockOn();
       void lockOff();
-      void lockOnAndWait(int minuts);
-      void lockOffAndWait(int minuts);
+      void lockOnAndWait(unsigned long seconds);
+      void lockOffAndWait(unsigned long seconds);
 
       void routine(float target, float temp);
       void valvRoutine();
@@ -72,10 +72,24 @@ class OnOffDevice  : public OverrideManager
       void activateDevice();
       boolean isActivated();
 
+
+      void checkOverrideTimer();
+      void resetLockTimer(unsigned long seconds);
+      void keepLockInMemory(byte increment);
+
+      void unlock();
+
     protected :
 
+      boolParameter lock;
+      byteParameter lockTarget;
+
+      elapsedMillis overrideTimer;
+      bool lockedAndWaiting;
+      unsigned long overrideWaitingTime;
+
       Output output;
-      
+
       void heaterRoutine(float target, float temp);
       void fanRoutine(float target, float temp);
       void adjustModLimits();

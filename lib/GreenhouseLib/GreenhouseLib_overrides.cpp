@@ -473,25 +473,6 @@ byte OverrideManager::overrideTarget(){
     return OFF_VAL;
   }
 }
-void OverrideManager::unlock(){
-  checkOverride(LOCK, false);
-  lockedAndWaiting = false;
-}
-
-  void OverrideManager::resetLockTimer(unsigned long seconds){
-    lockedAndWaiting = true;
-    overrideWaitingTime = seconds;
-    overrideTimer = 0;
-  }
-
-  void OverrideManager::checkOverrideTimer(){
-    if(lockedAndWaiting == true){
-      if(overrideTimer >= overrideWaitingTime*1000){
-        checkOverride(LOCK, false);
-        lockedAndWaiting = false;
-      }
-    }
-  }
 
 
   ClockRelativeOverride& OverrideManager::id(byte ID){
@@ -591,18 +572,12 @@ void OverrideManager::unlock(){
         }
       }
       void ClockRelativeOverride::checkIfActive(byte hr, byte mn, byte condition){
-        Serial.print("Condition : ");
-        Serial.print(condition);
-        Serial.print("target : ");
-        Serial.print(target.value());
 
         if(isBetween(hrStart.value(), mnStart.value(), hr, mn, hrStop.value(), mnStop.value()) && condition >= target.value()){
           activate();
-          Serial.println("activate");
         }
         else{
           desactivate();
-          Serial.println("desactivate");
         }
       }
 //FLOAT RELATIVE

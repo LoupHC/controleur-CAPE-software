@@ -36,8 +36,8 @@
 #define RAIN_SWITCH         3
 #define WIND_ANALOG_SENSOR  A3
 #define LIGHT_SENSOR        A2
-#define CURRENT_SENSOR1     A1
-#define CURRENT_SENSOR2     A0
+#define CURRENT_SENSOR2     A1
+#define CURRENT_SENSOR1     A0
 //*************INTERFACE*********************
 #define I2CADDR_LCD         0x27
 //#define I2CADDR_KEY         0x23 //Otomatillo
@@ -68,7 +68,7 @@
 #define TIMEPOINTS            4          //# of timepoints
 #define ROLLUPS               3          //# of rollups
 #define STAGES                4          //# of cool stages (for rollups)
-#define DEVICES               3          //# of devices
+#define DEVICES               5          //# of devices
 //********************PINOUT**************************
 #define ROLLUP1_OPENING_PIN   0    //connect this pin to the opening relay (west motor)
 #define ROLLUP1_CLOSING_PIN   1    //connect this pin to the closing relay (west motor)

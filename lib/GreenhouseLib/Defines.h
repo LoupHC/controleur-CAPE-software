@@ -52,7 +52,7 @@
 
 #define MAX_CLOCK_OV    3
 //humidity
-#define MAX_FLOAT_OV    1
+#define MAX_FLOAT_OV    2
 //rain
 //wind
 //outsideTemp
@@ -62,8 +62,8 @@
 
 //EEPROM indexation
 #define ROLLUP_INDEX      10
-#define DEVICE_INDEX         171
-#define TIMEPOINT_INDEX   240
+#define DEVICE_INDEX         200
+#define TIMEPOINT_INDEX   500
 
 
 #define GREENHOUSE_INDEX        2000
@@ -72,7 +72,7 @@
 #define BOOLOV_INDEX            3000
 
 
-#define ROLLUP_INDEX_SIZE       50
+#define ROLLUP_INDEX_SIZE       55
 #define DEVICE_INDEX_SIZE       12
 #define TIMEPOINT_INDEX_SIZE    24
 

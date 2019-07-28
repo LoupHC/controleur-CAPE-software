@@ -60,6 +60,16 @@ Greenhouse::Greenhouse(int timez, float lat, float longit, byte t, byte r,  byte
   anemometer.setAddress(_localIndex);
   _localIndex += sizeof(byte);
 
+
+  lowTempAlarm.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  highTempAlarm.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  minTemp.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+  maxTemp.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+
   timepoints.setValue(t);
   rollups.setValue(r);
   devices.setValue(f);
@@ -125,6 +135,14 @@ Greenhouse::Greenhouse(){
   _localIndex += sizeof(byte);
   anemometer.setAddress(_localIndex);
   _localIndex += sizeof(byte);
+  lowTempAlarm.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  highTempAlarm.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  minTemp.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+  maxTemp.setAddress(_localIndex);
+  _localIndex += sizeof(float);
 
   _ramping = false;
   _overrideProgramCounter = 0;
@@ -151,7 +169,10 @@ void Greenhouse::initGreenhouse(short timez, float lat, float longit, byte t, by
   luxMeter.setValue(false);
   anemometer.setValue(false);
   rainSensor.setValue(false);
-
+  lowTempAlarm.setValue(false);
+  highTempAlarm.setValue(false);
+  minTemp.setValue(-10);
+  maxTemp.setValue(40);
 }
 
 void Greenhouse::setNow(byte rightNow[6]){
@@ -176,7 +197,7 @@ void Greenhouse::setNow(byte rightNow[6]){
 boolean Greenhouse::otherRollupsAreMoving(byte exception){
   for (byte x = 0; x < rollups.value(); x++){
     if(x != exception){
-      if (rollup[x].isMoving()){
+      if (rollup[x].isMoving() && rollup[x].isActivated()){
         return true;
       }
     }
@@ -190,27 +211,31 @@ void Greenhouse::fullRoutine(byte rightNow[6], float greenhouseTemperature){
   checkProgramSuccession();
   selectActualProgram();
   startRamping();
-  #if MAX_ROLLUPS >= 1
-  for (byte x = 0; x < rollups.value(); x++){
-    if(!otherRollupsAreMoving(x)){
-      rollup[x].routine(_coolingTemp, greenhouseTemperature);
-    }
-  }
-  #endif
 
-  #if MAX_DEVICES >= 1
-  for (byte x = 0; x < devices.value(); x++){
-    if(device[x].type.value() == FANTYPE){
-      device[x].routine(_coolingTemp, greenhouseTemperature);
+    #if MAX_ROLLUPS >= 1
+    for (byte x = 0; x < rollups.value(); x++){
+      if((!otherRollupsAreMoving(x))){
+          rollup[x].routine(_coolingTemp, greenhouseTemperature);
+      }
     }
-    else if(device[x].type.value() == HEATERTYPE){
-      device[x].routine(_heatingTemp, greenhouseTemperature);
+    #endif
+
+    #if MAX_DEVICES >= 1
+    for (byte x = 0; x < devices.value(); x++){
+        if((device[x].type.value() == FANTYPE)){
+          device[x].routine(_coolingTemp, greenhouseTemperature);
+        }
+        else if((device[x].type.value() == HEATERTYPE)){
+          device[x].routine(_heatingTemp, greenhouseTemperature);
+        }
+        else if((device[x].type.value() == VALVTYPE)){
+          device[x].valvRoutine();
+        }
+
     }
-    else if(device[x].type.value() == VALVTYPE){
-      device[x].valvRoutine();
-    }
-  }
-  #endif
+    #endif
+
+
 }
 
 

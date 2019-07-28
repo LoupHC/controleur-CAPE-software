@@ -50,6 +50,12 @@ OnOffDevice::OnOffDevice(){
     enabled.setAddress(_localIndex);
     _localIndex += sizeof(boolean);
 
+    lock.setAddress(_localIndex);
+    _localIndex += sizeof(boolean);
+
+    lockTarget.setAddress(_localIndex);
+    _localIndex += sizeof(byte);
+
     initOverride(LOCK, 0,0);
 }
 
@@ -58,10 +64,33 @@ void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
   output.init(outputType, relayType, pin);
 }
 
+void OnOffDevice::unlock(){
+  checkOverride(LOCK, false);
+  lockedAndWaiting = false;
+  lock.setValue(false);
+}
+
+void OnOffDevice::resetLockTimer(unsigned long seconds){
+  lockedAndWaiting = true;
+  overrideWaitingTime = seconds;
+  overrideTimer = 0;
+}
+
+void OnOffDevice::checkOverrideTimer(){
+  if(lockedAndWaiting == true){
+    if(overrideTimer >= overrideWaitingTime*1000){
+      checkOverride(LOCK, false);
+      lockedAndWaiting = false;
+    }
+  }
+}
+void OnOffDevice::keepLockInMemory(byte increment){
+  lock.setValue(true);
+  lockTarget.setValue(increment);
+}
 void OnOffDevice::lockOn(){
   initOverride(LOCK, 0, true);
   checkOverride(LOCK, true);
-
 }
 
 void OnOffDevice::lockOff(){
@@ -69,16 +98,22 @@ void OnOffDevice::lockOff(){
   checkOverride(LOCK, true);
 }
 
-void OnOffDevice::lockOnAndWait(int minuts){
-  if(minuts != 0){
-    resetLockTimer(minuts);
+void OnOffDevice::lockOnAndWait(unsigned long seconds){
+  if(seconds != 0){
+    resetLockTimer(seconds);
+  }
+  else{
+    keepLockInMemory(1);
   }
   lockOn();
 }
 
-void OnOffDevice::lockOffAndWait(int minuts){
-  if(minuts != 0){
-    resetLockTimer(minuts);
+void OnOffDevice::lockOffAndWait(unsigned long seconds){
+  if(seconds != 0){
+    resetLockTimer(seconds);
+  }
+  else{
+    keepLockInMemory(0);
   }
   lockOff();
 }
@@ -200,9 +235,17 @@ void OnOffDevice::routine(float target, float temp){
 
 void OnOffDevice::valvRoutine(){
   if (isActivated()){
+    if(lock.value() == true){
+      if(lockTarget.value() == 0){
+        lockOff();
+      }
+      else{
+        lockOn();
+      }
+    }
     checkOverrideTimer();
     _activeOverride = activeOverride();
-    if(_activeOverride != OFF_VAL){
+    if(activeOverride() != OFF_VAL){
       if((bool)overrideTarget() == true){
         output.start();
       }
@@ -217,9 +260,16 @@ void OnOffDevice::valvRoutine(){
 }
 
 void OnOffDevice::fanRoutine(float target, float temp){
+  if(lock.value() == true){
+    if(lockTarget.value() == 0){
+      lockOff();
+    }
+    else{
+      lockOn();
+    }
+  }
   checkOverrideTimer();
-  _activeOverride = activeOverride();
-  if(_activeOverride != OFF_VAL){
+  if(activeOverride() != OFF_VAL){
     if((bool)overrideTarget() == true){
       output.start();
     }
@@ -239,9 +289,16 @@ void OnOffDevice::fanRoutine(float target, float temp){
 }
 
 void OnOffDevice::heaterRoutine(float target, float temp){
+  if(lock.value() == true){
+    if(lockTarget.value() == 0){
+      lockOff();
+    }
+    else{
+      lockOn();
+    }
+  }
     checkOverrideTimer();
-    _activeOverride = activeOverride();
-    if(_activeOverride != OFF_VAL){
+    if(activeOverride() != OFF_VAL){
       if((bool)overrideTarget() == true){
         output.start();
       }
@@ -259,142 +316,3 @@ void OnOffDevice::heaterRoutine(float target, float temp){
         }
     }
   }
-
-/*
-unsigned short Device::_EEPROMindex = 0;
-unsigned short Device::_counter = 0;
-
-Device::Device(){
-    _localIndex = DEVICE_INDEX + _EEPROMindex;
-    _EEPROMindex += DEVICE_INDEX_SIZE;
-    _localCounter = _counter;
-    _counter++;
-
-    mod.setLimits(0, 10);
-    mod.setAddress(_localIndex);
-    _localIndex += sizeof(float);
-
-    hyst.setLimits(0,5);
-    hyst.setAddress(_localIndex);
-    _localIndex += sizeof(float);
-
-}
-
-void Device::EEPROMGet(){
-  #ifdef DEBUG_EEPROM
-    Serial.println(F("-------------------"));
-    Serial.print(F("--------DEVICE "));
-    Serial.print(_localCounter);
-    Serial.println(F("--------"));
-    Serial.print(F("Address: "));
-    Serial.print(hyst.address());
-    Serial.print(F(" - Value :"));
-    Serial.print(hyst.value());
-    Serial.println(F(" - (Hysteresis)"));
-    Serial.print(F("Address: "));
-    Serial.print(mod.address());
-    Serial.print(F(" - Value :"));
-    Serial.print(mod.value());
-    Serial.println(F("   - (Mod)"));
-  #endif
-}
-
-/*
-Start or stop the device when a certain temperature is reached
-Adjust to an external target temperature (Mode VAR_TEMP)
-*/
-/*
-void Device::routine(float target, float temp){
-    checkOverrideTimer();
-    _activeOverride = activeOverride();
-    if(_activeOverride != OFF_VAL){
-      if((bool)overRide[_activeOverride].target == true){
-        output.start();
-      }
-      else if((bool)overRide[_activeOverride].target == false){
-        output.stop();
-      }
-    }
-    else{
-        float activationTemp = target + mod.value();
-        if (temp < (activationTemp - hyst.value())) {
-          	output.stop();
-        }
-        else if (temp > activationTemp) {
-          	output.start();
-        }
-    }
-  }
-
-
-  unsigned short Device::nb(){
-    return _localCounter;
-  }
-
-  unsigned short Device::EEPROMIndexBegin(){
-    return DEVICE_INDEX + (DEVICE_INDEX_SIZE*_localCounter);
-  }
-
-  unsigned short Device::EEPROMIndexEnd(){
-    return _localIndex;
-  }
-
-
-  unsigned short Heater::_EEPROMindex = 0;
-  unsigned short Heater::_counter = 0;
-
-  Heater::Heater(){
-      _localIndex = HEATER_INDEX + _EEPROMindex;
-      _EEPROMindex += HEATER_INDEX_SIZE;
-      _localCounter = _counter;
-      _counter++;
-
-      mod.setLimits(0, 10);
-      mod.setAddress(_localIndex);
-      _localIndex += sizeof(float);
-
-      hyst.setLimits(0,5);
-      hyst.setAddress(_localIndex);
-      _localIndex += sizeof(float);
-
-  }
-
-
-
-
-void Heater::EEPROMGet(){
-/*
-  hyst.getInEEPROM();
-  mod.getInEEPROM();
-*/
-/*
-  #ifdef DEBUG_EEPROM
-    Serial.println(F("-------------------"));
-    Serial.print(F("--------HEATER "));
-    Serial.print(_localCounter);
-    Serial.println(F("--------"));
-    Serial.print(F("Address: "));
-    Serial.print(hyst.address());
-    Serial.print(F(" - Value :"));
-    Serial.print(hyst.value());
-    Serial.println(F(" - (Hysteresis)"));
-    Serial.print(F("Address: "));
-    Serial.print(mod.address());
-    Serial.print(F(" - Value :"));
-    Serial.print(mod.value());
-    Serial.println(F("   - (Mod)"));
-  #endif
-}
-
-unsigned short Heater::nb(){
-  return _localCounter;
-}
-
-unsigned short Heater::EEPROMIndexBegin(){
-  return HEATER_INDEX + (HEATER_INDEX_SIZE*_localCounter);
-}
-
-unsigned short Heater::EEPROMIndexEnd(){
-  return _localIndex;
-}
-*/

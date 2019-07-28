@@ -39,6 +39,7 @@
   Current motorOne;
   Current motorTwo;
 
+  Lux radiation;
   /*
   float greenhouseTemperature;
   float greenhouseTemperature24h = 0;
@@ -64,8 +65,8 @@
 
 
   //lux;
-  elapsedMillis minutCount;
-  elapsedMillis hourCount;
+  elapsedMillis minutTimer;
+  elapsedMillis hourTimer;
   unsigned long averageLux;
   unsigned long averageDailyLux;
   int mV;
@@ -83,8 +84,8 @@ volatile unsigned long tipCount = 0; // bucket tip counter used in interrupt rou
 volatile unsigned long contactTime; // Timer to manage any contact bounce in interrupt routine
 volatile float totalRainfall = 0; // total amount of rainfall detected
 float rainSample = 0;
-float rainSetpoint = 0.1;
-unsigned long rainSampleDelay = 60000;
+float rainSetpoint = 0.04;
+unsigned long rainSampleDelay = 120000;
 elapsedMillis rainSampleCounter;
 
 
@@ -157,10 +158,10 @@ void getRain(){
   //Normally close contact rain sensor
   else if(greenhouse.rainSensor.value() == NC_CONTACT){
     if(digitalRead(RAIN_SWITCH) == HIGH){
-      rain = false;
+      rain = true;
     }
     else{
-      rain = true;
+      rain = false;
     }
   }
   //RG11 - 0.01'' bucket rain sensor
@@ -187,11 +188,8 @@ void getWind(){
 }
 
 void getCurrent(){
-  float currentRead1 = ((float)10/(float)1023*analogRead(CURRENT_SENSOR1)-5);
-  float currentRead2 = ((float)10/(float)1023*analogRead(CURRENT_SENSOR2)-5);
-
-  motorOne.registerValue(abs(currentRead1));
-  motorTwo.registerValue(abs(currentRead2));
+  r1current = abs((float)10/(float)1023*analogRead(CURRENT_SENSOR1)-5);
+  r2current = abs((float)10/(float)1023*analogRead(CURRENT_SENSOR2)-5);
 }
 
 
@@ -455,14 +453,14 @@ void getDailyLux(){
 }
 
 void luxCalculations(){
-  if(minutCount > 10000){
+  if(minutTimer > 10000){
     getLux();
     //greenhouse.weatherP.setValue(luxToWeatherRatio(averageLux));
-    minutCount = 0;
+    minutTimer = 0;
   }
-  if(hourCount > 3600000){
+  if(hourTimer > 3600000){
     getDailyLux();
-    hourCount = 0;
+    hourTimer = 0;
   }
 }
 

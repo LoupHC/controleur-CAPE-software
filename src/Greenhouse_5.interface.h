@@ -227,6 +227,16 @@ byte target[] = {
   B00000
 };
 
+byte frosts[] = {
+  B00100,
+  B10101,
+  B01110,
+  B01110,
+  B10101,
+  B00100,
+  B00000,
+  B00000
+};
 const byte MAIN = 0;
 const byte ROTUP = 1;
 const byte ROTDOWN = 2;
@@ -285,35 +295,39 @@ const byte HUMIDITY1= 65;
 const byte HUMIDITY2= 66;
 const byte RAIN1= 67;
 const byte RAIN2= 68;
-const byte WIND= 69;
-const byte BREAKER= 70;
-const byte OUTSIDE= 72;
-const byte PERIODS = 73;
-const byte ENABLE= 74;
-const byte INSTRUCT= 75;
-const byte PROGRAM = 76;
+const byte WIND1= 69;
+const byte WIND2= 70;
+const byte BREAKER= 71;
+const byte OUTSIDE1= 72;
+const byte OUTSIDE2= 73;
+const byte PERIODS = 74;
+const byte ENABLE= 75;
+const byte INSTRUCT= 76;
+const byte PROGRAM = 77;
 
 
-const byte ALARM = 76;
-const byte MAXTEMP= 77;
-const byte MINTEMP= 78;
 
 
-const byte TESTS = 79;
-const byte TESTTEMP = 80;
+const byte TESTS = 81;
+const byte TESTTEMP = 82;
 
-const byte WEATHERRATIO = 81;
-const byte INSIDETEMP = 82;
-const byte OUTSIDETEMP = 83;
-const byte LUXMETER = 84;
-const byte WINDSENSOR = 85;
-const byte RAINSENSOR = 86;
+const byte WEATHERRATIO = 83;
+const byte INSIDETEMP = 84;
+const byte OUTSIDETEMP = 85;
+const byte LUXMETER = 86;
+const byte WINDSENSOR = 87;
+const byte RAINSENSOR = 88;
 
-const byte INSIDETEMPDATA = 87;
-const byte OUTSIDETEMPDATA = 88;
-const byte WEATHERDATA = 89;
-const byte RADIATIONDATA = 90;
-const byte CURRENTSENSOR = 91;
+const byte INSIDETEMPDATA = 89;
+const byte OUTSIDETEMPDATA = 90;
+const byte WEATHERDATA = 91;
+const byte RADIATIONDATA = 92;
+const byte CURRENTSENSOR = 93;
+
+const byte LOWTEMPALARM = 78;
+const byte HIGHTEMPALARM = 94;
+const byte MAXTEMP= 79;
+const byte MINTEMP= 80;
 
 const byte STARTTIME = 1;
 const byte HEATINGSUN = 3;
@@ -440,6 +454,9 @@ const byte LOCKS = 4;
 const byte UPS = 5;
 const byte DOWNS = 6;
 const byte TARGETS = 7;
+const byte WINDS1 = 8;
+const byte WINDS2 = 9;
+const byte FROSTS = 10;
 
 
 void initLCD(byte length, byte width){
@@ -450,6 +467,9 @@ void initLCD(byte length, byte width){
   lcd.createChar(CLOCKS,clocks);
   lcd.createChar(HUMIDS,humids);
   lcd.createChar(RAINS,rains);
+  lcd.createChar(WINDS1,wind1);
+  lcd.createChar(WINDS2,wind2);
+  lcd.createChar(FROSTS,frosts);
   lcd.createChar(LOCKS,locks);
   lcd.createChar(UPS,up);
   lcd.createChar(DOWNS,down);
@@ -494,7 +514,6 @@ void lcdPrintOutput(String item, byte _column, byte _row, OnOffDevice device){
     else{
       lcd.print(F("OFF"));
     }
-    lcd.print(F("|"));
     if(device.isLock()){
       lcd.setCursor(_column+5, _row);
       lcd.write((byte)LOCKS);
@@ -511,7 +530,7 @@ void lcdPrintOutput(String item, byte _column, byte _row, OnOffDevice device){
 }
 
 void lcdPrintRollups(String side, String opening, String closing, byte _column, byte _row, Rollup rollup){
-  lcd.setCursor(_column, _row); lcd.print(F("           "));
+  lcd.setCursor(_column, _row); lcd.print(F("         "));
 
   if(rollup.isActivated()){
     lcd.setCursor(_column, _row);
@@ -540,7 +559,19 @@ void lcdPrintRollups(String side, String opening, String closing, byte _column, 
       lcd.setCursor(_column+8, _row);
       lcd.write((byte)RAINS);
     }
-
+    else if(rollup.isActive(WINDOV)){
+      lcd.setCursor(_column+8, _row);
+      if(flashingCounter == 0){
+        lcd.write((byte)WINDS1);
+      }
+      else if(flashingCounter == 1){
+        lcd.write((byte)WINDS2);
+      }
+    }
+    else if(rollup.isActive(OUTTEMP)){
+      lcd.setCursor(_column+8, _row);
+        lcd.write((byte)FROSTS);
+    }
   }
 }
 void lcdPrintTemp(byte _row){
@@ -591,7 +622,7 @@ boolean heatingDeviceIsActive(){
 }
 
 boolean coolingDeviceIsActive(){
-    if((fanIsActive(0)||fanIsActive(1)||fanIsActive(2)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()||greenhouse.rollup[2].isActivated())){
+    if((fanIsActive(0)||fanIsActive(1)||fanIsActive(2)||fanIsActive(3)||fanIsActive(4)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()||greenhouse.rollup[2].isActivated())){
       return true;
     }
     else{
@@ -599,7 +630,7 @@ boolean coolingDeviceIsActive(){
     }
 }
 boolean someDeviceIsActive(){
-  if(heaterIsActive(0) || heaterIsActive(1)|| heaterIsActive(2)||fanIsActive(0)||fanIsActive(1)||fanIsActive(2)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()||greenhouse.rollup[2].isActivated()){
+  if(heaterIsActive(0) || heaterIsActive(1)|| heaterIsActive(2) || heaterIsActive(3)|| heaterIsActive(4)||fanIsActive(0)||fanIsActive(1)||fanIsActive(2)||fanIsActive(3)||fanIsActive(4)||greenhouse.rollup[0].isActivated()||greenhouse.rollup[1].isActivated()||greenhouse.rollup[2].isActivated()){
     return true;
   }
   else{
@@ -612,6 +643,8 @@ byte heatingDevices(){
   if(heaterIsActive(0)){x++;}
   if(heaterIsActive(1)){x++;}
   if(heaterIsActive(2)){x++;}
+  if(heaterIsActive(3)){x++;}
+  if(heaterIsActive(4)){x++;}
   return x;
 }
 
@@ -620,14 +653,32 @@ byte otherHeatingDevices(int nb){
   if(nb == 0){
     if(heaterIsActive(1)){x++;}
     if(heaterIsActive(2)){x++;}
+    if(heaterIsActive(3)){x++;}
+    if(heaterIsActive(4)){x++;}
   }
   else if(nb == 1){
     if(heaterIsActive(0)){x++;}
     if(heaterIsActive(2)){x++;}
+    if(heaterIsActive(3)){x++;}
+    if(heaterIsActive(4)){x++;}
   }
   else if(nb == 2){
     if(heaterIsActive(0)){x++;}
     if(heaterIsActive(1)){x++;}
+    if(heaterIsActive(3)){x++;}
+    if(heaterIsActive(4)){x++;}
+  }
+  else if(nb == 3){
+    if(heaterIsActive(0)){x++;}
+    if(heaterIsActive(1)){x++;}
+    if(heaterIsActive(2)){x++;}
+    if(heaterIsActive(4)){x++;}
+  }
+  else if(nb == 4){
+    if(heaterIsActive(0)){x++;}
+    if(heaterIsActive(1)){x++;}
+    if(heaterIsActive(2)){x++;}
+    if(heaterIsActive(3)){x++;}
   }
   return x;
 }
@@ -637,6 +688,8 @@ byte coolingDevices(){
   if(fanIsActive(0)){x++;}
   if(fanIsActive(1)){x++;}
   if(fanIsActive(2)){x++;}
+  if(fanIsActive(3)){x++;}
+  if(fanIsActive(4)){x++;}
   if(greenhouse.rollup[0].isActivated()){x++;}
   if(greenhouse.rollup[1].isActivated()){x++;}
   if(greenhouse.rollup[2].isActivated()){x++;}
@@ -723,16 +776,25 @@ void lcdPrintTime(byte _row){
   }
 }
 
+void lcdPrintSeparators(){
+}
+
 void lcdPrintOutputs(){
 
-  if(D1.type.value() == FANTYPE){
-    lcdPrintOutput("F1:", 0, 3, D1);
-  }
-  else if(D1.type.value() == HEATERTYPE){
-      lcdPrintOutput("H1:", 0, 3, D1);
-  }
-  else if(D1.type.value() == VALVTYPE){
-      lcdPrintOutput("V1:", 0, 3, D1);
+  if(!D4.isActivated()){lcdPrintRollups("R1: ","OPENING", "CLOSING", 0, 2, R1);}
+  if(!D5.isActivated()){lcdPrintRollups("R2: ","OPENING", "CLOSING", 10, 2, R2);}
+  if(!D2.isActivated()&&!D3.isActivated()){lcdPrintRollups("R3: ","OPENING", "CLOSING", 10, 3, R3);}
+
+  if(D1.isActivated()){
+    if(D1.type.value() == FANTYPE){
+      lcdPrintOutput("F1:", 0, 3, D1);
+    }
+    else if(D1.type.value() == HEATERTYPE){
+        lcdPrintOutput("H1:", 0, 3, D1);
+    }
+    else if(D1.type.value() == VALVTYPE){
+        lcdPrintOutput("V1:", 0, 3, D1);
+    }
   }
 
   if(!R3.isActivated()){
@@ -757,12 +819,28 @@ void lcdPrintOutputs(){
       lcdPrintOutput("V3:", 14, 3, D3);
     }
   }
-  lcdPrintRollups("R1: ","OPENING", "CLOSING", 0, 2, R1);
-  lcdPrintRollups("|R2: ","|OPENING", "|CLOSING", 9, 2, R2);
-  if((!D2.isActivated())&&(!D3.isActivated())){
-    lcdPrintRollups("|R3: ","|OPENING", "|CLOSING", 9, 3, R3);
+  if(!R1.isActivated()){
+    if(D4.type.value() == FANTYPE){
+      lcdPrintOutput("F4:", 0, 2, D4);
+    }
+    else if(D4.type.value() == HEATERTYPE){
+      lcdPrintOutput("H4:", 0, 2, D4);
+    }
+    else if(D4.type.value() == VALVTYPE){
+      lcdPrintOutput("V4:", 0, 2, D4);
+    }
   }
-
+  if(!R2.isActivated()){
+    if(D5.type.value() == FANTYPE){
+      lcdPrintOutput("F5:",14 , 2, D5);
+    }
+    else if(D5.type.value() == HEATERTYPE){
+      lcdPrintOutput("H5:", 14, 2, D5);
+    }
+    else if(D5.type.value() == VALVTYPE){
+      lcdPrintOutput("V5:", 14, 2, D5);
+    }
+  }
 }
 
 void yearRoundStartTime(){
@@ -1137,6 +1215,13 @@ void printWeatherAdjustExtremes(){
   }
   if(usvariable == 100){
     lcd.print("[SUN]");
+  }
+}
+
+void printDisabledIfZero(){
+  lcd.setCursor(5,3);
+  if(fvariable == 0){
+    lcd.print("[DISABLED]");
   }
 }
 void printCursor(float number, float increment, byte row, byte line){
@@ -1748,6 +1833,8 @@ const char parameters_s[] PROGMEM = "parameters";
 const char overrides_s[] PROGMEM = "overrides";
 const char rotationtime_s[] PROGMEM = "rotation time";
 const char steps_s[] PROGMEM = "steps";
+const char breaker_s[] PROGMEM = "breaker";
+const char coldlock_s[] PROGMEM = "outside temp";
 const char rain_s[] PROGMEM = "rain";
 const char wind_s[] PROGMEM =  "wind";
 const char timer3_s[] PROGMEM = "timer 3";
@@ -1764,11 +1851,10 @@ byte lastSelectedElementInRollupList = 3;
 const char* const	rollupParametersList[] PROGMEM= {rotationtime_s, steps_s};
 const int sizeOfRollupParametersList = sizeof(rollupParametersList)/sizeof(rollupParametersList[0]);
 
-const char* const	overrideRollupList[] PROGMEM= {rain_s, wind_s,timer3_s,timer2_s,timer1_s,lockat_s,lockclose_s,lockopen_s};
-//const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
+const char* const	overrideRollupList[] PROGMEM= {breaker_s,coldlock_s,rain_s, wind_s,timer3_s,timer2_s,timer1_s,lockat_s,lockclose_s,lockopen_s};
 const int sizeOfOverrideRollupList = sizeof(overrideRollupList)/sizeof(overrideRollupList[0]);
 
-const char* const	overrideRollupLockList[] PROGMEM= {rain_s,wind_s,timer3_s,timer2_s,timer1_s,unlock_s};
+const char* const	overrideRollupLockList[] PROGMEM= {breaker_s,coldlock_s,rain_s,wind_s,timer3_s,timer2_s,timer1_s,unlock_s};
 const int sizeOfOverrideRollupLockList = sizeof(overrideRollupLockList)/sizeof(overrideRollupLockList[0]);
 
 void mainRollup(int nb){
@@ -1842,28 +1928,34 @@ byte clockOv(byte index){
 void overridesRollup(int nb){
   printHeader(header(("R"),nb),F(" - OVERRIDE       "));
   if(!greenhouse.rollup[nb].isLock()){
-    confirmVariable(7, overrideRollupList, sizeOfOverrideRollupList);
+    confirmVariable(9, overrideRollupList, sizeOfOverrideRollupList);
     if(choiceIsConfirmed()){
       switch (selectedElement) {
-        case 7: display(rollupId(nb,FOPEN));break;
-        case 6: display(rollupId(nb,FCLOSE));break;
-        case 5: display(rollupId(nb,FINC1));break;
-        case 4: clockOvIndex = 0; display(rollupId(nb,FIXOV1));break;
-        case 3: clockOvIndex = 1; display(rollupId(nb,FIXOV1));break;
-        case 2: clockOvIndex = 2; display(rollupId(nb,FIXOV1));break;
-        case 0: display(rollupId(nb,RAIN1));break;
+        case 9: display(rollupId(nb,FOPEN));break;
+        case 8: display(rollupId(nb,FCLOSE));break;
+        case 7: display(rollupId(nb,FINC1));break;
+        case 6: clockOvIndex = 0; display(rollupId(nb,FIXOV1));break;
+        case 5: clockOvIndex = 1; display(rollupId(nb,FIXOV1));break;
+        case 4: clockOvIndex = 2; display(rollupId(nb,FIXOV1));break;
+        case 3: display(rollupId(nb,WIND1));break;
+        case 2: display(rollupId(nb,RAIN1));break;
+        case 1: display(rollupId(nb,OUTSIDE1));break;
+        case 0: display(rollupId(nb,BREAKER));break;
       }
     }
   }
   else{
-    confirmVariable(5, overrideRollupLockList, sizeOfOverrideRollupLockList);
+    confirmVariable(7, overrideRollupLockList, sizeOfOverrideRollupLockList);
     if(choiceIsConfirmed()){
       switch (selectedElement) {
-        case 5: display(rollupId(nb,AUTO));break;
-        case 4: clockOvIndex = 0; display(rollupId(nb,FIXOV1));break;
-        case 3: clockOvIndex = 1; display(rollupId(nb,FIXOV1));break;
-        case 2: clockOvIndex = 2; display(rollupId(nb,FIXOV1));break;
-        case 0: display(rollupId(nb,RAIN1));break;
+        case 7: display(rollupId(nb,AUTO));break;
+        case 6: clockOvIndex = 0; display(rollupId(nb,FIXOV1));break;
+        case 5: clockOvIndex = 1; display(rollupId(nb,FIXOV1));break;
+        case 4: clockOvIndex = 2; display(rollupId(nb,FIXOV1));break;
+        case 3: display(rollupId(nb,WIND1));break;
+        case 2: display(rollupId(nb,RAIN1));break;
+        case 1: display(rollupId(nb,OUTSIDE1));break;
+        case 0: display(rollupId(nb,BREAKER));break;
       }
     }
   }
@@ -1927,6 +2019,100 @@ void rainTargetRollup(int nb){
 
   }
 }
+
+
+  void alarmLow(){
+      printHeader(F("   LOW TEMP ALARM   "));
+      confirmVariable(greenhouse.lowTempAlarm.value(), enableList, sizeOfEnableList);
+      if(choiceIsConfirmed()){
+        switch (selectedElement) {
+          case 0: greenhouse.lowTempAlarm.setValue(false);display(genericId(HOME));break;
+          case 1: display(genericId(MINTEMP));break;
+        }
+      }
+  }
+  void alarmHigh(){
+        printHeader(F("  HIGH TEMP ALARM   "));
+        confirmVariable(greenhouse.highTempAlarm.value(), enableList, sizeOfEnableList);
+        if(choiceIsConfirmed()){
+          switch (selectedElement) {
+            case 0: greenhouse.highTempAlarm.setValue(false);display(genericId(HOME));break;
+            case 1: display(genericId(MAXTEMP));break;
+          }
+        }
+  }
+  void minTemp(){
+    printHeader(F(" MIN. TEMPERATURE(C)"));
+    confirmVariable((float)-30,greenhouse.minTemp.value(),(float)50);
+    if(nextIsConfirmed()){
+      greenhouse.lowTempAlarm.setValue(true);
+    }
+    if(choiceIsConfirmed()){
+      greenhouse.minTemp.setValue(fvariable);
+      display(genericId(HOME));
+    }
+  }
+  void maxTemp(){
+    printHeader(F(" MAX. TEMPERATURE(C)"));
+    confirmVariable((float)-30,greenhouse.maxTemp.value(),(float)50);
+    if(nextIsConfirmed()){
+      greenhouse.highTempAlarm.setValue(true);
+    }
+    if(choiceIsConfirmed()){
+      greenhouse.maxTemp.setValue(fvariable);
+      display(genericId(HOME));
+    }
+
+  }
+
+void windRollup(int nb){
+  printHeader(header(("R"),nb),F(" - WIND OVERRIDE"));
+  confirmVariable(greenhouse.rollup[nb].isEnabled(WINDOV), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.device[nb].disable(WINDOV);display(genericId(HOME));break;
+      case 1: display(rollupId(nb, WIND2));break;
+    }
+  }
+}
+void windTargetRollup(int nb){
+  printHeader(header(("R"),nb),F(" - MAX SPEED(km/h)"));
+  confirmVariable((float)0,greenhouse.rollup[nb].floatVar(WINDOV),(float)100);
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].initOverride(WINDOV, 1, ABOVE, fvariable, 5, 0);
+    display(genericId(HOME));
+  }
+}
+void coldLockRollup(int nb){
+  printHeader(header(("R"),nb),F(" - OUTSIDE TEMP OV"));
+  confirmVariable(greenhouse.rollup[nb].isEnabled(OUTTEMP), enableList, sizeOfEnableList);
+  if(choiceIsConfirmed()){
+    switch (selectedElement) {
+      case 0: greenhouse.device[nb].disable(OUTTEMP);display(genericId(HOME));break;
+      case 1: display(rollupId(nb, OUTSIDE2));break;
+    }
+  }
+}
+void minTempRollup(int nb){
+  printHeader(header(("R"),nb),F(" - CLOSE AT(C)"));
+  confirmVariable((float)-50,greenhouse.rollup[nb].floatVar(OUTTEMP),(float)50);
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].initOverride(OUTTEMP, 1, BELOW, fvariable, 1, 0);
+    display(genericId(HOME));
+  }
+}
+
+void motorBreaker(int nb){
+  printHeader(header(("R"),nb),F(" - CLOSE AT(C)"));
+  confirmVariable((float)0,greenhouse.rollup[nb].currentLimit.value(),(float)10);
+  printDisabledIfZero();
+  if(choiceIsConfirmed()){
+    greenhouse.rollup[nb].currentLimit.setValue(fvariable);
+    display(genericId(HOME));
+  }
+}
+
+
 void autoModeRollup(int nb){
   greenhouse.rollup[nb].unlock();
   display(genericId(HOME));
@@ -2175,7 +2361,7 @@ void mainDevice(int nb){
 
     }
   }
-  if(!greenhouse.device[nb].isActivated()){
+  else{
     resetMenuCount();
     display(deviceId(nb,ENABLE));
   }
@@ -2194,7 +2380,7 @@ void disableDevice(int nb){
       display(genericId(HOME));
     }
   }
-  else if(!greenhouse.device[nb].isActivated()){
+  else{
     printHeader(deviceHeader(nb),F("- ENABLE(CONFIRM)"));
     printConfirmInstructions();
     if(nextIsConfirmed()){
@@ -2931,10 +3117,10 @@ void adjustTemperatures(){
   }
 }
 //********************GENERIC MENUS********************
-const String	configList[] = {"factory reset","sensors","tests","time/date/coord"};
+const String	configList[] = {"factory reset","high temp alarm","low temp alarm","sensors","tests","time/date/coord"};
 //const int sizeOfMainRollupList = sizeof(mainRollupList)/sizeof(mainRollupList[0]);
 const int sizeOfConfigList = sizeof(configList)/sizeof(configList[0]);
-byte lastSelectedElementInConfigList = 2;
+byte lastSelectedElementInConfigList = 5;
 
 void config(){
   printHeader(F("    CONFIG MENU     "));
@@ -2942,9 +3128,11 @@ void config(){
 
   if(choiceIsConfirmed()){
     switch (selectedElement) {
-      case 3: display(genericId(HOURSET));lastSelectedElementInConfigList = 3;break;
-      case 2: display(genericId(TESTS));lastSelectedElementInConfigList = 2;break;
-      case 1: display(genericId(SELECTSENSORS));lastSelectedElementInConfigList = 1;break;
+      case 5  : display(genericId(HOURSET));lastSelectedElementInConfigList = 5;break;
+      case 4: display(genericId(TESTS));lastSelectedElementInConfigList = 4;break;
+      case 3: display(genericId(SELECTSENSORS));lastSelectedElementInConfigList = 3;break;
+      case 2: display(genericId(LOWTEMPALARM));lastSelectedElementInConfigList = 2;break;
+      case 1: display(genericId(HIGHTEMPALARM));lastSelectedElementInConfigList = 1;break;
       case 0: display(genericId(FACTORYSETTINGS));lastSelectedElementInConfigList = 0;break;
     }
   }
@@ -3172,13 +3360,13 @@ void currentsensor(){
     if(R1.isActivated()){
       lcd.setCursor(0,1);
       lcd.print(F("R1 : "));
-      lcd.print(motorOne.average());
+      lcd.print(r1current);
       lcd.print(F(" A  "));
     }
     if(R2.isActivated()){
       lcd.setCursor(0,2);
       lcd.print(F("R2 : "));
-      lcd.print(motorTwo.average());
+      lcd.print(r2current);
       lcd.print(F(" A  "));
     }
     if(choiceIsConfirmed()){
@@ -3457,6 +3645,7 @@ void dayset(){
     setParameter("",F("   SET TIMEZONE    "),greenhouse.timezone,genericId(CONFIG));
   }
 
+
 struct indexedMenu {
   const byte name;
   void	(*Menu)(int nb);
@@ -3491,9 +3680,11 @@ const indexedMenu	rollupMenus[] = {
     {FIXOV4, clockOverrideTargetRollup},
     {RAIN1, rainRollup},
     {RAIN2, rainTargetRollup},
-    {WIND, disabled},
-    {BREAKER, disabled},
-    {OUTSIDE, disabled},
+    {WIND1, windRollup},
+    {WIND2, windTargetRollup},
+    {BREAKER, motorBreaker},
+    {OUTSIDE1, coldLockRollup},
+    {OUTSIDE2, minTempRollup},
     {PROGRAM, programRollup},
     {ENABLE, enableRollup},
     {INSTRUCT, disabled},
@@ -3571,10 +3762,13 @@ const Menu	genericMenus[] = {
     {OUTSIDETEMPDATA,outsidetempdata},
     {WEATHERDATA,weatherdata},
     {RADIATIONDATA,radiationdata},
-    {CURRENTSENSOR,currentsensor}
+    {CURRENTSENSOR,currentsensor},
+    {LOWTEMPALARM,alarmLow},
+    {MINTEMP,minTemp},
+    {HIGHTEMPALARM,alarmHigh},
+    {MAXTEMP,maxTemp}
 
 };
-
 //EXECUTE ACTIVE MENU PROGRAM
 void printRollup( int nb, byte menuName){
   menu = MODE_PROGRAM;
@@ -3640,9 +3834,11 @@ void printMenu(){
     if(menuID == rollupId(x,HUMIDITY2)){  printRollup(x, HUMIDITY2);}
     if(menuID == rollupId(x,RAIN1)){  printRollup(x, RAIN1);}
     if(menuID == rollupId(x,RAIN2)){  printRollup(x, RAIN2);}
-    if(menuID == rollupId(x,WIND)){  printRollup(x, WIND);}
+    if(menuID == rollupId(x,WIND1)){  printRollup(x, WIND1);}
+    if(menuID == rollupId(x,WIND2)){  printRollup(x, WIND2);}
     if(menuID == rollupId(x,BREAKER)){  printRollup(x, BREAKER);}
-    if(menuID == rollupId(x,OUTSIDE)){  printRollup(x, OUTSIDE);}
+    if(menuID == rollupId(x,OUTSIDE1)){  printRollup(x, OUTSIDE1);}
+    if(menuID == rollupId(x,OUTSIDE2)){  printRollup(x, OUTSIDE2);}
     if(menuID == rollupId(x,PROGRAM)){  printRollup(x, PROGRAM);}
     if(menuID == rollupId(x,ENABLE)){  printRollup(x, ENABLE);}
     if(menuID == rollupId(x,INSTRUCT)){  printRollup(x, INSTRUCT);}
@@ -3723,7 +3919,10 @@ void printMenu(){
   if(menuID == genericId(RAINSENSOR)){  printGeneric(RAINSENSOR);}
   if(menuID == genericId(WINDSENSOR)){  printGeneric(WINDSENSOR);}
   if(menuID == genericId(LUXMETER)){  printGeneric(LUXMETER);}
-
+  if(menuID == genericId(LOWTEMPALARM)){  printGeneric(LOWTEMPALARM);}
+  if(menuID == genericId(HIGHTEMPALARM)){  printGeneric(HIGHTEMPALARM);}
+  if(menuID == genericId(MINTEMP)){  printGeneric(MINTEMP);}
+  if(menuID == genericId(MAXTEMP)){  printGeneric(MAXTEMP);}
   if(menuID == genericId(INSIDETEMPDATA)){  printGeneric(INSIDETEMPDATA);}
   if(menuID == genericId(OUTSIDETEMPDATA)){  printGeneric(OUTSIDETEMPDATA);}
   if(menuID == genericId(WEATHERDATA)){  printGeneric(WEATHERDATA);}
@@ -3770,14 +3969,14 @@ void selectActiveKey(){
  keyPressed = keypad.getKey();
 
  switch(keyPressed){
-   case '1' : key = keyPressed;resetMenuCount();display(rollupId(0,MAIN));menu = MODE_PROGRAM;break;
-   case '2' : key = keyPressed;resetMenuCount();display(rollupId(1,MAIN));menu = MODE_PROGRAM;break;
-   case '3' : key = keyPressed;resetMenuCount();if((!D2.isActivated())&&(!D3.isActivated())){display(rollupId(2,MAIN));}menu = MODE_PROGRAM;break;
+   case '1' : key = keyPressed;resetMenuCount();if(!D4.isActivated()){display(rollupId(0,MAIN));};menu = MODE_PROGRAM;break;
+   case '2' : key = keyPressed;resetMenuCount();if(!D5.isActivated()){display(rollupId(1,MAIN));};menu = MODE_PROGRAM;break;
+   case '3' : key = keyPressed;resetMenuCount();if((!D2.isActivated())&&(!D3.isActivated())){display(rollupId(2,MAIN));};menu = MODE_PROGRAM;break;
    case '4' : key = keyPressed;resetMenuCount();display(deviceId(0,MAIN));menu = MODE_PROGRAM;break;
-   case '5' : key = keyPressed;resetMenuCount();if(!R3.isActivated()){display(deviceId(1,MAIN));menu = MODE_PROGRAM;}break;
-   case '6' : key = keyPressed;resetMenuCount();if(!R3.isActivated()){display(deviceId(2,MAIN));menu = MODE_PROGRAM;}break;
-   case '7' : key = keyPressed;break;
-   case '8' : key = keyPressed;break;
+   case '5' : key = keyPressed;resetMenuCount();if(!R3.isActivated()){display(deviceId(1,MAIN));};menu = MODE_PROGRAM;break;
+   case '6' : key = keyPressed;resetMenuCount();if(!R3.isActivated()){display(deviceId(2,MAIN));};menu = MODE_PROGRAM;break;
+   case '7' : key = keyPressed;resetMenuCount();if(!R1.isActivated()){display(deviceId(3,MAIN));};menu = MODE_PROGRAM;break;
+   case '8' : key = keyPressed;resetMenuCount();if(!R2.isActivated()){display(deviceId(4,MAIN));};menu = MODE_PROGRAM;break;
    case '9' : key = keyPressed;resetMenuCount();display(genericId(WEATHER));menu = MODE_PROGRAM;break;
    case '*' : line--;break;
    case '0' : key = keyPressed;jumpIncrements();break;

@@ -131,11 +131,8 @@ class OverrideManager{
     void setOverride(byte priority, byte target);
     void disableOverride(byte priority);
     void disableOverrides();
-    void checkOverrideTimer();
     void printOverrides();
-    void resetLockTimer(unsigned long seconds);
 
-    void unlock();
     boolean isLock();
 
     int getFreeRam();
@@ -147,9 +144,6 @@ class OverrideManager{
     BoolRelativeOverride boolOv[MAX_BOOL_OV];
 
   protected:
-    elapsedMillis overrideTimer;
-    bool lockedAndWaiting;
-    unsigned long overrideWaitingTime;
 
   private:
     bool idIsUnique(byte ID);

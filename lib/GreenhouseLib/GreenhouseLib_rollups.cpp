@@ -105,6 +105,13 @@ Rollup::Rollup(){
   enabled.setAddress(_localIndex);
   _localIndex += sizeof(boolean);
 
+  lock.setAddress(_localIndex);
+  _localIndex += sizeof(boolean);
+  lockTarget.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  currentLimit.setAddress(_localIndex);
+  _localIndex += sizeof(float);
+
   #ifdef TEST_MODE
   _incrementCounter = 0;
   _stage = 0;
@@ -138,9 +145,37 @@ void Rollup::initOutputs(byte outputType, boolean relayType, byte rOpen, byte rC
   _closingPin.init(outputType, relayType, rClose);
 }
 
+void Rollup::unlock(){
+  checkOverride(LOCK, false);
+  lockedAndWaiting = false;
+  lock.setValue(false);
+}
+
+void Rollup::resetLockTimer(unsigned long seconds){
+  lockedAndWaiting = true;
+  overrideWaitingTime = seconds;
+  overrideTimer = 0;
+}
+
+void Rollup::checkOverrideTimer(){
+  if(lockedAndWaiting == true){
+    if(overrideTimer >= overrideWaitingTime*1000){
+      checkOverride(LOCK, false);
+      lockedAndWaiting = false;
+    }
+  }
+}
+void Rollup::keepLockInMemory(byte increment){
+  lock.setValue(true);
+  lockTarget.setValue(increment);
+}
+
 void Rollup::lockOpenAndWait(unsigned long seconds){
   if(seconds != 0){
     resetLockTimer(seconds);
+  }
+  else{
+    keepLockInMemory(_increments);
   }
   lockOpen();
 }
@@ -148,6 +183,9 @@ void Rollup::lockOpenAndWait(unsigned long seconds){
 void Rollup::lockCloseAndWait(unsigned long seconds){
   if(seconds != 0){
     resetLockTimer(seconds);
+  }
+  else{
+    keepLockInMemory(0);
   }
   lockClose();
 }
@@ -171,6 +209,9 @@ void Rollup::lockAtIncrement(byte increment, unsigned long seconds){
   if(seconds != 0){
     resetLockTimer(seconds);
   }
+  else{
+    keepLockInMemory(increment);
+  }
   lockAtIncrement(increment);
 }
 
@@ -185,39 +226,45 @@ void Rollup::forceStop(){
 }
 
 void Rollup::routine(float targetTemp, float temp){
-  if(!isActivated()){
-    forceStop();
-  }
-  if (isActivated() || isMoving()){
-    if(isActivated() && _reset == true){
-      setIncrementCounter(increments());
-      lockCloseAndWait(rotationDown.value());
-      _reset = false;
-    }
-
-    autoAdjustStages();
-    checkOverrideTimer();
-    byte checkOverride = activeOverride();
-    if((_activeOverride == OFF_VAL)&&(checkOverride != OFF_VAL)&&(!isMoving())){
-        updatePosition(overrideTarget());
-        startMove();
-    }
-    else if(_activeOverride != OFF_VAL){
-      watchOverride();
-    }
-    else{
-      if(_routineCycle == false){
-          updatePosition(temp, targetTemp);
-          startMove();
+  if (isActivated()){
+      if(_reset == true){
+        setIncrementCounter(increments());
+        lockCloseAndWait(rotationDown.value());
+        _reset = false;
       }
       else{
-        watchRoutine();
+        if(lock.value() == true){
+          lockAtIncrement(lockTarget.value());
+        }
+      }
+      autoAdjustStages();
+      checkOverrideTimer();
+      byte checkOverride = activeOverride();
+      if((_activeOverride == OFF_VAL)&&(checkOverride != OFF_VAL)&&(!isMoving())){
+          updatePosition(overrideTarget());
+          startMove();
+      }
+      else if(_activeOverride != OFF_VAL){
+        watchOverride();
+      }
+      else{
+        if(_routineCycle == false){
+            updatePosition(temp, targetTemp);
+            startMove();
+        }
+        else{
+          watchRoutine();
+        }
       }
     }
-  }
   debugPrints();
 }
 
+void Rollup::checkCurrent(float current){
+  if(current >= currentLimit.value() && currentLimit.value() != 0){
+    desactivateDevice();
+  }
+}
 
 
 
@@ -468,8 +515,7 @@ void Rollup::autoAdjustStages(){
   }
   void Rollup::desactivateDevice(){
     enabled.setValue(false);
-    _openingPin.stop();
-    _closingPin.stop();
+    forceStop();
   }
   void Rollup::activateDevice(){
     enabled.setValue(true);
