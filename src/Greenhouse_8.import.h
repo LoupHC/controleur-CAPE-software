@@ -66,6 +66,7 @@ void memorySettings(){
 }
 
 
+
 void defaultSettings(){
     greenhouse.initGreenhouse(TIMEZONE, LATITUDE, LONGITUDE, TIMEPOINTS, ROLLUPS, DEVICES, false, false);
 
@@ -95,7 +96,7 @@ void defaultSettings(){
       R2.stage[4].mod.setValue(R2_S4_MOD);
       R2.stage[4].target.setValue(R2_S4_TARGET);
 
-      R3.setParameters(STAGES, R2_HYST, R2_ROTUP, R2_ROTDOWN, R2_PAUSE, false);
+      R3.setParameters(STAGES, R2_HYST, 200, 200, R2_PAUSE, false);
       R3.stage[0].mod.setValue(R2_S0_MOD);
       R3.stage[0].target.setValue(R2_S0_TARGET);
       R3.stage[1].mod.setValue(R2_S1_MOD);
@@ -119,31 +120,41 @@ void defaultSettings(){
       T4.setParameters(TP4_TYPE, TP4_HOUR, TP4_MN_MOD, TP4_HEAT_SUN, TP4_COOL_SUN, TP4_HEAT_CLOUD, TP4_COOL_CLOUD, TP4_RAMP);
 
     for(int x = 0; x < MAX_ROLLUPS;x++){
-      greenhouse.rollup[x].initOverride(CLOCKOV1, FIX_R1_PRIORITY, R1_HRSTART, R1_MNSTART, R1_HRSTOP, R1_MNSTOP, R1_TARGET);
+      greenhouse.rollup[x].initOverride(CLOCKOV1, CLOCKOV1_PRIORITY, R1_HRSTART, R1_MNSTART, R1_HRSTOP, R1_MNSTOP, R1_TARGET, 0,0);
       greenhouse.rollup[x].disable(CLOCKOV1);
-      greenhouse.rollup[x].initOverride(CLOCKOV2, FIX_R1_PRIORITY+1, R1_HRSTART+1, R1_MNSTART+1, R1_HRSTOP+1, R1_MNSTOP+1, R1_TARGET);
+      greenhouse.rollup[x].initOverride(CLOCKOV2, CLOCKOV2_PRIORITY, R1_HRSTART+1, R1_MNSTART+1, R1_HRSTOP+1, R1_MNSTOP+1, R1_TARGET,0, 0);
       greenhouse.rollup[x].disable(CLOCKOV2);
-      greenhouse.rollup[x].initOverride(CLOCKOV3, FIX_R1_PRIORITY+2, R1_HRSTART+2, R1_MNSTART+2, R1_HRSTOP+2, R1_MNSTOP+2, R1_TARGET);
+      greenhouse.rollup[x].initOverride(CLOCKOV3, CLOCKOV3_PRIORITY, R1_HRSTART+2, R1_MNSTART+2, R1_HRSTOP+2, R1_MNSTOP+2, R1_TARGET,0, 0);
       greenhouse.rollup[x].disable(CLOCKOV3);
-      greenhouse.rollup[x].initOverride(WINDOV, WIND_PRIORITY, ABOVE, MAX_WIND_SPEED, 5, 0);
-      greenhouse.rollup[x].disable(WINDOV);
-      greenhouse.rollup[x].initOverride(OUTTEMP, WIND_PRIORITY, BELOW, 5, 1, 0);
-      greenhouse.rollup[x].disable(OUTTEMP);
-      greenhouse.rollup[x].initOverride(RAINOV, RAIN_PRIORITY, RAIN_TARGET);
+      //greenhouse.rollup[x].initOverride(OUTTEMP, 3, BELOW, 5, 1, 0, 0,0);
+      //greenhouse.rollup[x].disable(OUTTEMP);
+      greenhouse.rollup[x].initOverride(RAINOV, RAINOV_PRIORITY, RAIN_TARGET, 0,0);
       greenhouse.rollup[x].disable(RAINOV);
+      greenhouse.rollup[x].initOverride(WINDOV, WINDOV_PRIORITY, ABOVE, MAX_WIND_SPEED, 10, 0,0, 0);
+      greenhouse.rollup[x].disable(WINDOV);
+      greenhouse.rollup[x].initOverride(DESHUM, DESHUM_PRIORITY, ABOVE, DESHUM_HOT, 3, 30, 0,0);
+      greenhouse.rollup[x].disable(DESHUM);
       greenhouse.rollup[x].currentLimit.setValue(0);
     }
 
+
+
+
     for(int x = 0; x < MAX_DEVICES;x++){
-      greenhouse.device[x].initOverride(CLOCKOV1, FIX_D1_PRIORITY, D1_HRSTART, D1_MNSTART, D1_HRSTOP, D1_MNSTOP, D1_TARGET);
+      greenhouse.device[x].initOverride(CLOCKOV1, CLOCKOV1_PRIORITY, D1_HRSTART, D1_MNSTART, D1_HRSTOP, D1_MNSTOP, D1_TARGET, 0,0);
       greenhouse.device[x].disable(CLOCKOV1);
-      greenhouse.device[x].initOverride(CLOCKOV2, FIX_D1_PRIORITY+1, D1_HRSTART+1, D1_MNSTART+1, D1_HRSTOP+1, D1_MNSTOP+1, D1_TARGET);
+      greenhouse.device[x].initOverride(CLOCKOV2, CLOCKOV2_PRIORITY, D1_HRSTART+1, D1_MNSTART+1, D1_HRSTOP+1, D1_MNSTOP+1, D1_TARGET, 0,0);
       greenhouse.device[x].disable(CLOCKOV2);
-      greenhouse.device[x].initOverride(CLOCKOV3, FIX_D1_PRIORITY+2, D1_HRSTART+2, D1_MNSTART+2, D1_HRSTOP+2, D1_MNSTOP+2, D1_TARGET);
+      greenhouse.device[x].initOverride(CLOCKOV3, CLOCKOV3_PRIORITY, D1_HRSTART+2, D1_MNSTART+2, D1_HRSTOP+2, D1_MNSTOP+2, D1_TARGET, 0,0);
       greenhouse.device[x].disable(CLOCKOV3);
-      greenhouse.device[x].initOverride(DESHUM, DESHUM_PRIORITY, ABOVE, DESHUM_HOT, 5, true);
+      greenhouse.device[x].initOverride(DESHUM, DESHUM_PRIORITY, ABOVE, 2.5, 0.2, true, 0,0);
+      greenhouse.device[x].disable(DESHUM);
+      greenhouse.device[x].initOverride(ANALOG, ANALOG_PRIORITY, ABOVE, 2.5, 0.2, true, 0,0);
+      greenhouse.device[x].disable(ANALOG);
+      greenhouse.device[x].initOverride(PULSE, PULSE_PRIORITY, 1, 1, 1);
       greenhouse.device[x].disable(DESHUM);
     }
+
 
     Serial.print(F("Version 5: "));
     Serial.println(EEPROM[0]);

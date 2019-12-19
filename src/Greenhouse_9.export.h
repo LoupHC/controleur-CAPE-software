@@ -111,9 +111,9 @@ void exportData(String record){
     datalog.print(F(","));
     datalog.print(windSpeed);
     datalog.print(F(","));
-    datalog.print(luxReading[0]);
+    datalog.print(radiation.lux());
     datalog.print(F(","));
-    datalog.print((float)luxReading[0]*0.0079);
+    datalog.print(radiation.wattPerMeterSquare());
     datalog.print(F(","));
     datalog.print(greenhouse.weather());
     datalog.print(F(","));

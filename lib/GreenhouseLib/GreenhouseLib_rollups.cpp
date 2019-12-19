@@ -64,7 +64,7 @@ Rollup::Rollup(){
   _localCounter = _counter;
   _counter++;
 
-  _activeOverride = OFF_VAL;
+  _activeOverride = false;
   _routineCycle = false;
 
 //Addresses assignation
@@ -72,34 +72,27 @@ Rollup::Rollup(){
   _localIndex = ROLLUP_INDEX + _EEPROMindex;
   _EEPROMindex += ROLLUP_INDEX_SIZE;
 
-  hyst.setLimits(0, 5);
   hyst.setAddress(_localIndex);
   _localIndex += sizeof(float);
 
-  rotationUp.setLimits(0,500);
   rotationUp.setAddress(_localIndex);
   _localIndex += sizeof(unsigned short);
 
-  rotationDown.setLimits(0,500);
   rotationDown.setAddress(_localIndex);
   _localIndex += sizeof(unsigned short);
 
-  pause.setLimits(0,240);
   pause.setAddress(_localIndex);
   _localIndex += sizeof(unsigned short);
   _increments = 100;
   _test = false;
 
   for(int x = 0; x < MAX_STAGES; x++){
-    stage[x].mod.setLimits(0,10);
     stage[x].mod.setAddress(_localIndex);
     _localIndex += sizeof(float);
-    stage[x].target.setLimits(0,100);
     stage[x].target.setAddress(_localIndex);
     _localIndex += sizeof(unsigned short);
   }
 
-  stages.setLimits(0, MAX_STAGES);
   stages.setAddress(_localIndex);
   _localIndex += sizeof(byte);
   enabled.setAddress(_localIndex);
@@ -120,8 +113,10 @@ Rollup::Rollup(){
   _incrementCounter = OFF_VAL;
   _stage = OFF_VAL;
   _reset = true;
+  _calibrating = false;
+
   #endif
-  initOverride(LOCK, 0,0);
+  initOverride(LOCK, 0,0,0,0);
   debugTimer = 0;
   rollupTimer = 0;
 }
@@ -159,7 +154,7 @@ void Rollup::resetLockTimer(unsigned long seconds){
 
 void Rollup::checkOverrideTimer(){
   if(lockedAndWaiting == true){
-    if(overrideTimer >= overrideWaitingTime*1000){
+    if(overrideTimer >= (unsigned long)overrideWaitingTime*1000){
       checkOverride(LOCK, false);
       lockedAndWaiting = false;
     }
@@ -189,21 +184,49 @@ void Rollup::lockCloseAndWait(unsigned long seconds){
   }
   lockClose();
 }
+
 void Rollup::lockOpen(){
-  initOverride(LOCK, 0, 100);
+//full open cycle even if increment counter is topped or rollup is still moving
+  /*if(incrementCounter() == 100 || isMoving()){
+    forceStop();
+    _incrementCounter = 0;
+    _stage = 0;
+    _reset = false;
+  }*/
+
+  initOverride(LOCK, 1, 100, 0, 0);
   checkOverride(LOCK, true);
 }
+
 void Rollup::lockClose(){
-  initOverride(LOCK, 0, 0);
+  //full close cycle even if increment counter is at zero or rollup is still moving
+  /*if(incrementCounter() == 0 || isMoving()){
+    forceStop();
+    _incrementCounter = 100;
+    _stage = _stages;
+    _reset = false;
+  }*/
+
+  initOverride(LOCK, 1, 0, 0, 0);
   checkOverride(LOCK, true);
 }
+
+
 void Rollup::lockAtIncrement(byte increment){
   if(increment <= _increments){
-    initOverride(LOCK, 0, increment);
+    initOverride(LOCK, 1, increment, 0, 0);
     checkOverride(LOCK, true);
   }
 }
 
+void Rollup::unforce(){
+  checkOverride(EXT_LOCK, false);
+}
+
+void Rollup::forceAt(byte increment){
+  initOverride(EXT_LOCK, 0, increment, 0,0);
+  checkOverride(EXT_LOCK, true);
+}
 
 void Rollup::lockAtIncrement(byte increment, unsigned long seconds){
   if(seconds != 0){
@@ -220,40 +243,109 @@ Open or close the rollups to specific increment, using a multiple cooling stages
 */
 void Rollup::forceStop(){
   stopMove();
+  _calibrating = false;
+  _activeOverride = false;
   _incrementCounter = OFF_VAL;
   _stage = OFF_VAL;
   _reset = true;
 }
 
+void Rollup::rotationTimeCalibration(){
+
+    float currentRead = (float)10/(float)1023*analogRead(_currentPin)-5;
+    motor.registerValue(currentRead);
+    float current = abs(motor.average());
+
+    //force close
+    if(_calibratingStep == 1){
+      _closingPin.start();
+      rollupTimer = 0;
+      _calibratingStep = 2;
+      Serial.println(F("first closing"));
+    }
+    //start opening from the bottom limit switch
+    if((_calibratingStep == 2)&&(rollupTimer > 5000)&&(current < 0.05)){
+      _closingPin.stop();
+        _openingPin.start();
+        rollupTimer = 0;
+        _calibratingStep = 3;
+        Serial.println(F("start opening"));
+    }
+    //start closing from the top limit switch
+    if((_calibratingStep == 3)&&(rollupTimer > 5000)&&(current < 0.05)){
+      _openingPin.stop();
+      rotationUp.setValue(rollupTimer/1000);
+        _closingPin.start();
+        rollupTimer = 0;
+        _calibratingStep = 4;
+
+        Serial.println(F("stop opening"));
+        Serial.print(F("rotation up : "));
+        Serial.println(rotationUp.value());
+        Serial.println(F("start closing"));
+    }
+    //resume when reach the bottom limit switch again
+    if((_calibratingStep == 4)&&(rollupTimer > 5000)&&(current < 0.05)){
+      _closingPin.stop();
+      rotationDown.setValue(rollupTimer/1000);
+      rollupTimer = 0;
+      _calibratingStep = 5;
+
+      Serial.println(F("stop closing"));
+      Serial.print(F("rotation down : "));
+      Serial.println(rotationDown.value());
+    }
+    if(_calibratingStep == 5){
+      setIncrementCounter(0);
+      _calibrating = false;
+      _reset = false;
+    }
+  }
+
+void Rollup::autoCalibration(const uint8_t  current_sensor){
+
+  _calibrating = true;
+  _currentPin = current_sensor;
+  _calibratingStep = 1;
+}
+
 void Rollup::routine(float targetTemp, float temp){
   if (isActivated()){
-      if(_reset == true){
-        setIncrementCounter(increments());
-        lockCloseAndWait(rotationDown.value());
-        _reset = false;
-      }
-      else{
-        if(lock.value() == true){
+
+    if(_calibrating == true){
+      _reset = false;
+      rotationTimeCalibration();
+    }
+    else{
+        //full rotation down cycle at reset
+        if(_reset == true){
+          setIncrementCounter(increments());
+          lockCloseAndWait(rotationDown.value());
+          _reset = false;
+        }
+        else if(lock.value() == true){
           lockAtIncrement(lockTarget.value());
         }
-      }
-      autoAdjustStages();
-      checkOverrideTimer();
-      byte checkOverride = activeOverride();
-      if((_activeOverride == OFF_VAL)&&(checkOverride != OFF_VAL)&&(!isMoving())){
-          updatePosition(overrideTarget());
-          startMove();
-      }
-      else if(_activeOverride != OFF_VAL){
-        watchOverride();
-      }
-      else{
-        if(_routineCycle == false){
-            updatePosition(temp, targetTemp);
+        autoAdjustStages();
+        checkOverrideTimer();
+
+        if((_activeOverride == false)&&(activeOverride() == true)&&(!isMoving())){
+
+            updatePosition(overrideTarget());
             startMove();
         }
+        else if(_activeOverride == true){
+          watchOverride();
+        }
         else{
-          watchRoutine();
+          if(_routineCycle == false){
+              updatePosition(temp, targetTemp);
+              startMove();
+          }
+          else{
+            watchRoutine();
+          }
+
         }
       }
     }
@@ -263,6 +355,7 @@ void Rollup::routine(float targetTemp, float temp){
 void Rollup::checkCurrent(float current){
   if(current >= currentLimit.value() && currentLimit.value() != 0){
     desactivateDevice();
+    _overcurrent = true;
   }
 }
 
@@ -298,6 +391,21 @@ void Rollup::updatePosition(float temp, float targetTemp){
     _routineCycle = true;
   }
 }
+unsigned short Rollup::routinePosition(float temp, float targetTemp){
+  short targetIncrement;
+
+  if (temp >= (targetTemp + stage[_upperStage].mod.value())){
+      targetIncrement = stage[_upperStage].target.value();
+  }
+  else if(temp < (targetTemp + stage[_stage].mod.value() - hyst.value())){
+      targetIncrement = stage[_lowerStage].target.value();
+  }
+  else{
+    targetIncrement = stage[_stage].target.value();
+  }
+  return targetIncrement;
+}
+
 void Rollup::updatePosition(byte target){
   if(_routineCycle == true){
     _routineCycle = false;
@@ -345,12 +453,12 @@ void Rollup::watchOverride(){
   if(rollupTimer > _moveTime){
       stopMove();
   }
-  byte checkOverride = activeOverride();
-  if((rollupTimer > _moveTime)&&(checkOverride != OFF_VAL)&&(checkOverride != _activeOverride)){
-      updatePosition(checkOverride);
+  if((rollupTimer > _moveTime)&&(activeOverride() == true)&&(overrideTarget() != incrementCounter())){
+      updatePosition(overrideTarget());
+      Serial.println(F("flag3"));
       startMove();
   }
-  if((rollupTimer > _moveTime)&&(checkOverride == OFF_VAL)){
+  if((rollupTimer > _moveTime)&&(activeOverride() == false)){
       resumeCycle("OVERRIDE");
   }
 }
@@ -363,9 +471,6 @@ void Rollup::watchOverride(){
     - reset _incrementMove
 */
 void Rollup::stopMove(){
-    if(_incrementCounter == OFF_VAL){
-      return;
-    }
     if(_openingPin.isActive()){
       _openingPin.stop();
     }
@@ -392,7 +497,7 @@ void Rollup::stopMove(){
 */
 void Rollup::resumeCycle(String type){
   if(type == "OVERRIDE"){
-      _activeOverride = OFF_VAL;
+      _activeOverride = false;
   }
   else if(type == "ROUTINE"){
       _routineCycle = false;
@@ -462,11 +567,11 @@ void Rollup::autoAdjustStages(){
       stage[x].target.setValue(stage[x-1].target.value());
     }
 
-    if(stage[x].mod.value() > stage[x-1].mod.maximum()){
-      stage[x].mod.setValue(stage[x-1].mod.maximum());
+    if(stage[x].mod.value() > MOD_MAXIMUM){
+      stage[x].mod.setValue(MOD_MAXIMUM);
     }
-    if(stage[x].target.value() > stage[x-1].target.maximum()){
-      stage[x].target.setValue(stage[x-1].target.maximum());
+    if(stage[x].target.value() > STAGE_TARGET_MAXIMUM){
+      stage[x].target.setValue(STAGE_TARGET_MAXIMUM);
     }
   }
 }
@@ -514,12 +619,23 @@ void Rollup::autoAdjustStages(){
     }
   }
   void Rollup::desactivateDevice(){
-    enabled.setValue(false);
     forceStop();
+    enabled.setValue(false);
   }
   void Rollup::activateDevice(){
     enabled.setValue(true);
+    _overcurrent = false;
+
   }
+  boolean Rollup::overCurrentWarning(){
+    if(_overcurrent == true){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+
   bool Rollup::isActivated(){
     return enabled.value();
   }
@@ -650,7 +766,7 @@ boolean Rollup::closing(){
   return _closingPin.isActive();
 }
 boolean Rollup::override(){
-  if(_activeOverride != OFF_VAL){
+  if(_activeOverride == true){
     return true;
   }
   else{
@@ -678,6 +794,14 @@ unsigned short Rollup::nb(){
   return _localCounter;
 }
 
+bool Rollup::inrushPhase(){
+  if((rollupTimer > 0 && rollupTimer < 1500)&&(isMoving())){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
 unsigned short Rollup::EEPROMIndexBegin(){
   return ROLLUP_INDEX + (ROLLUP_INDEX_SIZE*_localCounter);
 }
@@ -686,26 +810,13 @@ unsigned short Rollup::EEPROMIndexEnd(){
   return _localIndex;
 }
 
-boolean Rollup::TEST_parameterOffLimits(){
-  for(int x = 0; x < MAX_STAGES;x++){
-    if(stage[x].target.isOffLimit()||stage[x].mod.isOffLimit()){
-      return true;
-    }
-  }
-  if(hyst.isOffLimit()||rotationUp.isOffLimit()||rotationDown.isOffLimit()||pause.isOffLimit()){
-    return true;
-  }
-  else{
-    return false;
-  }
-}
 
 void Rollup::debugPrints(){
   if(debugTimer > 1000){
     if(_localCounter == 0 ){
       #ifdef DEBUG_ROLLUP1_CYCLE
         Serial.println(F("---------"));
-        if(_activeOverride != OFF_VAL){
+        if(_activeOverride == true){
           Serial.println(F("OVERRIDE : ON"));
         }
         if(_routineCycle == true){
@@ -736,8 +847,8 @@ void Rollup::debugPrints(){
           Serial.print(F("pauseTime : "));
           Serial.println(_moveTime + _pauseTime);
         }
-        else if(_activeOverride != OFF_VAL){
-          Serial.print(F("OVERRIDE"));
+        else if(_activeOverride == true){
+          Serial.print(F("OVERRIDE1"));
           Serial.println(_activeOverride);
           Serial.print(F("rollupTimer : "));
           Serial.println(rollupTimer);
@@ -749,7 +860,7 @@ void Rollup::debugPrints(){
   if(_localCounter == 1 ){
     #ifdef DEBUG_ROLLUP2_CYCLE
       Serial.println(F("---------"));
-      if(_activeOverride != OFF_VAL){
+      if(_activeOverride == true){
         Serial.println(F("OVERRIDE : ON"));
       }
       if(_routineCycle == true){
@@ -773,7 +884,7 @@ void Rollup::debugPrints(){
     #ifdef DEBUG_ROLLUP2_TIMING
       Serial.println(F("---------"));
       if(_routineCycle == true){
-        Serial.println(F("ROUTINE1"));
+        Serial.println(F("ROUTINE2"));
         Serial.print(F("rollupTimer : "));
         Serial.println(rollupTimer);
         Serial.print(F("moveTime : "));
@@ -781,8 +892,8 @@ void Rollup::debugPrints(){
         Serial.print(F("pauseTime : "));
         Serial.println(_moveTime + _pauseTime);
       }
-      else if(_activeOverride != OFF_VAL){
-        Serial.println(F("FIX OVERRIDE1"));
+      else if(_activeOverride == true){
+        Serial.println(F("OVERRIDE2"));
         Serial.print(F("rollupTimer : "));
         Serial.println(rollupTimer);
         Serial.print(F("moveTime : "));
@@ -793,7 +904,7 @@ void Rollup::debugPrints(){
     if(_localCounter == 2 ){
       #ifdef DEBUG_ROLLUP3_CYCLE
         Serial.println(F("---------"));
-        if(_activeOverride != OFF_VAL){
+        if(_activeOverride == true){
           Serial.println(F("OVERRIDE : ON"));
         }
         if(_routineCycle == true){
@@ -825,8 +936,8 @@ void Rollup::debugPrints(){
           Serial.print(F("pauseTime : "));
           Serial.println(_moveTime + _pauseTime);
         }
-        else if(_activeOverride != OFF_VAL){
-          Serial.println(F("FIX OVERRIDE3"));
+        else if(_activeOverride == true){
+          Serial.println(F("OVERRIDE3"));
           Serial.print(F("rollupTimer : "));
           Serial.println(rollupTimer);
           Serial.print(F("moveTime : "));

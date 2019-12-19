@@ -26,6 +26,7 @@
 #include "Parameters.h"
 #include "Defines.h"
 #include "GreenhouseLib_devices.h"
+#include "GreenhouseLib_sensors.h"
 
 #ifndef GreenhouseLib_rollups_h
 #define GreenhouseLib_rollups_h
@@ -83,17 +84,23 @@ class Rollup  : public OverrideManager
 
     void lockOpen();
     void lockClose();
+    void forceAt(byte increment);
+    void unforce();
     void lockOpenAndWait(unsigned long seconds);
     void lockCloseAndWait(unsigned long seconds);
     void lockAtIncrement(byte increment);
     void lockAtIncrement(byte increment, unsigned long seconds);
     void forceStop();
+    void autoCalibration(const uint8_t  current_sensor);
     //routihe functions
 		void routine(float target, float temp);
     void checkCurrent(float current);
     //Parameters functions
     void setParameters(byte stages, float hyst, unsigned short rotationUp, unsigned short rotationDown, unsigned short pause, bool enabled);
     void setIncrementCounter(unsigned short increment);
+    unsigned short routinePosition(float temp, float targetTemp);
+    boolean overCurrentWarning();
+
     void EEPROMGet();
 		//return private variables
     byteParameter stages;
@@ -118,10 +125,11 @@ class Rollup  : public OverrideManager
     boolean closing();
     unsigned short nb();
 
+    bool inrushPhase();
+
 		unsigned short EEPROMIndexBegin();
 		unsigned short EEPROMIndexEnd();
 
-    boolean TEST_parameterOffLimits();
     void setTest(boolean state);
 
 
@@ -171,6 +179,13 @@ class Rollup  : public OverrideManager
 		unsigned short _stages;
     boolean _reset;
 
+    boolean _calibrating;
+    uint8_t _currentPin;
+    byte _calibratingStep;
+    Current motor;
+    boolean _overcurrent;
+
+
 		//Timers
 		elapsedMillis rollupTimer;
 		elapsedMillis debugTimer;
@@ -190,6 +205,8 @@ class Rollup  : public OverrideManager
     void startMove();
     void stopMove();
     void resumeCycle(String type);
+    void rotationTimeCalibration();
+
 
     void autoAdjustStages();
     void calibrateStages();

@@ -39,35 +39,27 @@ Timepoint::Timepoint(){
   _counter++;
 
 
-  type.setLimits(0, 2);
   type.setAddress(_localIndex);
   _localIndex += 1;
 
-  mnMod.setLimits(0, 59);
   mnMod.setAddress(_localIndex);
   _localIndex += sizeof(short);
 
-  hrMod.setLimits(0,23);
   hrMod.setAddress(_localIndex);
   _localIndex += sizeof(short);
 
-  coolingTemp.setLimits(0,50);
   coolingTemp.setAddress(_localIndex);
   _localIndex += sizeof(float);
 
-  heatingTemp.setLimits(0,50);
   heatingTemp.setAddress(_localIndex);
   _localIndex += sizeof(float);
 
-  coolingTempCloud.setLimits(0,50);
   coolingTempCloud.setAddress(_localIndex);
   _localIndex += sizeof(float);
 
-  heatingTempCloud.setLimits(0,50);
   heatingTempCloud.setAddress(_localIndex);
   _localIndex += sizeof(float);
 
-  ramping.setLimits(0,180);
   ramping.setAddress(_localIndex);
   _localIndex += sizeof(unsigned short);
 
@@ -104,14 +96,6 @@ void Timepoint::setParameters(byte  typ, short hr, short mn, float heatTemp, flo
 
 void Timepoint::setTimepoint(short hourMod, short minutMod){
 
-  if(type.value() == SR || type.value() == SS){
-    hrMod.setLimits(-23,23);
-    mnMod.setLimits(-59,59);
-  }
-  else{
-    hrMod.setLimits(0,23);
-    mnMod.setLimits(0,59);
-  }
 
   if (type.value() == SR){
 		_time.setTime(sunRise[HOUR], sunRise[MINUT]);

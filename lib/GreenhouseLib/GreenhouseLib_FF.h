@@ -26,6 +26,7 @@
 #include "Parameters.h"
 #include "Defines.h"
 #include "GreenhouseLib_devices.h"
+#include "GreenhouseLib_sensors.h"
 
 #ifndef GreenhouseLib_FF_h
 #define GreenhouseLib_FF_h
@@ -43,6 +44,9 @@ class OnOffDevice  : public OverrideManager
       void lockOff();
       void lockOnAndWait(unsigned long seconds);
       void lockOffAndWait(unsigned long seconds);
+      void forceStart();
+      void forceStop();
+      void unforce();
 
       void routine(float target, float temp);
       void valvRoutine();
@@ -55,12 +59,13 @@ class OnOffDevice  : public OverrideManager
       floatParameter mod;
       byteParameter type;
       boolParameter enabled;
+      boolParameter pulse;
+
 			boolean isOn();
       boolean override();
 
 
 
-      boolean TEST_parameterOffLimits();
 
 
       void EEPROMGet();
@@ -78,6 +83,7 @@ class OnOffDevice  : public OverrideManager
       void keepLockInMemory(byte increment);
 
       void unlock();
+      OnTime onTime;
 
     protected :
 
@@ -92,15 +98,15 @@ class OnOffDevice  : public OverrideManager
 
       void heaterRoutine(float target, float temp);
       void fanRoutine(float target, float temp);
-      void adjustModLimits();
 
       byte _activeOverride;
+
+
 
       unsigned short _localCounter;
       static unsigned short _counter;
       unsigned short _localIndex;
       static unsigned short _EEPROMindex;
-
 
 };
 

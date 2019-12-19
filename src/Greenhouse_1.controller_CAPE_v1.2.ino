@@ -74,7 +74,6 @@ Greenhouse greenhouse;
   Timepoint &T2 = greenhouse.timepoint[1];
   Timepoint &T3 = greenhouse.timepoint[2];
   Timepoint &T4 = greenhouse.timepoint[3];
-  Alarm &alarm = greenhouse.alarm;
 
 
 
@@ -116,9 +115,8 @@ void setup() {
     keypad.begin( makeKeymap(keys) );
   #endif
   initSensors();
-  //Add safety alarm
-  alarm.init(MCP23008, ACT_LOW, ALARM_PIN);
-  alarm.addSequence(1, 1000, 1000);
+  delay(1000);
+  initAlarms();
 
   // change RTC settings
   #ifdef RTC_TIME_SET
@@ -131,9 +129,9 @@ void setup() {
   getDateAndTime();
   getGreenhouseTemp();
   getGreenhouseHum();
-  getRain();
-  getWind();
-
+  greenhouse.startingTime(rightNow);
+  greenhouse.startingParameters();
+  Sensor::setLogHour(greenhouse.hr(), greenhouse.mn());
   loadParameters();
 
   //Load parameters from EEPROM or Greenhouse_parameters.h
@@ -141,14 +139,18 @@ void setup() {
 //********************Parameters*******************
 
   //actual time, timepoint and targetTemp
-  greenhouse.startingParameters();
 
+  pinMode(40, INPUT_PULLUP);
+  pinMode(42, INPUT_PULLUP);
+  pinMode(44, INPUT_PULLUP);
+  pinMode(46, INPUT_PULLUP);
 
 
   #ifdef UNIT_TEST
     TestRunner::setTimeout(30);
   #endif
   startRecordingToSD();
+
 }
 
 
@@ -161,6 +163,8 @@ void loop() {
   x++;
   //actual time
   getDateAndTime();
+  Sensor::setLogHour(greenhouse.hr(), greenhouse.mn());
+
   //get data from sensors
   getGreenhouseTemp();
   getOutsideTemp();
@@ -169,22 +173,18 @@ void loop() {
   getRain();
   getWind();
   getCurrent();
-  //adjustWeatherSettings
+  getLux();
+  getOnTime();
+  //luxCalculations();
   autoWeather();
   //diplay infos on LCD screen
-  lcdDisplay();
 
-  if(greenhouse.lowTempAlarm.value() == true){
-    alarm.below(greenhouseTemperature.value(),greenhouse.minTemp.value());
-  }
-  if(greenhouse.highTempAlarm.value() == true){
-    alarm.above(greenhouseTemperature.value(), greenhouse.maxTemp.value());
-  }
-  alarm.conditionalTo(sensorFailure, 1);
-  alarm.checkAlarm();
+  lcdDisplay();
+  checkOverrides();
+
   //timepoint and target temperatures definitions, outputs routine
   greenhouse.fullRoutine(rightNow, greenhouseTemperature.value());
-  checkOverrides();
+  checkAlarms();
 
   #ifdef EXCEL_DATALOGGER
     dataloggingToExcel();
@@ -193,4 +193,5 @@ void loop() {
   #ifdef UNIT_TEST
     TestRunner::run();
   #endif
+
 }

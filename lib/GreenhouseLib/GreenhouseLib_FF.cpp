@@ -35,15 +35,12 @@ OnOffDevice::OnOffDevice(){
     _localCounter = _counter;
     _counter++;
 
-    mod.setLimits(-10, 10);
     mod.setAddress(_localIndex);
     _localIndex += sizeof(float);
 
-    hyst.setLimits(0,5);
     hyst.setAddress(_localIndex);
     _localIndex += sizeof(float);
 
-    type.setLimits(0,2);
     type.setAddress(_localIndex);
     _localIndex += sizeof(byte);
 
@@ -56,7 +53,10 @@ OnOffDevice::OnOffDevice(){
     lockTarget.setAddress(_localIndex);
     _localIndex += sizeof(byte);
 
-    initOverride(LOCK, 0,0);
+    pulse.setAddress(_localIndex);
+    _localIndex += sizeof(bool);
+
+    initOverride(LOCK, 0,0, 0,0);
 }
 
 void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
@@ -64,10 +64,12 @@ void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
   output.init(outputType, relayType, pin);
 }
 
+
 void OnOffDevice::unlock(){
   checkOverride(LOCK, false);
   lockedAndWaiting = false;
   lock.setValue(false);
+  output.stop();
 }
 
 void OnOffDevice::resetLockTimer(unsigned long seconds){
@@ -89,13 +91,27 @@ void OnOffDevice::keepLockInMemory(byte increment){
   lockTarget.setValue(increment);
 }
 void OnOffDevice::lockOn(){
-  initOverride(LOCK, 0, true);
+  initOverride(LOCK, 1, true, 0,0);
   checkOverride(LOCK, true);
 }
 
 void OnOffDevice::lockOff(){
-  initOverride(LOCK, 0, false);
+  initOverride(LOCK, 1, false, 0,0);
   checkOverride(LOCK, true);
+}
+
+void OnOffDevice::forceStart(){
+  initOverride(EXT_LOCK, 0, true, 0,0);
+  checkOverride(EXT_LOCK, true);
+}
+
+void OnOffDevice::forceStop(){
+  initOverride(EXT_LOCK, 0, false, 0,0);
+  checkOverride(EXT_LOCK, true);
+}
+void OnOffDevice::unforce(){
+  checkOverride(EXT_LOCK, false);
+  output.stop();
 }
 
 void OnOffDevice::lockOnAndWait(unsigned long seconds){
@@ -119,19 +135,9 @@ void OnOffDevice::lockOffAndWait(unsigned long seconds){
 }
 
 
-//programmation functions
-void OnOffDevice::adjustModLimits(){
-  if(type.value() == HEATERTYPE){
-    mod.setLimits(-10,0);
-  }
-  else if(type.value() == FANTYPE){
-    mod.setLimits(0,10);
-  }
-}
 
 void OnOffDevice::setParameters(byte typ, float modif, float hysteresis, bool enab){
   type.setValue(typ);
-  adjustModLimits();
   hyst.setValue(hysteresis);
   mod.setValue(modif);
   enabled.setValue(enab);
@@ -140,7 +146,7 @@ void OnOffDevice::setParameters(byte typ, float modif, float hysteresis, bool en
 Or one by one...
 */
 boolean OnOffDevice::override(){
-  if(_activeOverride == OFF_VAL){
+  if(_activeOverride == false){
     return false;
   }
   else{
@@ -169,14 +175,6 @@ bool OnOffDevice::isActivated(){
 }
 
 
-boolean OnOffDevice::TEST_parameterOffLimits(){
-  if(hyst.isOffLimit()||mod.isOffLimit()){
-    return true;
-  }
-  else{
-    return false;
-  }
-}
 void OnOffDevice::EEPROMGet(){
   #ifdef DEBUG_EEPROM
     Serial.println(F("-------------------"));
@@ -222,7 +220,6 @@ Adjust to an external target temperature (Mode VAR_TEMP)
 */
 
 void OnOffDevice::routine(float target, float temp){
-  adjustModLimits();
   if (isActivated()){
     if(type.value() == FANTYPE){
       fanRoutine(target, temp);
@@ -245,7 +242,7 @@ void OnOffDevice::valvRoutine(){
     }
     checkOverrideTimer();
     _activeOverride = activeOverride();
-    if(activeOverride() != OFF_VAL){
+    if(activeOverride() == true){
       if((bool)overrideTarget() == true){
         output.start();
       }
@@ -269,7 +266,7 @@ void OnOffDevice::fanRoutine(float target, float temp){
     }
   }
   checkOverrideTimer();
-  if(activeOverride() != OFF_VAL){
+  if(activeOverride() == true){
     if((bool)overrideTarget() == true){
       output.start();
     }
@@ -298,7 +295,7 @@ void OnOffDevice::heaterRoutine(float target, float temp){
     }
   }
     checkOverrideTimer();
-    if(activeOverride() != OFF_VAL){
+    if(activeOverride() == true){
       if((bool)overrideTarget() == true){
         output.start();
       }

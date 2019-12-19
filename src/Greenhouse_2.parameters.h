@@ -46,19 +46,19 @@ TIMEPOINTS PARAMETERS - SYNTAX RULES:
 */
 //*******************************************************Timepoint 1
 #define TP1_TYPE            CLOCK
-#define TP1_HOUR            9
+#define TP1_HOUR            7
 #define TP1_MN_MOD          0
-#define TP1_HEAT_SUN        20
-#define TP1_COOL_SUN        22
-#define TP1_HEAT_CLOUD      16
-#define TP1_COOL_CLOUD      18
+#define TP1_HEAT_SUN        18
+#define TP1_COOL_SUN        20
+#define TP1_HEAT_CLOUD      18
+#define TP1_COOL_CLOUD      20
 #define TP1_RAMP            0
 //*******************************************************Timepoint 2
 #define TP2_TYPE            CLOCK
-#define TP2_HOUR            9
+#define TP2_HOUR            7
 #define TP2_MN_MOD          0
-#define TP2_HEAT_SUN        22
-#define TP2_COOL_SUN        25
+#define TP2_HEAT_SUN        18
+#define TP2_COOL_SUN        20
 #define TP2_HEAT_CLOUD      18
 #define TP2_COOL_CLOUD      20
 #define TP2_RAMP            0
@@ -68,8 +68,8 @@ TIMEPOINTS PARAMETERS - SYNTAX RULES:
 #define TP3_MN_MOD          0
 #define TP3_HEAT_SUN        18
 #define TP3_COOL_SUN        20
-#define TP3_HEAT_CLOUD      16
-#define TP3_COOL_CLOUD      18
+#define TP3_HEAT_CLOUD      18
+#define TP3_COOL_CLOUD      20
 #define TP3_RAMP            0
 //*******************************************************Timepoint 4
 #define TP4_TYPE            CLOCK
@@ -81,16 +81,6 @@ TIMEPOINTS PARAMETERS - SYNTAX RULES:
 #define TP4_COOL_CLOUD      18
 #define TP4_RAMP            0
 //*******************************************************Timepoint 5
-
-#define TP5_TYPE            CLOCK
-#define TP5_HOUR            0
-#define TP5_MN_MOD          30
-#define TP5_HEAT_SUN        16
-#define TP5_COOL_SUN        20
-#define TP5_HEAT_CLOUD      16
-#define TP5_COOL_CLOUD      18
-#define TP5_RAMP            0
-//*******************************************************************
 /*
 (SEE Greenhouse_userManual.h FOR MORE DETAILS)
 
@@ -102,14 +92,14 @@ ROLLUP PARAMETERS - SYNTAX RULES :
 */
 //*******************************************************Rollup 1 (overral parameters)
 #define R1_HYST             1
-#define R1_ROTUP            20
-#define R1_ROTDOWN          20
+#define R1_ROTUP            0
+#define R1_ROTDOWN          0
 #define R1_PAUSE            20
 //*******************************************************Rollup 2 (overral parameters)
 
 #define R2_HYST             1
-#define R2_ROTUP            20
-#define R2_ROTDOWN          20
+#define R2_ROTUP            0
+#define R2_ROTDOWN          0
 #define R2_PAUSE            20
 
 //*******************************************************************
@@ -171,95 +161,35 @@ DEVICE PARAMETERS - SYNTAX RULES:
 #define ALARM_MAX_TEMP    35.00
 
 
-/*ROLLUP CALIBRATION - FIX OVERRIDE
 
-Conditions :
- - rollup has been fully open or fully close for a while (SAFETY_DELAY(min))
- - rollup is not moving
-Action :
- - full opening or full closing cycle
-*/
-//#define OVERRIDE8 "FULL_VENTILATION"
-//#define OVERRIDE9 "FULL_VENTILATION"
-
-/*FULL VENTILATION - FIX OVERRIDE
-
-Conditions :
- -Full ventiliation action is called
-Action :
- - open rollups and start all devices for a while (FULL_VENTILATION_DELAY(min))
-*/
-
-/*#define FULL_VENTILATION
-#define FULL_VENTILATION_DELAY        5
-*/
-
-/*DESHUM CYCLE - RELATIVE OVERRIDE
-
-Conditions :
-  - deshum cycle has been activated
-  -between start time and stop time
-  -temperature stays over a minimum
-Action :
-  - open rollups at target increment
-  AND/OR
-  - activate heater
-  AND/OR
-  - activate device(s)
-*/
-/*
-#define HEATER1_DESHUM
-#define HEATER1_DESHUM_START_HOUR      6
-#define HEATER1_DESHUM_START_MIN       5
-#define HEATER1_DESHUM_STOP_HOUR       6
-#define HEATER1_DESHUM_STOP_MIN        10
-
-#define DEVICE1_DESHUM
-#define DEVICE1_DESHUM_START_HOUR         6
-#define DEVICE1_DESHUM_START_MIN          5
-#define DEVICE1_DESHUM_STOP_HOUR          6
-#define DEVICE1_DESHUM_STOP_MIN           20
-
-#define ROLLUP1_DESHUM
-#define ROLLUP1_DESHUM_INCREMENT       50
-#define ROLLUP1_DESHUM_START_HOUR      6
-#define ROLLUP1_DESHUM_START_MIN       5
-#define ROLLUP1_DESHUM_STOP_HOUR       6
-#define ROLLUP1_DESHUM_STOP_MIN        20
-
-#define ROLLUP2_DESHUM
-#define ROLLUP2_DESHUM_INCREMENT       50
-#define ROLLUP2_DESHUM_START_HOUR      6
-#define ROLLUP2_DESHUM_START_MIN       5
-#define ROLLUP2_DESHUM_STOP_HOUR       6
-#define ROLLUP2_DESHUM_STOP_MIN        20
-
-#define DESHUM_MININIM                 14
-*/
-
-
-#define FIX_R1_PRIORITY 3
 #define R1_HRSTART  3
 #define R1_MNSTART  0
 #define R1_HRSTOP 3
 #define R1_MNSTOP 30
 #define R1_TARGET 50
 
-#define FIX_D1_PRIORITY 2
 #define D1_HRSTART  3
 #define D1_MNSTART  0
 #define D1_HRSTOP 3
 #define D1_MNSTOP 30
 #define D1_TARGET  true
 
-#define DESHUM_PRIORITY    3
 #define DESHUM_HOT         80
 
-#define DESHUM_COLD_PRIORITY    3
 #define DESHUM_COLD        80
 
-#define RAIN_PRIORITY      2
 #define RAIN_TARGET        20
 
-#define WIND_PRIORITY      1
 #define MAX_WIND_SPEED     80
+
+
+#define EXT_LOCK_PRIORITY   0
+#define LOCK_PRIORITY       1
+#define WINDOV_PRIORITY     2
+#define RAINOV_PRIORITY     3
+#define PULSE_PRIORITY      2
+#define ANALOG_PRIORITY     3
+#define CLOCKOV1_PRIORITY   4
+#define CLOCKOV2_PRIORITY   5
+#define CLOCKOV3_PRIORITY   6
+#define DESHUM_PRIORITY     7

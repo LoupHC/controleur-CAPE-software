@@ -32,11 +32,11 @@
 class Parameter
 {
   public:
-    void setAddress(int adress);
-    int address();
+    void setAddress(short adress);
+    short address();
 
   protected :
-    int _address;
+    short _address;
 };
 
 class floatParameter : public Parameter
@@ -45,15 +45,8 @@ class floatParameter : public Parameter
     floatParameter();
     ~floatParameter();
     void setValue(float value);
-    void setLimits(float minimum, float maximum);
-    float minimum();
-    float maximum();
     float value();
-    boolean isOffLimit();
 
-  private:
-    float _minimum;
-    float _maximum;
 };
 
 class uShortParameter : public Parameter
@@ -62,15 +55,8 @@ class uShortParameter : public Parameter
     uShortParameter();
     ~uShortParameter();
     void setValue(unsigned short value);
-    void setLimits(unsigned short minimum, unsigned short maximum);
-    unsigned short minimum();
-    unsigned short maximum();
     unsigned short value();
-    boolean isOffLimit();
 
-  private:
-    unsigned short _minimum;
-    unsigned short _maximum;
 };
 
 class shortParameter : public Parameter
@@ -81,15 +67,8 @@ class shortParameter : public Parameter
     void setValue(short  value);
     void setLastValue(short value);
     void updateLastValue();
-    void setLimits(short minimum, short maximum);
-    short minimum();
-    short maximum();
     short value();
-    boolean isOffLimit();
 
-  private:
-    short _minimum;
-    short _maximum;
 };
 
 class byteParameter : public Parameter
@@ -98,15 +77,8 @@ class byteParameter : public Parameter
     byteParameter();
     ~byteParameter();
     void setValue(byte value);
-    void setLimits(byte minimum, byte maximum);
-    byte minimum();
-    byte maximum();
-    boolean isOffLimit();
     byte value();
 
-  private:
-    byte _minimum;
-    byte _maximum;
 };
 
 class boolParameter : public Parameter

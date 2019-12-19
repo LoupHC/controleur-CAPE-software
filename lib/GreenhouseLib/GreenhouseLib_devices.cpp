@@ -122,7 +122,7 @@
         sequence[x].onTime = 1000;
         sequence[x].offTime = 0;
       }
-      _sequencePlaying = OFF;
+      _sequencePlaying = OFF_VAL;
       counter = 0;
     }
     Alarm::~Alarm(){}
@@ -146,7 +146,7 @@
         }
         else{
           if(_sequencePlaying == 0){
-            _sequencePlaying = OFF;
+            _sequencePlaying = OFF_VAL;
           }
         }
     }
@@ -157,7 +157,7 @@
         }
         else{
           if(_sequencePlaying == sequence){
-            _sequencePlaying = OFF;
+            _sequencePlaying = OFF_VAL;
           }
         }
       }
@@ -169,7 +169,7 @@
         }
         else{
           if(_sequencePlaying == 0){
-            _sequencePlaying = OFF;
+            _sequencePlaying = OFF_VAL;
           }
         }
     }
@@ -180,7 +180,7 @@
         }
         else{
           if(_sequencePlaying == sequence){
-            _sequencePlaying = OFF;
+            _sequencePlaying = OFF_VAL;
           }
         }
     }
@@ -192,7 +192,7 @@
         }
         else{
           if(_sequencePlaying == 0){
-            _sequencePlaying = OFF;
+            _sequencePlaying = OFF_VAL;
           }
         }
     }
@@ -203,7 +203,7 @@
         }
         else{
           if(_sequencePlaying == sequence){
-            _sequencePlaying = OFF;
+            _sequencePlaying = OFF_VAL;
           }
         }
     }
@@ -214,7 +214,7 @@
         }
         else{
           if(_sequencePlaying == 0){
-            _sequencePlaying = OFF;
+            _sequencePlaying = OFF_VAL;
           }
         }
     }
@@ -228,22 +228,24 @@
       }
       else{
         if(_sequencePlaying == sequence){
-          _sequencePlaying = OFF;
+          _sequencePlaying = OFF_VAL;
         }
       }
     }
 
     //execute the selected sequence
     void Alarm::checkAlarm(){
-      /*Serial.print("counter : ");
-      Serial.println(counter);
-      if(_sequencePlaying != OFF){
-      Serial.print("offtime : ");
-      Serial.println(sequence[_sequencePlaying].offTime);
-      Serial.print("ontime : ");
-      Serial.println(sequence[_sequencePlaying].onTime);
-    }*/
-      if(_sequencePlaying == OFF){
+      #ifdef DEBUG_ALARM
+        Serial.print(F("counter : "));
+        Serial.println(counter);
+        if(_sequencePlaying != OFF_VAL){
+          Serial.print(F("offtime : "));
+          Serial.println(sequence[_sequencePlaying].offTime);
+          Serial.print(F("ontime : "));
+          Serial.println(sequence[_sequencePlaying].onTime);
+        }
+      #endif
+      if(_sequencePlaying == OFF_VAL){
         output.stop();
         counter = 0;
       }
@@ -254,12 +256,9 @@
       else{
         if(counter < sequence[_sequencePlaying].onTime){
           output.start();
-          //activate(true);
-
         }
         else if(counter < (sequence[_sequencePlaying].onTime+sequence[_sequencePlaying].offTime)){
           output.stop();
-          //activate(false);
         }
         else{
           counter = 0;

@@ -25,11 +25,13 @@
 #include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
+#include "GreenhouseLib_timing.h"
+#include "Average.h"
+
 
 
 #ifndef GreenhouseLib_sensors_h
 #define GreenhouseLib_sensors_h
-
 
 class Sensor
 {
@@ -37,22 +39,33 @@ class Sensor
     Sensor();
     ~Sensor();
     float value();
-    float average24h();
-    float min24h();
-    float max24h();
+    int average24h();
+    int average12h();
+    int hourAverage();
+    int hourAverage(byte hour);
+    int min24h();
+    int max24h();
     void registerValue(float value);
     void clearRecords();
-    boolean allDataAcquired();
+    boolean someDataMissing();
+    static void setLogHour(byte hour, byte mn);
 
 
   protected:
+
+    void setAverage24h();
+    void setAverage12h();
+    int logHr(int index);
+    static byte _logHr;
+    static byte _logMn;
     float _value;
-    float _average24h[24];
-    float _average1h[6];
+    int _average24hVal;
+    int _average12hVal;
+    int  _average24h[24];
+    int  _average1h[6];
     int _recordCount;
-    elapsedMillis timer;
-    void recordNewValueInAverage1h();
-    void recordNewValueInAverage24h();
+    elapsedMillis tenMinutTimer;
+    elapsedMillis oneSecondTimer;
     void  updateLastHourAverage();
 };
 
@@ -73,7 +86,7 @@ class Wind
     ~Wind();
     float value();
     void registerValue(float value);
-    boolean allDataAcquired();
+    boolean someDataMissing();
 
 
   protected:
@@ -92,7 +105,7 @@ class Rain
     float rainfall24h();
     boolean isRaining();
     void registerValue(float value);
-    boolean allDataAcquired();
+    boolean someDataMissing();
 
 
   protected:
@@ -113,12 +126,9 @@ class Current
 
 
   private:
-    void getAverage();
-    float _currentRead[5];
+    float _currentRead[15];
     float _value;
-    byte _recordCount;
     elapsedMillis _timer;
-    elapsedMillis _averageTimer;
 
 
 };
@@ -126,12 +136,40 @@ class Current
 class Lux : public Sensor
 {
   public:
+    Lux();
+    void registerLux(unsigned long lux);
+    unsigned long lux();
+    unsigned long luxHourAverage(byte hour);
     unsigned long wattPerMeterSquare();
-    unsigned long Joules24h();
-    byte weatherRatio(byte hour, byte min);
+    unsigned long wattPerMeterSquare(unsigned long value);
+    unsigned long dayJoules();
+    byte autoWeatherRatio();
+    //byte weatherRatio(unsigned long lux);
+    unsigned long averageDailyLux();
+    unsigned long averageLuxUntilNow();
+    //unsigned long averageFromPreviousLogs(byte previousLogs);
+    //unsigned long computedLux();
   private:
+    unsigned long adjustedLuxValue(unsigned long lux, float adjust);
+    boolean isOnEdgesOfRadiationLog(byte hour, int edgePos);
+    byte lastRadiationLog();
+    void setLuxSetpoints();
+    unsigned long _sunLux;
+    unsigned long _cloudLux;
+    byte _averagePeriod;
+    byte _hourOffset;
     friend class Timepoint;
 };
 
+class OnTime{
+  public:
+    OnTime();
+    void record(byte hr,byte mn,  bool state);
+    unsigned long onTime24h();
+    boolean someDataMissing();
+  private:
+    byte _onTime[24];
+    byte _lastMinRecorded;
+};
 
 #endif

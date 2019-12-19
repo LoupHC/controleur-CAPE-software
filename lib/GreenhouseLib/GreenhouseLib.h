@@ -102,6 +102,8 @@ class Greenhouse
     byteParameter luxMeter;
     byteParameter rainSensor;
     byteParameter anemometer;
+    boolParameter autoWeather;
+
 
     Alarm alarm;
     boolParameter lowTempAlarm;

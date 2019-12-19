@@ -31,9 +31,13 @@
 //*************SENSORS PINOUT*********************
 #define TEMP2_DATA          4 //connect this pin to the SHT1X data line
 #define TEMP2_CLOCK         5 //connect this pin to the SHT1X clock line
-#define TEMP1_CLOCK         7 //connect this pin to the DS18B20 data line
 #define TEMP1_DATA          6 //connect this pin to the DS18B20 data line
+#define TEMP1_CLOCK         7 //connect this pin to the DS18B20 data line
+
 #define RAIN_SWITCH         3
+#define WIND_DIGITAL_SENSOR 2
+#define SOIL_MOISTURE2       A5
+#define SOIL_MOISTURE1       A4
 #define WIND_ANALOG_SENSOR  A3
 #define LIGHT_SENSOR        A2
 #define CURRENT_SENSOR2     A1
@@ -57,7 +61,7 @@
 #define EXPORT_DELAY        60
 #define MAX_LINES_PER_FILE  10000
 //*************VERSION*********************
-#define FIRST_BOOT          111
+#define FIRST_BOOT          113
 
 
 //************************************************************

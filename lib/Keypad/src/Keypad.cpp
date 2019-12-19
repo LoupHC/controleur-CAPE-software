@@ -40,8 +40,8 @@ Keypad::Keypad(char *userKeymap, byte *row, byte *col, byte numRows, byte numCol
 
 	begin(userKeymap);
 
-	setDebounceTime(5);
-	setHoldTime(500);
+	setDebounceTime(0);
+	setHoldTime(0);
 	keypadEventListener = 0;
 
 	startTime = 0;
@@ -70,7 +70,7 @@ bool Keypad::getKeys() {
 	bool keyActivity = false;
 
 	// Limit how often the keypad is scanned. This makes the loop() run 10 times as fast.
-	if ( (millis()-startTime)>debounceTime ) {
+	if ( (millis()-startTime)>=debounceTime ) {
 		scanKeys();
 		keyActivity = updateList();
 		startTime = millis();
@@ -159,7 +159,7 @@ void Keypad::nextKeyState(byte idx, boolean button) {
 				holdTimer = millis(); }		// Get ready for next HOLD state.
 			break;
 		case PRESSED:
-			if ((millis()-holdTimer)>holdTime)	// Waiting for a key HOLD...
+			if ((millis()-holdTimer)>=holdTime)	// Waiting for a key HOLD...
 				transitionTo (idx, HOLD);
 			else if (button==OPEN)				// or for a key to be RELEASED.
 				transitionTo (idx, RELEASED);
