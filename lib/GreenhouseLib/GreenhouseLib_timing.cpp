@@ -62,8 +62,6 @@ Timepoint::Timepoint(){
 
   ramping.setAddress(_localIndex);
   _localIndex += sizeof(unsigned short);
-
-  EEPROMTimer = 0;
 }
 
 Timepoint::~Timepoint(){}

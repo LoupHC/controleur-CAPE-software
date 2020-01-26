@@ -166,10 +166,7 @@ void Sensor::clearRecords(){
 
 //record new value every 10 minuts
 void Sensor::registerValue(float value){
-  if(oneSecondTimer >= 1000){
     _value = value;
-    oneSecondTimer = 0;
-  }
   if(_logMn%10 == 0){
     int remainder = _logMn%10;
     int roundedIndex = (_logMn-remainder)/10;
@@ -202,6 +199,11 @@ float Humidity::deficit(float temp){
   float Hdeficit = relativeToAbsoluteConversion(100, temp)-relativeToAbsoluteConversion(_value, temp);
   return Hdeficit;
 }
+float Humidity::dew(float temp){
+  float gamma = log(_value / 100) + ((17.62 * temp) / (243.5 + temp));
+  float dp = 243.5 * gamma / (17.62 - gamma);
+  return dp;
+}
 Lux::Lux(){
   _cloudLux = 20000;
   _sunLux = 30000;
@@ -222,8 +224,12 @@ unsigned long Lux::luxHourAverage(byte x){
   return average;
 }
 void Lux::registerLux(unsigned long lux){
-  int value = (int)(lux/10);//lux is divided by 100 to fit in an int
-  registerValue(value);
+  unsigned long computeLux = lux/10;
+  int value = (int)computeLux;//lux is divided by 100 to fit in an int
+  if(oneSecondTimer >= 1000){
+    registerValue(value);
+    oneSecondTimer = 0;
+  }
 }
 unsigned long Lux::wattPerMeterSquare(){
   return lux()*0.0079;//conversion constant from lux to w/m2 (for direct sunlight)
@@ -349,10 +355,12 @@ byte Lux::autoWeatherRatio(){
 //joules/cm2/24h
 unsigned long Lux::dayJoules(){
   unsigned long joules = 0;
-
-  for (int x = 0; x < 24; x++){
-    if(hourAverage(x) != OFF_VAL){
-      joules += wattPerMeterSquare(hourAverage(x)*10)*0.36; //0.36 : 3600 seconds / 10000cm2
+  if(_logHr > Timepoint::sunRise[2]){
+    for (int x = Timepoint::sunRise[2]; x < _logHr; x++){
+      if(hourAverage(x) != OFF_VAL){
+        float computeJoules = wattPerMeterSquare((unsigned long)hourAverage(x)*10)*0.36;//0.36 : 3600 seconds / 10000cm2
+        joules += computeJoules;
+      }
     }
   }
   return joules;

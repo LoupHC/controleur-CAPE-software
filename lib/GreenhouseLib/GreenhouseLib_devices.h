@@ -71,6 +71,8 @@ class Alarm
     void offRange(float parameter, float minimum, float maximum, byte sequence);
     void conditionalTo(boolean value, byte sequence);
     //Execute the alarm
+    void start();
+    void stop();
     void checkAlarm();
     boolean isActive();
 

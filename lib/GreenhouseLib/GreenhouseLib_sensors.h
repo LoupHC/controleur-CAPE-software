@@ -64,7 +64,6 @@ class Sensor
     int  _average24h[24];
     int  _average1h[6];
     int _recordCount;
-    elapsedMillis tenMinutTimer;
     elapsedMillis oneSecondTimer;
     void  updateLastHourAverage();
 };
@@ -76,45 +75,10 @@ class Humidity : public Sensor
   public:
     float absolute(float temp);
     float deficit(float temp);
+    float dew(float temp);
   private:
     float relativeToAbsoluteConversion(float humidity, float temp);
 };
-
-class Wind
-{  public:
-    Wind();
-    ~Wind();
-    float value();
-    void registerValue(float value);
-    boolean someDataMissing();
-
-
-  protected:
-    float _average1min[6];
-    elapsedMillis timer;
-    void recordNewValueInAverage5min();
-
-};
-
-class Rain
-{
-  public:
-    Rain();
-    ~Rain();
-    float totalRainfall();
-    float rainfall24h();
-    boolean isRaining();
-    void registerValue(float value);
-    boolean someDataMissing();
-
-
-  protected:
-    float _totalRainfall;
-    float _rainfall24h[24];
-    elapsedMillis timer;
-
-};
-
 
 class Current
 {

@@ -2942,14 +2942,14 @@ const int sizeOfTempSensorList = sizeof(tempSensorList)/sizeof(tempSensorList[0]
 
 void insideTemp(){
   printHeader(F(" INSIDE TEMP SENSOR "));
-    confirmVariable(greenhouse.insideTemp.value(), tempSensorList, sizeOfTempSensorList-1);
+    confirmVariable(greenhouse.insideTempSensor.value(), tempSensorList, sizeOfTempSensorList-1);
 
   if(choiceIsConfirmed()){
     switch (selectedElement) {
       //0 = DS18B20
       //1 = SHT1X
-      case 0: if(greenhouse.insideTemp.value() != 0){greenhouseTemperature.clearRecords();greenhouseHumidity.clearRecords();};greenhouse.insideTemp.setValue(0);break;
-      case 1: if(greenhouse.insideTemp.value() != 1){greenhouseTemperature.clearRecords();greenhouseHumidity.clearRecords();}greenhouse.insideTemp.setValue(1);break;
+      case 0: if(greenhouse.insideTempSensor.value() != 0){greenhouseTemperature.clearRecords();greenhouseHumidity.clearRecords();};greenhouse.insideTempSensor.setValue(0);break;
+      case 1: if(greenhouse.insideTempSensor.value() != 1){greenhouseTemperature.clearRecords();greenhouseHumidity.clearRecords();}greenhouse.insideTempSensor.setValue(1);break;
     }
     display(genericId(INSIDETEMPDATA));
   }
@@ -2958,16 +2958,16 @@ void insideTemp(){
 
 void outsideTemp(){
   printHeader(F("OUTSIDE TEMP SENSOR"));
-  confirmVariable(greenhouse.outsideTemp.value(), tempSensorList, sizeOfTempSensorList);
+  confirmVariable(greenhouse.outsideTempSensor.value(), tempSensorList, sizeOfTempSensorList);
 
   if(choiceIsConfirmed()){
     switch (selectedElement) {
       //0 = DS18B20
       //1 = SHT1X
       //2 = off
-      case 0: if(greenhouse.outsideTemp.value() != 0){outsideTemperature.clearRecords();outsideHumidity.clearRecords();};greenhouse.outsideTemp.setValue(0); display(genericId(OUTSIDETEMPDATA));break;
-      case 1: if(greenhouse.outsideTemp.value() != 1){outsideTemperature.clearRecords();outsideHumidity.clearRecords();}; greenhouse.outsideTemp.setValue(1); display(genericId(OUTSIDETEMPDATA));break;
-      case 2: if(greenhouse.outsideTemp.value() != 2){outsideTemperature.clearRecords();outsideHumidity.clearRecords();};greenhouse.outsideTemp.setValue(2); display(genericId(HOME));break;
+      case 0: if(greenhouse.outsideTempSensor.value() != 0){outsideTemperature.clearRecords();outsideHumidity.clearRecords();};greenhouse.outsideTempSensor.setValue(0); display(genericId(OUTSIDETEMPDATA));break;
+      case 1: if(greenhouse.outsideTempSensor.value() != 1){outsideTemperature.clearRecords();outsideHumidity.clearRecords();}; greenhouse.outsideTempSensor.setValue(1); display(genericId(OUTSIDETEMPDATA));break;
+      case 2: if(greenhouse.outsideTempSensor.value() != 2){outsideTemperature.clearRecords();outsideHumidity.clearRecords();};greenhouse.outsideTempSensor.setValue(2); display(genericId(HOME));break;
     }
   }
 }
@@ -3030,7 +3030,7 @@ void insidetempdata(){
   lcd.print(F("T24h:"));
   lcd.print((int)greenhouseTemperature.average24h());
   lcd.print(F("C"));
-  if(greenhouse.insideTemp.value() == STH1X_TEMP){
+  if(greenhouse.insideTempSensor.value() == SHT1X_TEMP){
     lcd.setCursor(9,1);
     lcd.print(F("|HR:"));
     lcd.print(greenhouseHumidity.value());
@@ -3050,7 +3050,7 @@ void insidetempdata(){
 
 }
 void outsidetempdata(){
-  if(greenhouse.outsideTemp.value() != OFF_TEMP){
+  if(greenhouse.outsideTempSensor.value() != OFF_TEMP){
     printHeader(F("  OUTSIDE TEMP/HUM  "));
     lcd.setCursor(0,1);
     lcd.print(F("T:"));
@@ -3065,7 +3065,7 @@ void outsidetempdata(){
     lcd.print((int)outsideTemperature.max24h());
     lcd.print(F("C"));
   }
-  if(greenhouse.outsideTemp.value() == STH1X_TEMP){
+  if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP){
     lcd.setCursor(9,1);
     lcd.print(F("|HR:"));
     lcd.print(outsideHumidity.value());

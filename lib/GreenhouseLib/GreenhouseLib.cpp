@@ -22,58 +22,6 @@
 #include "GreenhouseLib.h"
 
 
-Greenhouse::Greenhouse(int timez, float lat, float longit, byte t, byte r,  byte f){
-  _localIndex = GREENHOUSE_INDEX;
-  timezone.setAddress(_localIndex);
-  _localIndex += sizeof(short);
-  latitude.setAddress(_localIndex);
-  _localIndex += sizeof(float);
-  longitude.setAddress(_localIndex);
-  _localIndex += sizeof(float);
-  timepoints.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  rollups.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  devices.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  daynight.setAddress(_localIndex);
-  _localIndex += sizeof(boolean);
-  weatheradjust.setAddress(_localIndex);
-  _localIndex += sizeof(boolean);
-  weatherP.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-
-  insideTemp.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  outsideTemp.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  luxMeter.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  rainSensor.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  anemometer.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-
-
-  lowTempAlarm.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  highTempAlarm.setAddress(_localIndex);
-  _localIndex += sizeof(byte);
-  minTemp.setAddress(_localIndex);
-  _localIndex += sizeof(float);
-  maxTemp.setAddress(_localIndex);
-  _localIndex += sizeof(float);
-
-  timepoints.setValue(t);
-  rollups.setValue(r);
-  devices.setValue(f);
-  timezone.setValue(timez);
-  latitude.setValue(lat);
-  longitude.setValue(longit);
-  _ramping = false;
-  _overrideProgramCounter = 0;
-}
-
 Greenhouse::Greenhouse(){
   _localIndex = GREENHOUSE_INDEX;
 
@@ -113,9 +61,9 @@ Greenhouse::Greenhouse(){
   _localIndex += sizeof(boolean);
   weatherP.setAddress(_localIndex);
   _localIndex += sizeof(byte);
-  insideTemp.setAddress(_localIndex);
+  insideTempSensor.setAddress(_localIndex);
   _localIndex += sizeof(byte);
-  outsideTemp.setAddress(_localIndex);
+  outsideTempSensor.setAddress(_localIndex);
   _localIndex += sizeof(byte);
   luxMeter.setAddress(_localIndex);
   _localIndex += sizeof(byte);
@@ -123,6 +71,10 @@ Greenhouse::Greenhouse(){
   _localIndex += sizeof(byte);
   anemometer.setAddress(_localIndex);
   _localIndex += sizeof(byte);
+  for(int x = 0; x < MAX_TENSIOMETERS;x++){
+    tensiometer[x].setAddress(_localIndex);
+    _localIndex += sizeof(byte);
+  }
   autoWeather.setAddress(_localIndex);
   _localIndex += sizeof(bool);
   lowTempAlarm.setAddress(_localIndex);
@@ -134,6 +86,10 @@ Greenhouse::Greenhouse(){
   maxTemp.setAddress(_localIndex);
   _localIndex += sizeof(float);
   autoWeather.setAddress(_localIndex);
+  _localIndex += sizeof(bool);
+  alarmEnabled.setAddress(_localIndex);
+  _localIndex += sizeof(byte);
+  energySavingMode.setAddress(_localIndex);
   _localIndex += sizeof(bool);
 
   _ramping = false;
@@ -156,15 +112,20 @@ void Greenhouse::initGreenhouse(short timez, float lat, float longit, byte t, by
   prenight.setValue(false);
   weatheradjust.setValue(wa);
   weatherP.setValue(SUN);
-  insideTemp.setValue(STH1X_TEMP);
-  outsideTemp.setValue(OFF_TEMP);
+  insideTempSensor.setValue(SHT1X_TEMP);
+  outsideTempSensor.setValue(OFF_TEMP);
   luxMeter.setValue(false);
   anemometer.setValue(false);
+  alarmEnabled.setValue(false);
+  tensiometer[0].setValue(false);
+  tensiometer[1].setValue(false);
+  tensiometer[2].setValue(false);
   rainSensor.setValue(OFF_RAIN);
   lowTempAlarm.setValue(false);
   highTempAlarm.setValue(false);
   minTemp.setValue(-10);
   maxTemp.setValue(40);
+  energySavingMode.setValue(true);
 }
 
 void Greenhouse::setNow(byte rightNow[6]){
@@ -206,8 +167,13 @@ void Greenhouse::fullRoutine(byte rightNow[6], float greenhouseTemperature){
 
     #if MAX_ROLLUPS >= 1
     for (byte x = 0; x < rollups.value(); x++){
-      if((!otherRollupsAreMoving(x))){
-          rollup[x].routine(_coolingTemp, greenhouseTemperature);
+      if(energySavingMode.value() == true){
+        if((!otherRollupsAreMoving(x))){
+            rollup[x].routine(_coolingTemp, greenhouseTemperature);
+        }
+      }
+      else{
+        rollup[x].routine(_coolingTemp, greenhouseTemperature);
       }
     }
     #endif
@@ -404,8 +370,8 @@ void Greenhouse::updateTempTargets(){
     lastHeatingTemp = timepoint[_lastTimepoint-1].heatingTempCloud.value() + ((((float)weatherP.value())/100)*(timepoint[_lastTimepoint-1].heatingTemp.value() - timepoint[_lastTimepoint-1].heatingTempCloud.value()));
   }
 
-  _coolingTempStep = (_newCoolingTemp - lastCoolingTemp)/3;
-  _heatingTempStep = (_newHeatingTemp - lastHeatingTemp)/3;
+  _coolingTempStep = (_newCoolingTemp - lastCoolingTemp)/4;
+  _heatingTempStep = (_newHeatingTemp - lastHeatingTemp)/4;
 }
 
 
@@ -450,6 +416,8 @@ void Greenhouse::startRamping(){
 
   if(isBetween(timepoint[_timepoint-1].hr(), timepoint[_timepoint-1].mn(), hr(), mn(), firstStep.hour(), firstStep.minut())){
     //keep cooling/heatingTemp as it is
+    _coolingTemp = _newCoolingTemp - _coolingTempStep*3;
+    _heatingTemp = _newHeatingTemp - _heatingTempStep*3;
     _ramping = true;
     #ifdef DEBUG_RAMPING
 
@@ -487,45 +455,6 @@ void Greenhouse::startRamping(){
     #endif
 
   }
-
-
-/*
-  unsigned long rampTime = (unsigned long)timepoint[_timepoint-1].ramping.value()*60000;
-
-  if (ramping > rampTime){
-
-    if (_newCoolingTemp > _coolingTemp){
-      _coolingTemp += 1;
-      if(_coolingTemp > _newCoolingTemp){
-        _coolingTemp = _newCoolingTemp;
-      }
-    }
-    else if (_newCoolingTemp < _coolingTemp){
-      _coolingTemp -= 1;
-      if(_coolingTemp < _newCoolingTemp){
-        _coolingTemp = _newCoolingTemp;
-      }
-    }
-    if (_newHeatingTemp > _heatingTemp){
-      _heatingTemp += 1;
-      if(_heatingTemp > _newHeatingTemp){
-        _heatingTemp = _newHeatingTemp;
-      }
-    }
-    else if (_newHeatingTemp < _heatingTemp){
-      _heatingTemp -= 1;
-      if(_heatingTemp < _newHeatingTemp){
-        _heatingTemp = _newHeatingTemp;
-      }
-    }
-    ramping = 0;
-  }
-  if((_newCoolingTemp == _coolingTemp)&&(_newHeatingTemp == _heatingTemp)){
-    _ramping = false;
-  }
-  else{
-    _ramping = true;
-  }*/
 }
 
 void Greenhouse::setWeather(byte weather){

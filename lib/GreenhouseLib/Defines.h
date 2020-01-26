@@ -32,8 +32,9 @@
 #define MAX_ROLLUPS 3
 #define MAX_STAGES 6
 #define MAX_TIMEPOINTS 4
-#define MAX_DEVICES 5
-#define MAX_OVERRIDES 7
+#define MAX_DEVICES 6
+#define MAX_OVERRIDES 8
+#define MAX_TENSIOMETERS 3
 
 #define MAX_CLOCK_OV    3
 #define MAX_FLOAT_OV    2
@@ -47,8 +48,8 @@
 #define TIMEPOINT_INDEX         500
 #define GREENHOUSE_INDEX        2000
 #define CLOCKOV_INDEX           2100
-#define FLOATOV_INDEX           2700
-#define BOOLOV_INDEX            3200
+#define FLOATOV_INDEX           2800
+#define BOOLOV_INDEX            3400
 
 #define ROLLUP_INDEX_SIZE       70
 #define DEVICE_INDEX_SIZE       15
@@ -88,7 +89,7 @@
 
 //Sensor types
 #define DS18B20_TEMP  0
-#define STH1X_TEMP    1
+#define SHT1X_TEMP    1
 #define OFF_TEMP      2
 
 #define OFF_RAIN      3
@@ -109,7 +110,9 @@
 #define BELOW         2
 
 //Clock override types
-#define ON_PULSE    204
+#define ON_PULSE            206
+#define UNDERDEFCONDITIONAL 205
+#define HDEFCONDITIONAL     204
 #define UNDERCONDITIONAL    203
 #define HRCONDITIONAL       202
 #define SOILCONDITIONAL     201
@@ -131,7 +134,7 @@
 #define MIN_STAGES 1
 #define STAGE_TARGET_MINIMUM 0
 #define STAGE_TARGET_MAXIMUM 100
-#define MIN_ROTATION_TIME 0
+#define MIN_ROTATION_TIME 1
 #define MAX_ROTATION_TIME 500
 #define MIN_PAUSE_TIME 0
 #define MAX_PAUSE_TIME 240

@@ -70,6 +70,7 @@ Greenhouse greenhouse;
   OnOffDevice &D3 = greenhouse.device[2];
   OnOffDevice &D4 = greenhouse.device[3];
   OnOffDevice &D5 = greenhouse.device[4];
+  OnOffDevice &D6 = greenhouse.device[5];
   Timepoint &T1 = greenhouse.timepoint[0];
   Timepoint &T2 = greenhouse.timepoint[1];
   Timepoint &T3 = greenhouse.timepoint[2];
@@ -172,7 +173,6 @@ void loop() {
   getOutsideHum();
   getRain();
   getWind();
-  getCurrent();
   getLux();
   getOnTime();
   //luxCalculations();
@@ -184,11 +184,15 @@ void loop() {
 
   //timepoint and target temperatures definitions, outputs routine
   greenhouse.fullRoutine(rightNow, greenhouseTemperature.value());
-  checkAlarms();
+
+  if(!D6.enabled.value()){
+    checkAlarms();
+  }
 
   #ifdef EXCEL_DATALOGGER
     dataloggingToExcel();
   #endif
+    dataloggingToSD();
     dataloggingToSD();
   #ifdef UNIT_TEST
     TestRunner::run();

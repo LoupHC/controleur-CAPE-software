@@ -29,14 +29,19 @@
 //Each greenhouse parameter have 4 associated values, a minimumimum value, a
 //maximum value, an actual value and the last value recorded
 
+
 class Parameter
 {
   public:
     void setAddress(short adress);
     short address();
+    boolean parameterChange();
+    static void acknowledgeUpdate();
+    static boolean updated();
 
   protected :
     short _address;
+    static boolean _updated;
 };
 
 class floatParameter : public Parameter
@@ -111,6 +116,7 @@ class timeParameter
 };
 
 boolean isBetween(byte startHour, byte startMin, byte actualHour, byte actualMin, byte stopHour, byte stopMin);
+boolean isBetweenExclusively(byte startHour, byte startMin, byte actualHour, byte actualMin, byte stopHour, byte stopMin);
 
 
 #endif

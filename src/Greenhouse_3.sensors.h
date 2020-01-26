@@ -26,6 +26,7 @@
 
   byte clockTest = 0;
   byte tempSensorTest = 0;
+  byte humSensorTest = 0;
 
   //Time array
   byte rightNow[6];
@@ -35,15 +36,12 @@
   Temperature outsideTemperature;
   Humidity greenhouseHumidity;
   Humidity outsideHumidity;
-  Sensor soilMoisture;
+  Sensor soilMoisture[3];
 
   Current motorOne;
   Current motorTwo;
 
   Lux radiation;
-
-  float r1current;
-  float r2current;
 
   boolean rain = false;
   float rainfall24h = 0;
@@ -52,8 +50,6 @@
 
 
   //lux;
-  elapsedMillis minutTimer;
-  elapsedMillis hourTimer;
   unsigned long averageLux;
   unsigned long averageDailyLux;
   int mV;
@@ -88,7 +84,7 @@ int startMonth = 1;
 int startYear = 0;
 
 void setRollupsInTestMode(){
-  if(tempSensorTest != 0 || clockTest != 0){
+  if(clockTest != 0){
       greenhouse.testRollups(true);
   }
   else{
@@ -154,19 +150,24 @@ void getRain(){
   //RG11/Sparkfun - 0.01'' bucket rain sensor
   else if(greenhouse.rainSensor.value() == RG11_BUCKET){
     //check precipitations in the last 2 minuts sample
-    if(totalRainfall > rainSample + rainSetpoint){
-      rain = true;
-    }
-    else{
-      rain = false;
-    }
     //reset rainSample
     if(rainSampleCounter > rainSampleDelay){
+      if(totalRainfall > rainSample + rainSetpoint){
+        rain = true;
+      }
+      else{
+        rain = false;
+      }
       rainSample = totalRainfall;
       rainSampleCounter = 0;
     }
   }
+  else{
+    rain = false;
+    totalRainfall = false;
+  }
 }
+
 #define switch_delay_to_wind_speed 2.4 // 2.4km/h = 1 trigger/second
 volatile unsigned long contactTimeAne; // Timer to manage any contact bounce in interrupt routine for anemometer
 elapsedMillis AneSampleCounter; //Anemometer switch counter; elapsed time in millisecond since last trigger
@@ -193,28 +194,12 @@ void getWind(){
   else if(greenhouse.anemometer.value() == SPARKFUN_WIND){
     windSpeed = (unsigned short)interruptWindSpeed;
   }
+  else{
+    windSpeed = 0;
+  }
 
 }
 
-
-void getCurrent(){
-  float currentRead1 = (float)10/(float)1023*analogRead(CURRENT_SENSOR1)-5;
-  float currentRead2 = (float)10/(float)1023*analogRead(CURRENT_SENSOR2)-5;
-  if(R1.inrushPhase() == false){
-    motorOne.registerValue(currentRead1);
-  }
-  else{
-    motorOne.registerValue(motorOne.average());
-  }
-  if(R2.inrushPhase() == false){
-    motorTwo.registerValue(currentRead2);
-  }
-  else{
-    motorTwo.registerValue(motorTwo.average());
-  }
-  r1current = abs(motorOne.average());
-  r2current = abs(motorTwo.average());
-}
 
 
 void testTime(){
@@ -311,30 +296,18 @@ boolean checkSensorFailure(float parameter,float measuredValue, float minValue, 
 boolean droppingTest = false;
 boolean risingTest = false;
 float startTempTest = 10.0;
-float stopTempTest = 30.0;
-float testIncrement = 0.05;
+float mockGreenhouseTemp = 10.0;
+float startHumTest = 80.0;
+float mockGreenhouseHum = 80.0;
 
 
 void testTemp(){
-  if(risingTest == false){
-    greenhouseTemperature.registerValue(startTempTest + testIncrement);
-    risingTest = true;
-  }
-  else if((risingTest == true)&&(droppingTest == false)){
-    greenhouseTemperature.registerValue(greenhouseTemperature.value() + testIncrement);
-  }
-  else if((risingTest == true)&&(droppingTest == true)){
-    greenhouseTemperature.registerValue(greenhouseTemperature.value() - testIncrement);
-  }
-  if(greenhouseTemperature.value() >= stopTempTest){
-    droppingTest = true;
-  }
-  if(greenhouseTemperature.value() <= startTempTest){
-    droppingTest = false;
-    risingTest = false;
-    tempSensorTest = 0;
-  }
+  greenhouseTemperature.registerValue(mockGreenhouseTemp);
 }
+void testHum(){
+  greenhouseHumidity.registerValue(mockGreenhouseHum);
+}
+
 
 byte tempFailTest = 0;
 
@@ -354,7 +327,7 @@ void getGreenhouseTemp(){
   else{
     float temp;
 
-    if(greenhouse.insideTemp.value() == DS18B20_TEMP){
+    if(greenhouse.insideTempSensor.value() == DS18B20_TEMP){
       ds18b20_in.requestTemperatures();
       temp = ds18b20_in.getTempCByIndex(0);
 
@@ -366,7 +339,7 @@ void getGreenhouseTemp(){
       }
 
     }
-    else if(greenhouse.insideTemp.value() == STH1X_TEMP){
+    else if(greenhouse.insideTempSensor.value() == SHT1X_TEMP){
       temp = sht1x_in.readTemperatureC();
       if(checkSensorFailure(greenhouseTemperature.value(), temp, -40.00,60.00,1)){
         tempFailTest++;
@@ -394,32 +367,38 @@ byte humFailTest = 0;
 
 void getGreenhouseHum(){
   setRollupsInTestMode();
-  float hum;
 
-  if(greenhouse.insideTemp.value() == STH1X_TEMP){
-    hum = sht1x_in.readHumidity();
-
-    if(checkSensorFailure(greenhouseHumidity.value(), hum, -1.00,101.00,2)){
-      humFailTest++;
-    }
-    else{
-      humFailTest = 0;
-    }
+  if(humSensorTest == TEST_TEMP){
+    testHum();
   }
+  else{
 
-  if(humFailTest == 0){
-    greenhouseHumidity.registerValue(hum);
+    float hum;
+    if(greenhouse.insideTempSensor.value() == SHT1X_TEMP){
+      hum = sht1x_in.readHumidity();
+
+      if(checkSensorFailure(greenhouseHumidity.value(), hum, -1.00,101.00,2)){
+        humFailTest++;
+      }
+      else{
+        humFailTest = 0;
+      }
+    }
+
+    if(humFailTest == 0){
+      greenhouseHumidity.registerValue(hum);
+    }
   }
 }
 
 void getOutsideTemp(){
     float temp;
 
-    if(greenhouse.outsideTemp.value() == DS18B20_TEMP){
+    if(greenhouse.outsideTempSensor.value() == DS18B20_TEMP){
       ds18b20_out.requestTemperatures();
       outsideTemperature.registerValue(ds18b20_out.getTempCByIndex(0));
     }
-    else if(greenhouse.outsideTemp.value() == STH1X_TEMP){
+    else if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP){
       outsideTemperature.registerValue(sht1x_out.readTemperatureC());
     }
     else{
@@ -428,7 +407,7 @@ void getOutsideTemp(){
 }
 
 void getOutsideHum(){
-  if(greenhouse.outsideTemp.value() == STH1X_TEMP){
+  if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP){
     outsideHumidity.registerValue(sht1x_out.readHumidity());
   }
   else{
@@ -456,11 +435,19 @@ void getLux(){
 
 void getSoilMoisture(){
 
-  int aRead = analogRead(LIGHT_SENSOR);
-  mV = 5000/1023*aRead;
+  int aRead = analogRead(SOIL_MOISTURE1);
   unsigned long kPa = 80/1023*aRead;
+  soilMoisture[0].registerValue(kPa);
 
-  soilMoisture.registerValue(kPa);
+
+  aRead = analogRead(SOIL_MOISTURE2);
+  kPa = 80/1023*aRead;
+  soilMoisture[1].registerValue(kPa);
+
+
+  aRead = analogRead(SOIL_MOISTURE3);
+  kPa = 80/1023*aRead;
+  soilMoisture[2].registerValue(kPa);
 }
 
 void autoWeather(){
@@ -481,19 +468,19 @@ void initSensors(){
   //last recorded value if probe doesnt reply back at first cycle
     sensorBackup();
   //start communication with temp probe
-  if(greenhouse.insideTemp.value() == DS18B20_TEMP){
+  if(greenhouse.insideTempSensor.value() == DS18B20_TEMP){
     ds18b20_in.begin();
     ds18b20_in.setResolution(12);
   }
-  else if(greenhouse.insideTemp.value() == STH1X_TEMP){
+  else if(greenhouse.insideTempSensor.value() == SHT1X_TEMP){
     sht1x_in.initSensor();
   }
 
-  if(greenhouse.outsideTemp.value() == DS18B20_TEMP){
+  if(greenhouse.outsideTempSensor.value() == DS18B20_TEMP){
     ds18b20_out.begin();
     ds18b20_out.setResolution(12);
   }
-  else if(greenhouse.outsideTemp.value() == STH1X_TEMP){
+  else if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP){
     sht1x_out.initSensor();
   }
   //start communication with clock

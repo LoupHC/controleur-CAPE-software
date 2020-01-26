@@ -36,8 +36,9 @@
 
 #define RAIN_SWITCH         3
 #define WIND_DIGITAL_SENSOR 2
-#define SOIL_MOISTURE2       A5
-#define SOIL_MOISTURE1       A4
+#define SOIL_MOISTURE3      A6
+#define SOIL_MOISTURE2      A5
+#define SOIL_MOISTURE1      A4
 #define WIND_ANALOG_SENSOR  A3
 #define LIGHT_SENSOR        A2
 #define CURRENT_SENSOR2     A1
@@ -85,8 +86,8 @@
 
 //*************COORD GÉOGRAPHIQUES*********************
 #define TIMEZONE              -5
-#define LATITUDE              46.03
-#define LONGITUDE             -73.56
+#define LATITUDE              46.00
+#define LONGITUDE             -72.00
 
 //TIME AND DATE ARE SET AT FIRST UPLOAD ONLY
 //For subsequent RTC programming :

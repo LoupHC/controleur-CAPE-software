@@ -162,16 +162,16 @@ DEVICE PARAMETERS - SYNTAX RULES:
 
 
 
-#define R1_HRSTART  3
+#define R1_HRSTART  0
 #define R1_MNSTART  0
-#define R1_HRSTOP 3
-#define R1_MNSTOP 30
+#define R1_HRSTOP 0
+#define R1_MNSTOP 0
 #define R1_TARGET 50
 
-#define D1_HRSTART  3
+#define D1_HRSTART  0
 #define D1_MNSTART  0
-#define D1_HRSTOP 3
-#define D1_MNSTOP 30
+#define D1_HRSTOP 0
+#define D1_MNSTOP 0
 #define D1_TARGET  true
 
 #define DESHUM_HOT         80
@@ -187,9 +187,8 @@ DEVICE PARAMETERS - SYNTAX RULES:
 #define LOCK_PRIORITY       1
 #define WINDOV_PRIORITY     2
 #define RAINOV_PRIORITY     3
-#define PULSE_PRIORITY      2
 #define ANALOG_PRIORITY     3
-#define CLOCKOV1_PRIORITY   4
-#define CLOCKOV2_PRIORITY   5
-#define CLOCKOV3_PRIORITY   6
-#define DESHUM_PRIORITY     7
+#define OUTT_PRIORITY       4
+#define CLOCKOV1_PRIORITY   5
+#define CLOCKOV2_PRIORITY   6
+#define CLOCKOV3_PRIORITY   7

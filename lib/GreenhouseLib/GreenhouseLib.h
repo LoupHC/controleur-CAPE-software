@@ -22,7 +22,6 @@
 
 #include "Arduino.h"
 #include "TimeLord.h"
-#include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
 #include "GreenhouseLib_overrides.h"
@@ -44,7 +43,6 @@
 class Greenhouse
 {
   public:
-    Greenhouse(int timezone, float latitude, float longitude, byte timepoints, byte rollups, byte devices);
     Greenhouse();
     ~Greenhouse();
     void initGreenhouse(short timezone, float latitude, float longitude, byte timepoints, byte rollups,byte devices, bool dn, bool wa);
@@ -97,12 +95,16 @@ class Greenhouse
     byteParameter rollups;           //# of rollups
     byteParameter devices;              //# of devices
 
-    byteParameter insideTemp;
-    byteParameter outsideTemp;
+    byteParameter insideTempSensor;
+    byteParameter outsideTempSensor;
     byteParameter luxMeter;
     byteParameter rainSensor;
+    byteParameter rainBucketResetTime;
     byteParameter anemometer;
+    byteParameter tensiometer[MAX_TENSIOMETERS];
+    byteParameter alarmEnabled;
     boolParameter autoWeather;
+    boolParameter energySavingMode;
 
 
     Alarm alarm;
@@ -145,8 +147,6 @@ class Greenhouse
     void startRamping();
     boolean otherRollupsAreMoving(byte exception);
 
-    elapsedMillis ramping;  //ramping timer
-    elapsedMillis beep;
 
     int _localIndex;
 

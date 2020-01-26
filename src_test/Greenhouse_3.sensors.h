@@ -315,13 +315,13 @@ void getGreenhouseTemp(){
   }
   else{
     float temp;
-    if(greenhouse.insideTemp.value() == DS18B20_TEMP){
+    if(greenhouse.insideTempSensor.value() == DS18B20_TEMP){
       ds18b20_in.requestTemperatures();
       temp = ds18b20_in.getTempCByIndex(0);
 
       checkSensorFailure(greenhouseTemperature.value(), temp, -127.00,1,&sensorFailure);
     }
-    else if(greenhouse.insideTemp.value() == STH1X_TEMP){
+    else if(greenhouse.insideTempSensor.value() == SHT1X_TEMP){
       temp = sht1x_in.readTemperatureC();
       checkSensorFailure(greenhouseTemperature.value(), temp, -40.00,1,&sensorFailure);
     }
@@ -340,7 +340,7 @@ void getGreenhouseHum(){
   areRollupsInTestMode();
   float hum;
 
-  if(greenhouse.insideTemp.value() == STH1X_TEMP){
+  if(greenhouse.insideTempSensor.value() == SHT1X_TEMP){
     hum = sht1x_in.readHumidity();
     checkSensorFailure(greenhouseHumidity.value(), hum, 0,3,&sensorFailure);
   }
@@ -353,11 +353,11 @@ void getGreenhouseHum(){
 
 void getOutsideTemp(){
     float temp;
-    if(greenhouse.outsideTemp.value() == DS18B20_TEMP){
+    if(greenhouse.outsideTempSensor.value() == DS18B20_TEMP){
       ds18b20_out.requestTemperatures();
       outsideTemperature.registerValue(ds18b20_out.getTempCByIndex(0));
     }
-    else if(greenhouse.outsideTemp.value() == STH1X_TEMP){
+    else if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP){
       outsideTemperature.registerValue(sht1x_out.readTemperatureC());
     }
     else{
@@ -366,7 +366,7 @@ void getOutsideTemp(){
 }
 
 void getOutsideHum(){
-  if(greenhouse.outsideTemp.value() == STH1X_TEMP){
+  if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP){
     outsideHumidity.registerValue(sht1x_out.readHumidity());
     //outsideAbsoluteHumidity = absoluteHumidity(outsideTemperature, outsideHumidity);
     //outsideHumidityDeficit = absoluteHumidity(outsideTemperature, 100) - absoluteHumidity(outsideTemperature, outsideHumidity);

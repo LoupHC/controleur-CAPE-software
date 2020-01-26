@@ -43,6 +43,8 @@ Action :
 //#define DESHUM_CYCLE_FIXOV    93
 //#define ROLLUP_CALIBRATION  97
 
+
+
 #define WINDOV            95
 #define CLOCKOV1                 96
 #define CLOCKOV2                 97
@@ -61,7 +63,6 @@ float deshum_hot = 80;
 float deshum_cold = 80;
 
 
-Alarm &alarm = greenhouse.alarm;
 boolean motorFailure[3] = {false,false,false};
 boolean overcurrentAlarm = false;
 
@@ -69,29 +70,31 @@ elapsedMillis windTimer[3];
 
 void initAlarms(){
   //Add safety alarm
-  alarm.init(MCP23008, ACT_LOW, ALARM_PIN);
-  alarm.addSequence(1, 1000, 59000);
-  alarm.addSequence(2, 5000, 55000);
+  greenhouse.alarm.init(MCP23008, ACT_LOW, ALARM_PIN);
+  greenhouse.alarm.addSequence(1, 1000, 59000);
+  greenhouse.alarm.addSequence(2, 5000, 55000);
 }
 
 void checkAlarms(){
-  if(greenhouse.lowTempAlarm.value() == true){
-    alarm.below(greenhouseTemperature.value(),greenhouse.minTemp.value());
-  }
-  if(greenhouse.highTempAlarm.value() == true){
-    alarm.above(greenhouseTemperature.value(), greenhouse.maxTemp.value());
-  }
-  for (byte x = 0; x < greenhouse.rollups.value(); x++){
-    if(motorFailure[x] == true){
-      overcurrentAlarm = true;
+  if(greenhouse.alarmEnabled.value()){
+    if(greenhouse.lowTempAlarm.value() == true){
+      greenhouse.alarm.below(greenhouseTemperature.value(),greenhouse.minTemp.value());
     }
+    if(greenhouse.highTempAlarm.value() == true){
+      greenhouse.alarm.above(greenhouseTemperature.value(), greenhouse.maxTemp.value());
+    }
+    for (byte x = 0; x < greenhouse.rollups.value(); x++){
+      if(motorFailure[x] == true){
+        overcurrentAlarm = true;
+      }
+    }
+    if((motorFailure[0] == false)&&(motorFailure[1] == false)&&(motorFailure[2] == false)){
+      overcurrentAlarm = false;
+    }
+    greenhouse.alarm.conditionalTo(sensorFailure, 1);
+    greenhouse.alarm.conditionalTo(overcurrentAlarm, 2);
+    greenhouse.alarm.checkAlarm();
   }
-  if((motorFailure[0] == false)&&(motorFailure[1] == false)&&(motorFailure[2] == false)){
-    overcurrentAlarm = false;
-  }
-  alarm.conditionalTo(sensorFailure, 1);
-  alarm.conditionalTo(overcurrentAlarm, 2);
-  alarm.checkAlarm();
 }
 
 boolean rainOverride(byte ID, Rollup rollup){
@@ -110,29 +113,31 @@ boolean override42 = false;
 boolean override44 = false;
 boolean override46 = false;
 
+
+
 void externalOverrides(){
   if(digitalRead(40) == LOW){
     if(override40 == false){
       override40 = true;
-      greenhouse.device[0].forceStart();
+      greenhouse.device[2].forceStart();
     }
   }
   else{
     if(override40 == true){
       override40 = false;
-      greenhouse.device[0].unforce();
+      greenhouse.device[2].unforce();
     }
   }
   if(digitalRead(42) == LOW){
     if(override42 == false){
       override42 = true;
-      greenhouse.device[1].forceStart();
+      greenhouse.device[3].forceStart();
     }
   }
   else{
     if(override42 == true){
       override42 = false;
-      greenhouse.device[1].unforce();
+      greenhouse.device[3].unforce();
     }
 
   }
@@ -162,21 +167,98 @@ void externalOverrides(){
   }
 }
 
+void checkOverrideSensors(){
+
+  for (byte x = 0; x < greenhouse.rollups.value(); x++){
+    for (byte y = 0; y < 3; y++){
+      if(greenhouse.rollup[x].ovType(CLOCKOV1+y) == HRCONDITIONAL||greenhouse.rollup[x].ovType(CLOCKOV1+y) == HDEFCONDITIONAL){
+        if(greenhouse.insideTempSensor.value() != SHT1X_TEMP){
+          greenhouse.rollup[x].disable(CLOCKOV1+y);
+        }
+      }
+    }
+    if(greenhouse.rainSensor.value() == OFF_RAIN){
+      greenhouse.rollup[x].disable(RAINOV);
+    }
+
+    if(greenhouse.anemometer.value() == OFF_WIND){
+      greenhouse.rollup[x].disable(WINDOV);
+    }
+//OUTSIDE TEMP
+    if(greenhouse.outsideTempSensor.value() == OFF_TEMP){
+      greenhouse.rollup[x].disable(OUTTEMP);
+    }
+  }
+
+  for (byte x = 0; x < greenhouse.devices.value(); x++){
+    for (byte y = 0; y < 3; y++){
+      //PROGRAM 1
+      if(greenhouse.device[x].ovType(CLOCKOV1+y) == WEATHERCONDITIONAL){
+        if(greenhouse.weatheradjust.value() == false){
+          greenhouse.device[x].disable(CLOCKOV1+y);
+        }
+      }
+      else if(greenhouse.device[x].ovType(CLOCKOV1+y) == SOILCONDITIONAL){
+        if(greenhouse.tensiometer[greenhouse.device[x].tensiometerIndex()].value() == false){
+          greenhouse.device[x].disable(CLOCKOV1+y);
+        }
+      }
+      else if(greenhouse.device[x].ovType(CLOCKOV1+y) == HRCONDITIONAL||greenhouse.device[x].ovType(CLOCKOV1+y) == HDEFCONDITIONAL||greenhouse.device[x].ovType(CLOCKOV1+y) == UNDERDEFCONDITIONAL||greenhouse.device[x].ovType(CLOCKOV1+y) == UNDERCONDITIONAL){
+        if(greenhouse.insideTempSensor.value() != SHT1X_TEMP){
+          greenhouse.rollup[x].disable(CLOCKOV1+y);
+        }
+      }
+    }
+  }
+  if(greenhouse.luxMeter.value() == false){
+    greenhouse.autoWeather.setValue(false);
+  }
+}
+
 void checkOverrides(){
   externalOverrides();
+  checkOverrideSensors();
 
   for (byte x = 0; x < greenhouse.rollups.value(); x++){
     for (byte y = 0; y < 3; y++){
       if(greenhouse.rollup[x].ovType(CLOCKOV1+y) == HRCONDITIONAL){
-        if(greenhouse.rollup[x].routinePosition( greenhouseTemperature.value(), greenhouse.coolingTemp()) <= greenhouse.rollup[x].overrideTarget(CLOCKOV1+y)){
-          greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.value());
-          Serial.print(greenhouse.rollup[0].routinePosition( greenhouseTemperature.value(), greenhouse.coolingTemp()));
-          Serial.print(":");
-          Serial.println(greenhouse.rollup[x].overrideTarget(CLOCKOV1+y));
+          if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP && greenhouse.insideTempSensor.value() == SHT1X_TEMP){
+            if(greenhouse.rollup[x].routinePosition( greenhouseTemperature.value(), greenhouse.coolingTemp()) <= greenhouse.rollup[x].overrideTarget(CLOCKOV1+y) && outsideHumidity.absolute(outsideTemperature.value()) < greenhouseHumidity.absolute(greenhouseTemperature.value()) ){
+                greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.value());
+            }
+            else{
+              //disable
+              greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), 0);
+            }
+          }
+          else{
+            if(greenhouse.rollup[x].routinePosition( greenhouseTemperature.value(), greenhouse.coolingTemp()) <= greenhouse.rollup[x].overrideTarget(CLOCKOV1+y)){
+              greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.value());
+            }
+            else{
+              //disable
+              greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), 0);
+            }
+          }
+      }
+      else if(greenhouse.rollup[x].ovType(CLOCKOV1+y) == HDEFCONDITIONAL){
+        if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP && greenhouse.insideTempSensor.value() == SHT1X_TEMP){
+          if(greenhouse.rollup[x].routinePosition( greenhouseTemperature.value(), greenhouse.coolingTemp()) <= greenhouse.rollup[x].overrideTarget(CLOCKOV1+y) && outsideHumidity.absolute(outsideTemperature.value()) < greenhouseHumidity.absolute(greenhouseTemperature.value()) ){
+              greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.deficit(greenhouseTemperature.value()));
+          }
+          else{
+            //disable
+            greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), 0);
+          }
         }
         else{
-          //disable
-          greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), 0);
+          if(greenhouse.rollup[x].routinePosition( greenhouseTemperature.value(), greenhouse.coolingTemp()) <= greenhouse.rollup[x].overrideTarget(CLOCKOV1+y)){
+            greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.deficit(greenhouseTemperature.value()));
+          }
+          else{
+            //disable
+            greenhouse.rollup[x].checkOverride(greenhouse.rollup[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), 0);
+          }
         }
       }
       else{
@@ -186,14 +268,6 @@ void checkOverrides(){
 
     greenhouse.rollup[x].checkOverride(RAINOV, rainOverride(RAINOV, R1));
 
-    //HUMIDITY OVERRIDE
-    if(greenhouse.rollup[x].routinePosition( greenhouseTemperature.value(), greenhouse.coolingTemp()) <= greenhouse.rollup[x].overrideTarget(DESHUM)){
-      greenhouse.rollup[x].checkOverride(DESHUM,greenhouseHumidity.value());
-    }
-    else{
-      //disable
-      greenhouse.rollup[x].checkOverride(DESHUM,(float)0);
-    }
 //WIND OVERRIDE
     if(!greenhouse.rollup[x].isActive(WINDOV)){
       greenhouse.rollup[x].checkOverride(WINDOV, (float)windSpeed);
@@ -209,8 +283,6 @@ void checkOverrides(){
     greenhouse.rollup[x].checkOverride(OUTTEMP, outsideTemperature.value());
 
 //OVERCURRENT
-    R1.checkCurrent(r1current);
-    R2.checkCurrent(r2current);
     if(greenhouse.rollup[x].overCurrentWarning() == true){
       motorFailure[x] = true;
     }
@@ -226,21 +298,45 @@ void checkOverrides(){
         greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouse.weather());
       }
       else if(greenhouse.device[x].ovType(CLOCKOV1+y) == SOILCONDITIONAL){
-        greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), soilMoisture.value());
+        if(greenhouse.device[x].type.value() == VALVTYPE){
+          greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), soilMoisture[greenhouse.device[x].tensiometerIndex()].value());
+        }
+      }
+      else if(greenhouse.device[x].ovType(CLOCKOV1+y) == UNDERDEFCONDITIONAL){
+        greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.deficit(greenhouseTemperature.value()));
       }
       else if(greenhouse.device[x].ovType(CLOCKOV1+y) == UNDERCONDITIONAL){
         greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.value());
       }
+      else if(greenhouse.device[x].ovType(CLOCKOV1+y) == HDEFCONDITIONAL){
+        if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP && greenhouse.insideTempSensor.value() == SHT1X_TEMP){
+          if(outsideHumidity.absolute(outsideTemperature.value()) < greenhouseHumidity.absolute(greenhouseTemperature.value()) ){
+            greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.deficit(greenhouseTemperature.value()));
+          }
+        }
+        else{
+          greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.deficit(greenhouseTemperature.value()));
+        }
+      }
       else if(greenhouse.device[x].ovType(CLOCKOV1+y) == HRCONDITIONAL){
-        greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.value());
+        if(greenhouse.outsideTempSensor.value() == SHT1X_TEMP && greenhouse.insideTempSensor.value() == SHT1X_TEMP){
+          if(outsideHumidity.absolute(outsideTemperature.value()) < greenhouseHumidity.absolute(greenhouseTemperature.value()) ){
+            greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.value());
+          }
+        }
+        else{
+          greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn(), greenhouseHumidity.value());
+        }
       }
       else{
         greenhouse.device[x].checkOverride(greenhouse.device[x].id(CLOCKOV1+y),greenhouse.hr(), greenhouse.mn());
       }
     }
+    if(greenhouse.device[x].isActive(LOCK)){
+      greenhouse.device[x].checkOverride(LOCK, true);
+    }
     float analogInput = (float)mV/(float)1000;
     greenhouse.device[x].checkOverride(ANALOG, analogInput);
-    greenhouse.device[x].checkOverride(PULSE,greenhouse.device[x].pulse.value());
 
   }
 }

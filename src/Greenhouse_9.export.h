@@ -6,6 +6,7 @@
 const int chipSelect = 53;
 
 File datalog;
+File parameters;
 int lastMinutRecord;
 int lastHourRecord;
 
@@ -113,7 +114,7 @@ void exportData(String record){
     datalog.print(F(","));
     datalog.print(radiation.lux());
     datalog.print(F(","));
-    datalog.print(radiation.wattPerMeterSquare());
+    datalog.print(radiation.dayJoules());
     datalog.print(F(","));
     datalog.print(greenhouse.weather());
     datalog.print(F(","));
@@ -131,10 +132,165 @@ void exportData(String record){
     datalog.print(F(","));
     datalog.print(D2.isOn());
     datalog.print(F(","));
-    datalog.println(D3.isOn());
+    datalog.print(D3.isOn());
+    datalog.print(F(","));
+    datalog.print(D4.isOn());
+    datalog.print(F(","));
+    datalog.print(D5.isOn());
+    datalog.print(F(","));
+    datalog.println(D6.isOn());
   }
   datalog.close(); // close the file
 
+}
+
+void exportParametersToSD(){
+  parameters = SD.open("PARAMETERS", FILE_WRITE);
+  if (SD.exists("PARAMETERS")) {
+    Serial.println("PARAMETERS file exists");
+  }
+  else{
+    Serial.println(F("Error writing to file"));
+  }
+  if (parameters) {
+    for(int x = 0; x < MAX_ROLLUPS;x++){
+
+      parameters.println(greenhouse.rollup[x].hyst.value());
+      parameters.println(greenhouse.rollup[x].rotationUp.value());
+      parameters.println(greenhouse.rollup[x].rotationDown.value());
+      parameters.println(greenhouse.rollup[x].pause.value());
+
+      for(int y = 0; y < MAX_STAGES;y++){
+        parameters.println(greenhouse.rollup[x].stage[y].mod.value());
+        parameters.println(greenhouse.rollup[x].stage[y].target.value());
+      }
+      parameters.println(greenhouse.rollup[x].stages.value());
+      parameters.println(greenhouse.rollup[x].enabled.value());
+      parameters.println(greenhouse.rollup[x].lock.value());
+      parameters.println(greenhouse.rollup[x].lockTarget.value());
+      parameters.println(greenhouse.rollup[x].currentLimit.value());
+
+      for(int y = 0; y < MAX_CLOCK_OV;y++){
+        parameters.println(greenhouse.rollup[x].clockOv[y].ID.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].priority.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].enabled.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].target.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].hrStart.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].mnStart.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].hrStop.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].mnStop.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].pulseOff.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].pulseOn.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].condition.value());
+        parameters.println(greenhouse.rollup[x].clockOv[y].ovType.value());
+      }
+      for(int y = 0; y < MAX_BOOL_OV;y++){
+        parameters.println(greenhouse.rollup[x].boolOv[y].ID.value());
+        parameters.println(greenhouse.rollup[x].boolOv [y].priority.value());
+        parameters.println(greenhouse.rollup[x].boolOv [y].enabled.value());
+        parameters.println(greenhouse.rollup[x].boolOv [y].target.value());
+        parameters.println(greenhouse.rollup[x].boolOv [y].pulseOff.value());
+        parameters.println(greenhouse.rollup[x].boolOv [y].pulseOn.value());
+      }
+      for(int y = 0; y < MAX_FLOAT_OV;y++){
+        parameters.println(greenhouse.rollup[x].floatOv[y].ID.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].priority.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].enabled.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].target.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].comparator.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].floatVar.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].hyst.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].pulseOff.value());
+        parameters.println(greenhouse.rollup[x].floatOv [y].pulseOn.value());
+      }
+    }
+
+    for(int x = 0; x < MAX_DEVICES;x++){
+      parameters.println(greenhouse.device[x].mod.value());
+      parameters.println(greenhouse.device[x].hyst.value());
+      parameters.println(greenhouse.device[x].type.value());
+      parameters.println(greenhouse.device[x].enabled.value());
+      parameters.println(greenhouse.device[x].lock.value());
+      parameters.println(greenhouse.device[x].lockTarget.value());
+      parameters.println(greenhouse.device[x].pulse.value());
+      parameters.println(greenhouse.device[x].tensiometer.value());
+
+
+      for(int y = 0; y < MAX_CLOCK_OV;y++){
+        parameters.println(greenhouse.device[x].clockOv[y].ID.value());
+        parameters.println(greenhouse.device[x].clockOv[y].priority.value());
+        parameters.println(greenhouse.device[x].clockOv[y].enabled.value());
+        parameters.println(greenhouse.device[x].clockOv[y].target.value());
+        parameters.println(greenhouse.device[x].clockOv[y].hrStart.value());
+        parameters.println(greenhouse.device[x].clockOv[y].mnStart.value());
+        parameters.println(greenhouse.device[x].clockOv[y].hrStop.value());
+        parameters.println(greenhouse.device[x].clockOv[y].mnStop.value());
+        parameters.println(greenhouse.device[x].clockOv[y].pulseOff.value());
+        parameters.println(greenhouse.device[x].clockOv[y].pulseOn.value());
+        parameters.println(greenhouse.device[x].clockOv[y].condition.value());
+        parameters.println(greenhouse.device[x].clockOv[y].ovType.value());
+      }
+
+      for(int y = 0; y < MAX_BOOL_OV;y++){
+        parameters.println(greenhouse.device[x].boolOv[y].ID.value());
+        parameters.println(greenhouse.device[x].boolOv [y].priority.value());
+        parameters.println(greenhouse.device[x].boolOv [y].enabled.value());
+        parameters.println(greenhouse.device[x].boolOv [y].target.value());
+        parameters.println(greenhouse.device[x].boolOv [y].pulseOff.value());
+        parameters.println(greenhouse.device[x].boolOv [y].pulseOn.value());
+      }
+
+      for(int y = 0; y < MAX_FLOAT_OV;y++){
+        parameters.println(greenhouse.device[x].floatOv[y].ID.value());
+        parameters.println(greenhouse.device[x].floatOv [y].priority.value());
+        parameters.println(greenhouse.device[x].floatOv [y].enabled.value());
+        parameters.println(greenhouse.device[x].floatOv [y].target.value());
+        parameters.println(greenhouse.device[x].floatOv [y].comparator.value());
+        parameters.println(greenhouse.device[x].floatOv [y].floatVar.value());
+        parameters.println(greenhouse.device[x].floatOv [y].hyst.value());
+        parameters.println(greenhouse.device[x].floatOv [y].pulseOff.value());
+        parameters.println(greenhouse.device[x].floatOv [y].pulseOn.value());
+      }
+    }
+    for(int x = 0; x < MAX_TIMEPOINTS;x++){
+      parameters.println(greenhouse.timepoint[x].type.value());
+      parameters.println(greenhouse.timepoint[x].mnMod.value());
+      parameters.println(greenhouse.timepoint[x].hrMod.value());
+      parameters.println(greenhouse.timepoint[x].coolingTemp.value());
+      parameters.println(greenhouse.timepoint[x].heatingTemp.value());
+      parameters.println(greenhouse.timepoint[x].coolingTempCloud.value());
+      parameters.println(greenhouse.timepoint[x].heatingTempCloud.value());
+      parameters.println(greenhouse.timepoint[x].ramping.value());
+    }
+    parameters.println(greenhouse.timezone.value());
+    parameters.println(greenhouse.latitude.value());
+    parameters.println(greenhouse.longitude.value());
+    parameters.println(greenhouse.timepoints.value());
+    parameters.println(greenhouse.rollups.value());
+    parameters.println(greenhouse.devices.value());
+    parameters.println(greenhouse.daynight.value());
+    parameters.println(greenhouse.weatheradjust.value());
+    parameters.println(greenhouse.dif.value());
+    parameters.println(greenhouse.prenight.value());
+    parameters.println(greenhouse.weatherP.value());
+    parameters.println(greenhouse.insideTempSensor.value());
+    parameters.println(greenhouse.outsideTempSensor.value());
+    parameters.println(greenhouse.luxMeter.value());
+    parameters.println(greenhouse.rainSensor.value());
+    parameters.println(greenhouse.anemometer.value());
+    for(int y = 0; y < MAX_TENSIOMETERS;y++){
+      parameters.println(greenhouse.tensiometer[y].value());
+    }
+    parameters.println(greenhouse.autoWeather.value());
+    parameters.println(greenhouse.lowTempAlarm.value());
+    parameters.println(greenhouse.highTempAlarm.value());
+    parameters.println(greenhouse.minTemp.value());
+    parameters.println(greenhouse.maxTemp.value());
+    parameters.println(greenhouse.autoWeather.value());
+    parameters.println(greenhouse.alarmEnabled.value());
+    parameters.println(greenhouse.energySavingMode.value());
+  }
+  parameters.close();
 }
 
 String recordHeader(){
@@ -206,4 +362,9 @@ void dataloggingToSD(){
       exportData(monthlyRecord());
       lastHourRecord = greenhouse.hr();
     }
+
+  if(Parameter::updated()){
+    exportParametersToSD();
+    Parameter::acknowledgeUpdate();
+  }
 }

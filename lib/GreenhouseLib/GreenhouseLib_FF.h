@@ -47,6 +47,7 @@ class OnOffDevice  : public OverrideManager
       void forceStart();
       void forceStop();
       void unforce();
+      boolean isLock();
 
       void routine(float target, float temp);
       void valvRoutine();
@@ -58,8 +59,11 @@ class OnOffDevice  : public OverrideManager
       floatParameter hyst;
       floatParameter mod;
       byteParameter type;
+      byteParameter tensiometer;
       boolParameter enabled;
       boolParameter pulse;
+      boolParameter lock;
+      byteParameter lockTarget;
 
 			boolean isOn();
       boolean override();
@@ -76,6 +80,8 @@ class OnOffDevice  : public OverrideManager
       void desactivateDevice();
       void activateDevice();
       boolean isActivated();
+      void asignTensiometer(byte tensiometer);
+      byte tensiometerIndex();
 
 
       void checkOverrideTimer();
@@ -87,21 +93,18 @@ class OnOffDevice  : public OverrideManager
 
     protected :
 
-      boolParameter lock;
-      byteParameter lockTarget;
 
       elapsedMillis overrideTimer;
       bool lockedAndWaiting;
       unsigned long overrideWaitingTime;
 
       Output output;
-
       void heaterRoutine(float target, float temp);
       void fanRoutine(float target, float temp);
 
       byte _activeOverride;
 
-
+      byte _tensiometerIndex;
 
       unsigned short _localCounter;
       static unsigned short _counter;

@@ -10,21 +10,7 @@
 
 
 
-class Timer{
-  public:
-    void reset();
-    void start(int on, int off);
-    void start(int on);
-    void loop(int on, int off);
-    boolean isOn();
 
-  private:
-    byteParameter activeTimer;
-    byteParameter inactiveTimer;
-    elapsedMillis timer;
-    bool lockedAndWaiting;
-    int overrideWaitingTime;
-};
 
 
 class OverrideR{
@@ -44,6 +30,7 @@ class OverrideR{
 
   protected:
     void followPulseCounter();
+    void followLockPulseCounter();
     elapsedMillis _pulseTimer;
     bool _active;
 };
@@ -81,8 +68,6 @@ class FloatRelativeOverride : public OverrideR {
     floatParameter hyst;
 
   private:
-
-    elapsedMillis _pulseTimer;
     static unsigned short _EEPROMindex;
     unsigned short _localIndex;
 };
@@ -163,7 +148,6 @@ class OverrideManager{
     void OverridesEEPROMGet();
     void clearOverridesInEEPROM();
 
-    //priority dispatcher
     bool activeOverride();
     byte overrideTarget();
 
@@ -172,7 +156,6 @@ class OverrideManager{
     void disableOverrides();
     void printOverrides();
 
-    boolean isLock();
 
     int getFreeRam();
 

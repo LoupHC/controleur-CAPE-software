@@ -56,7 +56,12 @@ OnOffDevice::OnOffDevice(){
     pulse.setAddress(_localIndex);
     _localIndex += sizeof(bool);
 
+
+    tensiometer.setAddress(_localIndex);
+    _localIndex += sizeof(byte);
+
     initOverride(LOCK, 0,0, 0,0);
+    _tensiometerIndex = 0;
 }
 
 void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
@@ -64,14 +69,21 @@ void OnOffDevice::initOutput(byte outputType, boolean relayType, byte pin){
   output.init(outputType, relayType, pin);
 }
 
-
+boolean OnOffDevice::isLock(){
+  if(isActive(LOCK)||isActive(EXT_LOCK)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
 void OnOffDevice::unlock(){
   checkOverride(LOCK, false);
   lockedAndWaiting = false;
   lock.setValue(false);
   output.stop();
+  disable(LOCK);
 }
-
 void OnOffDevice::resetLockTimer(unsigned long seconds){
   lockedAndWaiting = true;
   overrideWaitingTime = seconds;
@@ -81,8 +93,7 @@ void OnOffDevice::resetLockTimer(unsigned long seconds){
 void OnOffDevice::checkOverrideTimer(){
   if(lockedAndWaiting == true){
     if(overrideTimer >= overrideWaitingTime*1000){
-      checkOverride(LOCK, false);
-      lockedAndWaiting = false;
+      unlock();
     }
   }
 }
@@ -91,12 +102,14 @@ void OnOffDevice::keepLockInMemory(byte increment){
   lockTarget.setValue(increment);
 }
 void OnOffDevice::lockOn(){
-  initOverride(LOCK, 1, true, 0,0);
+  enable(LOCK);
+  setOverrideTarget(LOCK, true);
   checkOverride(LOCK, true);
 }
 
 void OnOffDevice::lockOff(){
-  initOverride(LOCK, 1, false, 0,0);
+  enable(LOCK);
+  setOverrideTarget(LOCK, false);
   checkOverride(LOCK, true);
 }
 
@@ -165,13 +178,20 @@ boolean OnOffDevice::isOn(){
 
 void OnOffDevice::desactivateDevice(){
   enabled.setValue(false);
-  output.stop();
+  unlock();
 }
 void OnOffDevice::activateDevice(){
   enabled.setValue(true);
 }
 bool OnOffDevice::isActivated(){
   return enabled.value();
+}
+
+void OnOffDevice::asignTensiometer(byte tensiom){
+  tensiometer.setValue(tensiom);
+}
+byte OnOffDevice::tensiometerIndex(){
+  return tensiometer.value();
 }
 
 

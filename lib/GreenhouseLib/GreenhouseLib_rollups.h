@@ -80,26 +80,30 @@ class Rollup  : public OverrideManager
     Rollup();
     ~Rollup();
     void initOutputs(byte outputType, boolean relayType, byte rOpen, byte rClose);
+    void initCurrentPin(uint8_t _currentPin);
     void initStage(Stage stage, float mod, byte inc);
+
+    //overrides
+    void forceStop();
+    void forceAt(byte increment);
+    void unforce();
 
     void lockOpen();
     void lockClose();
-    void forceAt(byte increment);
-    void unforce();
     void lockOpenAndWait(unsigned long seconds);
     void lockCloseAndWait(unsigned long seconds);
     void lockAtIncrement(byte increment);
     void lockAtIncrement(byte increment, unsigned long seconds);
-    void forceStop();
-    void autoCalibration(const uint8_t  current_sensor);
+    void autoCalibration();
+
+    boolean isLock();
+
     //routihe functions
 		void routine(float target, float temp);
-    void checkCurrent(float current);
     //Parameters functions
     void setParameters(byte stages, float hyst, unsigned short rotationUp, unsigned short rotationDown, unsigned short pause, bool enabled);
     void setIncrementCounter(unsigned short increment);
     unsigned short routinePosition(float temp, float targetTemp);
-    boolean overCurrentWarning();
 
     void EEPROMGet();
 		//return private variables
@@ -110,6 +114,8 @@ class Rollup  : public OverrideManager
     uShortParameter pause;
     boolParameter enabled;
     floatParameter currentLimit;
+    boolParameter lock;
+    byteParameter lockTarget;
 
 
     Stage stage[MAX_STAGES];
@@ -125,7 +131,10 @@ class Rollup  : public OverrideManager
     boolean closing();
     unsigned short nb();
 
+    float current();
     bool inrushPhase();
+    boolean overCurrentWarning();
+
 
 		unsigned short EEPROMIndexBegin();
 		unsigned short EEPROMIndexEnd();
@@ -136,6 +145,8 @@ class Rollup  : public OverrideManager
     void desactivateDevice();
     void activateDevice();
     boolean isActivated();
+    boolean isStandby();
+
 
 
     void checkOverrideTimer();
@@ -147,15 +158,6 @@ class Rollup  : public OverrideManager
 
   private:
 
-    boolParameter lock;
-    byteParameter lockTarget;
-
-    elapsedMillis overrideTimer;
-    bool lockedAndWaiting;
-    unsigned long overrideWaitingTime;
-
-    boolean _test;
-    byte _increments;
     //const parameters
     Output _openingPin;
     Output _closingPin;
@@ -178,13 +180,23 @@ class Rollup  : public OverrideManager
     unsigned short _lowerStage;
 		unsigned short _stages;
     boolean _reset;
+    boolean _standby;
 
+
+    elapsedMillis overrideTimer;
+    bool lockedAndWaiting;
+    unsigned long overrideWaitingTime;
+
+    boolean _test;
+    byte _increments;
+
+    //Self-calibration
     boolean _calibrating;
     uint8_t _currentPin;
     byte _calibratingStep;
     Current motor;
     boolean _overcurrent;
-
+    float _current;
 
 		//Timers
 		elapsedMillis rollupTimer;
@@ -200,13 +212,16 @@ class Rollup  : public OverrideManager
     //Actions
     void watchRoutine();
     void watchOverride();
+    void updatePosition();
     void updatePosition(float temp, float targetTemp);
     void updatePosition(byte overrideNumber);
     void startMove();
     void stopMove();
+    void reset();
     void resumeCycle(String type);
     void rotationTimeCalibration();
-
+    void checkOvercurrent();
+    void getCurrent();
 
     void autoAdjustStages();
     void calibrateStages();

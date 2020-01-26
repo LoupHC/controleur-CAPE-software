@@ -27,14 +27,21 @@
 
 #define DEF_ADDRESS -111
 
+boolean Parameter::_updated = false;
+
+
 void Parameter::setAddress(short address){
   _address = address;
 }
 short Parameter::address(){
   return _address;
 }
-
-
+void Parameter::acknowledgeUpdate(){
+  _updated = false;
+}
+boolean Parameter::updated(){
+  return _updated;
+}
 
 floatParameter::floatParameter(){
   setAddress(DEF_ADDRESS);
@@ -45,6 +52,7 @@ floatParameter::~floatParameter(){}
 void floatParameter::setValue(float value){
   if(address() != DEF_ADDRESS){
       EEPROM.put(address(), value);
+      _updated = true;
   }
 }
 /*
@@ -76,6 +84,7 @@ shortParameter::~shortParameter(){}
 void shortParameter::setValue(short value){
   if(address() != DEF_ADDRESS){
       EEPROM.put(address(), value);
+      _updated = true;
 
   }
 }
@@ -108,6 +117,7 @@ uShortParameter::~uShortParameter(){}
 void uShortParameter::setValue(unsigned short value){
   if(address() != DEF_ADDRESS){
         EEPROM.put(address(), value);
+        _updated = true;
   }
 }
 
@@ -137,6 +147,7 @@ byteParameter::~byteParameter(){}
 void byteParameter::setValue(byte value){
   if(address() != DEF_ADDRESS){
       EEPROM.put(address(), value);
+      _updated = true;
   }
 }
 
@@ -168,6 +179,7 @@ boolParameter::~boolParameter(){}
 void boolParameter::setValue(bool value){
   if(address() != DEF_ADDRESS){
       EEPROM.put(address(), value);
+      _updated = true;
   }
 }
 
@@ -230,23 +242,41 @@ void timeParameter::adjustTime(){
   }
 }
 
+boolean isBetweenExclusively(byte startHour, byte startMin, byte actualHour, byte actualMin, byte stopHour, byte stopMin){
+  unsigned short startTime = (unsigned short)startHour*60 + (unsigned short)startMin;
+  unsigned short actualTime = (unsigned short)actualHour*60 + (unsigned short)actualMin;
+  unsigned short stopTime = (unsigned short)stopHour*60 + (unsigned short)stopMin;
 
-  boolean isBetween(byte startHour, byte startMin, byte actualHour, byte actualMin, byte stopHour, byte stopMin){
-    unsigned short startTime = (unsigned short)startHour*60 + (unsigned short)startMin;
-    unsigned short actualTime = (unsigned short)actualHour*60 + (unsigned short)actualMin;
-    unsigned short stopTime = (unsigned short)stopHour*60 + (unsigned short)stopMin;
-
-    if (stopTime < startTime){
-      stopTime += 24*60;
-      if(actualTime < startTime){
-        actualTime += 24*60;
-      }
-    }
-
-    if ((actualTime >= startTime)&&(actualTime <= stopTime)){
-      return true;
-    }
-    else{
-      return false;
+  if (stopTime <= startTime){
+    stopTime += 24*60;
+    if(actualTime < startTime){
+      actualTime += 24*60;
     }
   }
+
+  if ((actualTime >= startTime)&&(actualTime <= stopTime)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+boolean isBetween(byte startHour, byte startMin, byte actualHour, byte actualMin, byte stopHour, byte stopMin){
+  unsigned short startTime = (unsigned short)startHour*60 + (unsigned short)startMin;
+  unsigned short actualTime = (unsigned short)actualHour*60 + (unsigned short)actualMin;
+  unsigned short stopTime = (unsigned short)stopHour*60 + (unsigned short)stopMin;
+
+  if (stopTime < startTime){
+    stopTime += 24*60;
+    if(actualTime < startTime){
+      actualTime += 24*60;
+    }
+  }
+
+  if ((actualTime >= startTime)&&(actualTime <= stopTime)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}

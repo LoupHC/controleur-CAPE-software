@@ -23,7 +23,6 @@
 
 #include "Arduino.h"
 #include "EEPROM.h"
-#include "elapsedMillis.h"
 #include "Parameters.h"
 #include "Defines.h"
 
@@ -79,7 +78,6 @@ class Timepoint
   	static unsigned short _EEPROMindex;
 		unsigned short _localCounter;
 		static unsigned short _counter;
-		elapsedMillis EEPROMTimer;
 };
 
 

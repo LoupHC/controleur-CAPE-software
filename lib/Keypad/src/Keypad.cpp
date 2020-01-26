@@ -40,8 +40,8 @@ Keypad::Keypad(char *userKeymap, byte *row, byte *col, byte numRows, byte numCol
 
 	begin(userKeymap);
 
-	setDebounceTime(0);
-	setHoldTime(0);
+	setDebounceTime(50);
+	setHoldTime(3000);
 	keypadEventListener = 0;
 
 	startTime = 0;
@@ -57,7 +57,7 @@ void Keypad::begin(char *userKeymap) {
 char Keypad::getKey() {
 	single_key = true;
 
-	if (getKeys() && key[0].stateChanged && (key[0].kstate==PRESSED))
+	if ((getKeys() && key[0].stateChanged && key[0].kstate == PRESSED)||key[0].kstate==HOLD)
 		return key[0].kchar;
 
 	single_key = false;
@@ -266,6 +266,7 @@ void Keypad::transitionTo(byte idx, KeyState nextState) {
 
 /*
 || @changelog
+|| | 3.1 2019-12-27 - Loup     				 : getKey() returns HOLD state as well
 || | 3.1 2013-01-15 - Mark Stanley     : Fixed missing RELEASED & IDLE status when using a single key.
 || | 3.0 2012-07-12 - Mark Stanley     : Made library multi-keypress by default. (Backwards compatible)
 || | 3.0 2012-07-12 - Mark Stanley     : Modified pin functions to support Keypad_I2C

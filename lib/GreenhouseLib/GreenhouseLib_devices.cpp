@@ -274,3 +274,11 @@
         return false;
       }
     }
+
+    void Alarm::start(){
+      output.start();
+    }
+
+    void Alarm::stop(){
+      output.stop();
+    }
